@@ -43,9 +43,6 @@ jobs:
           path: ${{ github.workspace }}/.next/cache
           key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
 
-      - name: Setup Prisma
-        run: pnpm prebuild
-
       - run: pnpm build
       - run: pnpm test-e2e
 
@@ -98,9 +95,6 @@ jobs:
         with:
           path: ${{ github.workspace }}/.next/cache
           key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
-
-      - name: Setup Prisma
-        run: pnpm prebuild
 
       - run: pnpm test-unit
       - run: pnpm tsc
