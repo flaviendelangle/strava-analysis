@@ -7,10 +7,11 @@
  * @see https://trpc.io/docs/v11/router
  * @see https://trpc.io/docs/v11/procedures
  */
+import { transformer } from "~/utils/transformer";
 
-import { initTRPC } from '@trpc/server';
-import { transformer } from '~/utils/transformer';
-import type { Context } from './context';
+import { initTRPC } from "@trpc/server";
+
+import type { Context } from "./context";
 
 const t = initTRPC.context<Context>().create({
   /**

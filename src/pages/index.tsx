@@ -1,13 +1,22 @@
-import { trpc } from '../utils/trpc';
-import type { NextPageWithLayout } from './_app';
+import { signIn, signOut, useSession } from "next-auth/react";
+
+import type { NextPageWithLayout } from "./_app";
 
 const IndexPage: NextPageWithLayout = () => {
-  const postsQuery = trpc.post.hello.useQuery()
-
+  const session = useSession();
+  if (session.data?.user) {
+    return (
+      <>
+        Signed in as {session.data.user.email} <br />
+        <button onClick={() => signOut()}>Sign out</button>
+      </>
+    );
+  }
   return (
-    <div className="flex flex-col bg-gray-800 py-8">
-      {postsQuery.data ?? 'Loading...'}
-    </div>
+    <>
+      Not signed in <br />
+      <button onClick={() => signIn()}>Sign in</button>
+    </>
   );
 };
 

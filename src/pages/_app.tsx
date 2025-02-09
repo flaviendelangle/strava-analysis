@@ -1,10 +1,12 @@
-import type { NextPage } from 'next';
-import type { AppType, AppProps } from 'next/app';
-import type { ReactElement, ReactNode } from 'react';
+import type { ReactElement, ReactNode } from "react";
 
-import { DefaultLayout } from '~/components/DefaultLayout';
-import { trpc } from '~/utils/trpc';
-import '~/styles/globals.css';
+import type { NextPage } from "next";
+import { SessionProvider } from "next-auth/react";
+import type { AppProps, AppType } from "next/app";
+
+import { LoggedInLayout } from "~/components/LoggedInLayout";
+import "~/styles/globals.css";
+import { trpc } from "~/utils/trpc";
 
 export type NextPageWithLayout<
   TProps = Record<string, unknown>,
@@ -17,11 +19,18 @@ type AppPropsWithLayout = AppProps & {
   Component: NextPageWithLayout;
 };
 
-const MyApp = (({ Component, pageProps }: AppPropsWithLayout) => {
+const App = (({
+  Component,
+  pageProps: { session, ...pageProps },
+}: AppPropsWithLayout) => {
   const getLayout =
-    Component.getLayout ?? ((page) => <DefaultLayout>{page}</DefaultLayout>);
+    Component.getLayout ?? ((page) => <LoggedInLayout>{page}</LoggedInLayout>);
 
-  return getLayout(<Component {...pageProps} />);
+  return getLayout(
+    <SessionProvider session={session}>
+      <Component {...pageProps} />
+    </SessionProvider>,
+  );
 }) as AppType;
 
-export default trpc.withTRPC(MyApp);
+export default trpc.withTRPC(App);

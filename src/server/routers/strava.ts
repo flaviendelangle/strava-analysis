@@ -1,8 +1,7 @@
-import { router, publicProcedure } from '../trpc';
+import { publicProcedure, router } from "../trpc";
 
-export const postRouter = router({
-  hello: publicProcedure
-    .query(async () => {
-      return 'Hello world'
-    }),
+export const stravaRouter = router({
+  hello: publicProcedure.query(async () => {
+    return "Hello world";
+  }),
 });

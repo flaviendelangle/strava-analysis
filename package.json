@@ -7,14 +7,10 @@
     "start": "next start",
     "lint": "eslint --cache src",
     "lint-fix": "pnpm lint --fix",
+    "prettier": "prettier --write .",
     "test-unit": "vitest",
     "test-e2e": "playwright test",
     "test-start": "run-s test-unit test-e2e"
-  },
-  "prettier": {
-    "printWidth": 80,
-    "trailingComma": "all",
-    "singleQuote": true
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.8",
@@ -24,6 +20,7 @@
     "@trpc/server": "npm:@trpc/server@next",
     "clsx": "^2.0.0",
     "next": "^15.1.3",
+    "next-auth": "^4.24.11",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "strava-v3": "^2.2.1",
@@ -32,6 +29,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.26.1",
+    "@trivago/prettier-plugin-sort-imports": "5.2.2",
     "@types/node": "^22.9.0",
     "@types/react": "^19.0.0",
     "autoprefixer": "^10.4.7",
@@ -43,6 +41,7 @@
     "npm-run-all": "^4.1.5",
     "postcss": "^8.4.39",
     "prettier": "^3.3.3",
+    "prettier-plugin-tailwindcss": "^0.6.11",
     "start-server-and-test": "^1.12.0",
     "tailwindcss": "^3.4.6",
     "tsx": "^4.0.0",
