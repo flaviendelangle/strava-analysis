@@ -9,7 +9,11 @@ export function ActivityMap(props: ActivityMapProps) {
     id: activityId,
   });
 
-  return <Map activity={activityQuery.data} />;
+  return (
+    <Map
+      activities={activityQuery.data == null ? null : [activityQuery.data]}
+    />
+  );
 }
 
 interface ActivityMapProps {

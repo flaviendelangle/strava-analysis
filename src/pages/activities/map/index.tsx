@@ -7,4 +7,6 @@ const ActivitiesTablePage: NextPageWithLayout = () => {
   return <ActivitiesMap />;
 };
 
+export const dynamic = "force-dynamic";
+
 export default ActivitiesTablePage;

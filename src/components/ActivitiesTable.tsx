@@ -5,7 +5,6 @@ import Link from "next/link";
 
 import {
   Row,
-  SortingState,
   createColumnHelper,
   flexRender,
   getCoreRowModel,
@@ -83,7 +82,6 @@ const columns = [
 
 export function ActivitiesTable() {
   const activitiesQuery = trpc.strava.activities.useQuery();
-  const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const data = React.useMemo(
     () => activitiesQuery.data ?? [],
@@ -93,10 +91,6 @@ export function ActivitiesTable() {
   const table = useReactTable({
     data,
     columns,
-    onSortingChange: setSorting,
-    state: {
-      sorting,
-    },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getRowCanExpand: () => true,

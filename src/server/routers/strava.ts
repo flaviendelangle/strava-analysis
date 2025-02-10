@@ -25,6 +25,20 @@ export const stravaRouter = router({
 
     return activities;
   }),
+  activitiesWithMap: authedProcedure.query(async ({ ctx }) => {
+    const token = await getToken({
+      req: ctx.req,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+
+    const db = getDB();
+
+    const activities = await db.query.activitiesTable.findMany({
+      where: (activity, { eq }) => eq(activity.athlete, Number(token?.sub)),
+    });
+
+    return activities;
+  }),
   activityWithMap: authedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {

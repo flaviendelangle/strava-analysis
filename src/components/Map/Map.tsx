@@ -15,32 +15,37 @@ const osm = {
 };
 
 interface FitBoundsProps {
-  positions: [number, number][];
+  polylines: { id: number; polyline: [number, number][] }[];
 }
 
 function FitBounds(props: FitBoundsProps) {
-  const { positions } = props;
+  const { polylines } = props;
   const map = useMap();
 
   React.useEffect(() => {
+    const positions = polylines[0]?.polyline ?? [];
     if (positions.length > 0) {
       const bounds = positions.map(
         (pos) => [pos[0], pos[1]] as [number, number],
       );
       map.fitBounds(bounds);
     }
-  }, [positions, map]);
+  }, [polylines, map]);
 
   return null;
 }
 
 export default function Map(props: MapProps) {
-  const { activity } = props;
+  const { activities } = props;
 
-  const polyline = React.useMemo(() => {
-    if (!activity?.map_polyline) return null;
-    return decode(activity.map_polyline);
-  }, [activity]);
+  const polylines = React.useMemo(() => {
+    return (activities ?? [])
+      .map((activity) => {
+        if (!activity?.map_polyline) return null;
+        return { id: activity.id, polyline: decode(activity.map_polyline) };
+      })
+      .filter((activity) => !!activity);
+  }, [activities]);
 
   return (
     <MapContainer
@@ -52,16 +57,14 @@ export default function Map(props: MapProps) {
         url={osm.maptiler.url}
         attribution={osm.maptiler.attribution}
       />
-      {!!polyline && (
-        <React.Fragment>
-          <Polyline positions={polyline} color="red" />
-          <FitBounds positions={polyline} />
-        </React.Fragment>
-      )}
+      {polylines?.map((activity) => (
+        <Polyline key={activity.id} positions={activity.polyline} color="red" />
+      ))}
+      <FitBounds polylines={polylines} />
     </MapContainer>
   );
 }
 
 interface MapProps {
-  activity: RouterOutput["strava"]["activityWithMap"] | null;
+  activities: RouterOutput["strava"]["activitiesWithMap"] | null;
 }
