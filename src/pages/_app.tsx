@@ -3,6 +3,7 @@ import type { ReactElement, ReactNode } from "react";
 import dayjs from "dayjs";
 import "dayjs/locale/en-gb";
 import localizedFormat from "dayjs/plugin/localizedFormat";
+import quarterOfYear from "dayjs/plugin/quarterOfYear";
 import type { NextPage } from "next";
 import { SessionProvider } from "next-auth/react";
 import type { AppProps, AppType } from "next/app";
@@ -12,6 +13,7 @@ import "~/styles/globals.css";
 import { trpc } from "~/utils/trpc";
 
 dayjs.extend(localizedFormat);
+dayjs.extend(quarterOfYear);
 dayjs.locale("en-gb");
 
 export type NextPageWithLayout<

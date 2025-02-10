@@ -23,18 +23,18 @@ function addSpaceBetweenUpperCase(input: string): string {
 
 type Activity = RouterOutput["strava"]["activities"][number];
 
-function ActivityRow(props: { row: Row<Activity> }) {
-  const { row } = props;
+function ActivityRow(props: { row: Row<Activity>; index: number }) {
+  const { row, index } = props;
 
   return (
     <React.Fragment>
       <tr
-        className="cursor-pointer select-none hover:bg-gray-600 data-[odd=true]:bg-gray-900 data-[odd=true]:hover:bg-gray-700"
-        data-odd={row.index % 2 === 1}
+        className="h-12 cursor-pointer select-none hover:bg-gray-600 data-[odd=true]:bg-gray-900 data-[odd=true]:hover:bg-gray-700"
+        data-odd={index % 2 === 1}
         onClick={row.getToggleExpandedHandler()}
       >
         {row.getVisibleCells().map((cell) => (
-          <td className="px-6 py-4">
+          <td className="px-6">
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
           </td>
         ))}
@@ -50,7 +50,7 @@ function ActivityRow(props: { row: Row<Activity> }) {
               </div>
             )}
           </td>
-          <td colSpan={row.getVisibleCells().length - 1} className="px-6 py-4">
+          <td colSpan={row.getVisibleCells().length - 1} className="px-6">
             <Link
               className="inline-flex rounded-md bg-purple-800 px-4 py-2 text-white hover:bg-purple-700"
               href={`/activities/${row.original.id}`}
@@ -149,9 +149,9 @@ export function ActivitiesTable() {
       <tbody>
         {activitiesQuery.isLoading
           ? Array.from({ length: 25 }).map((_, index) => (
-              <tr key={index} className="odd:bg-gray-900">
+              <tr key={index} className="h-12 odd:bg-gray-900">
                 {table.getVisibleFlatColumns().map(() => (
-                  <td className="px-6 py-4">
+                  <td className="px-6">
                     <div className="h-4 w-32 animate-pulse bg-gray-600" />
                   </td>
                 ))}
@@ -159,7 +159,9 @@ export function ActivitiesTable() {
             ))
           : table
               .getRowModel()
-              .rows.map((row) => <ActivityRow key={row.id} row={row} />)}
+              .rows.map((row, rowIndex) => (
+                <ActivityRow key={row.id} row={row} index={rowIndex} />
+              ))}
       </tbody>
     </table>
   );

@@ -58,17 +58,23 @@ export const stravaRouter = router({
 
       return activity;
     }),
-  loadActivities: authedProcedure.mutation(async ({ ctx }) => {
+  loadOlderActivities: authedProcedure.mutation(async ({ ctx }) => {
     const token = await getToken({
       req: ctx.req,
       secret: process.env.NEXTAUTH_SECRET,
     });
 
-    const activities = await strava.athlete.listActivities({
-      access_token: token!.accessToken as string,
+    const db = getDB();
+    const oldestActivity = await db.query.activitiesTable.findFirst({
+      where: (activity, { eq }) => eq(activity.athlete, Number(token!.sub)),
+      orderBy: (activity, { asc }) => asc(activity.startDate),
     });
 
-    const db = getDB();
+    const activities = await strava.athlete.listActivities({
+      access_token: token!.accessToken as string,
+      per_page: 50,
+      before: new Date(oldestActivity!.startDate).getTime() / 1000,
+    });
 
     // TODO: Batch the insertions
     for await (const activity of activities) {

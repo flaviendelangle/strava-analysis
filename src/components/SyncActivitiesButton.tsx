@@ -2,21 +2,21 @@ import { trpc } from "~/utils/trpc";
 
 export function SyncActivitiesButton() {
   const utils = trpc.useUtils();
-  const loadActivitiesMutation = trpc.strava.loadActivities.useMutation({
+  const loadActivitiesMutation = trpc.strava.loadOlderActivities.useMutation({
     onSuccess: () => utils.strava.activities.invalidate(),
   });
 
   return (
     <button
-      className="bg-zinc-500 text-white px-4 py-1 rounded-md inline-flex center gap-4"
+      className="center inline-flex gap-4 rounded-md bg-zinc-500 px-4 py-1 text-white"
       onClick={() => loadActivitiesMutation.mutate()}
     >
-      Sync activities
+      Load older activities
       {loadActivitiesMutation.isPending && (
         <div role="status">
           <svg
             aria-hidden="true"
-            className="inline w-4 h-4 text-gray-200 animate-spin dark:text-gray-600 fill-gray-300"
+            className="inline h-4 w-4 animate-spin fill-gray-300 text-gray-200 dark:text-gray-600"
             viewBox="0 0 100 101"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
