@@ -108,6 +108,11 @@ function NavBar() {
           svgPath="m20.5 3-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5M15 19l-6-2.11V5l6 2.11z"
           href="/activities/map"
         />
+        <NavBarLink
+          label="Statistics"
+          svgPath="M4 9h4v11H4zm12 4h4v7h-4zm-6-9h4v16h-4z"
+          href="/statistics"
+        />
         <NavBarButton
           label="Sign out"
           svgPath="m17 7-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4z"

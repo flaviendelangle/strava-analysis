@@ -17,6 +17,10 @@ import { RouterOutput, trpc } from "~/utils/trpc";
 
 import { ActivityMap } from "./ActivityMap";
 
+function addSpaceBetweenUpperCase(input: string): string {
+  return input.replace(/([A-Z])/g, " $1").trim();
+}
+
 type Activity = RouterOutput["strava"]["activities"][number];
 
 function ActivityRow(props: { row: Row<Activity> }) {
@@ -38,7 +42,13 @@ function ActivityRow(props: { row: Row<Activity> }) {
       {row.getIsExpanded() && (
         <tr className="h-96 w-full">
           <td>
-            <ActivityMap activityId={row.original.id} />
+            {row.original.map_polyline ? (
+              <ActivityMap activityId={row.original.id} />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-4xl">
+                No map needed
+              </div>
+            )}
           </td>
           <td colSpan={row.getVisibleCells().length - 1} className="px-6 py-4">
             <Link
@@ -66,7 +76,7 @@ const columns = [
     header: () => <span>Date</span>,
   }),
   columnHelper.accessor("type", {
-    cell: (info) => info.getValue(),
+    cell: (info) => addSpaceBetweenUpperCase(info.getValue()),
     header: () => <span>Type</span>,
   }),
   columnHelper.accessor("distance", {
