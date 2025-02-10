@@ -1,7 +1,7 @@
 // @ts-check
+import { NextConfig } from "next";
 
-import { NextConfig } from 'next';
-import { env } from './src/server/env';
+import { env } from "./src/server/env";
 
 /**
  * @see https://nextjs.org/docs/api-reference/next.config.js/introduction
@@ -20,5 +20,19 @@ export default {
   /** We run typechecking as a separate task in CI */
   typescript: {
     ignoreBuildErrors: true,
+  },
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "/activities/table",
+        permanent: false,
+      },
+      {
+        source: "/activities",
+        destination: "/activities/table",
+        permanent: false,
+      },
+    ];
   },
 } satisfies NextConfig;

@@ -2,7 +2,7 @@ name: Testing
 on: [push]
 jobs:
   e2e:
-    name: 'Build + E2E tests'
+    name: "Build + E2E tests"
     services:
       postgres:
         image: postgres
@@ -29,7 +29,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 22.x
-          cache: 'pnpm' # You can active this cache when your repo has a lockfile
+          cache: "pnpm" # You can active this cache when your repo has a lockfile
 
       - name: Install deps (with cache)
         run: pnpm install
@@ -42,9 +42,6 @@ jobs:
         with:
           path: ${{ github.workspace }}/.next/cache
           key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
-
-      - name: Setup Prisma
-        run: pnpm prebuild
 
       - run: pnpm build
       - run: pnpm test-e2e
@@ -61,7 +58,7 @@ jobs:
             playwright/test-results
 
   unit:
-    name: 'Unit tests + typecheck'
+    name: "Unit tests + typecheck"
     services:
       postgres:
         image: postgres
@@ -88,7 +85,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 22.x
-          cache: 'pnpm' # You can active this cache when your repo has a lockfile
+          cache: "pnpm" # You can active this cache when your repo has a lockfile
 
       - name: Install deps (with cache)
         run: pnpm install
@@ -98,9 +95,6 @@ jobs:
         with:
           path: ${{ github.workspace }}/.next/cache
           key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
-
-      - name: Setup Prisma
-        run: pnpm prebuild
 
       - run: pnpm test-unit
       - run: pnpm tsc
