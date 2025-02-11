@@ -12,14 +12,15 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
-import { formatDistance, formatDuration } from "~/utils/format";
-import { RouterOutput, trpc } from "~/utils/trpc";
+import { useActivitiesQuery } from "~/hooks/trpc/useActivitiesQuery";
+import {
+  formatActivityType,
+  formatDistance,
+  formatDuration,
+} from "~/utils/format";
+import { RouterOutput } from "~/utils/trpc";
 
 import { ActivityMap } from "./ActivityMap";
-
-function addSpaceBetweenUpperCase(input: string): string {
-  return input.replace(/([A-Z])/g, " $1").trim();
-}
 
 type Activity = RouterOutput["strava"]["activities"][number];
 
@@ -34,7 +35,7 @@ function ActivityRow(props: { row: Row<Activity>; index: number }) {
         onClick={row.getToggleExpandedHandler()}
       >
         {row.getVisibleCells().map((cell) => (
-          <td className="px-6">
+          <td className="px-6" key={cell.id}>
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
           </td>
         ))}
@@ -76,7 +77,7 @@ const columns = [
     header: () => <span>Date</span>,
   }),
   columnHelper.accessor("type", {
-    cell: (info) => addSpaceBetweenUpperCase(info.getValue()),
+    cell: (info) => formatActivityType(info.getValue()),
     header: () => <span>Type</span>,
   }),
   columnHelper.accessor("distance", {
@@ -91,7 +92,7 @@ const columns = [
 ];
 
 export function ActivitiesTable() {
-  const activitiesQuery = trpc.strava.activities.useQuery();
+  const activitiesQuery = useActivitiesQuery();
 
   const data = React.useMemo(
     () => activitiesQuery.data ?? [],

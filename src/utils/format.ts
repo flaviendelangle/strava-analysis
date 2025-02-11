@@ -32,3 +32,7 @@ export const formatSpeed = (metersPerSecond: number, activityType: string) => {
 
   return `${(metersPerSecond * 3.6).toFixed(1)} km/h`;
 };
+
+export function formatActivityType(activityType: string): string {
+  return activityType.replace(/([A-Z])/g, " $1").trim();
+}

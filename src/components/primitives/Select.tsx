@@ -8,7 +8,7 @@ export function Select<TValue extends string = string>(
   return (
     <BaseSelect.Root {...other}>
       <BaseSelect.Trigger className="flex h-10 min-w-36 select-none items-center justify-between gap-3 rounded-md border border-gray-200 pl-3.5 pr-3 text-base text-white hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-1 focus-visible:outline-blue-800 active:bg-gray-800 data-[popup-open]:bg-gray-800">
-        <BaseSelect.Value placeholder={options[0].value} />
+        <BaseSelect.Value placeholder={options[0]?.value} />
         <BaseSelect.Icon className="flex">
           <ChevronUpDownIcon />
         </BaseSelect.Icon>
@@ -23,6 +23,7 @@ export function Select<TValue extends string = string>(
               <BaseSelect.Item
                 className="grid min-w-[var(--anchor-width)] cursor-default select-none grid-cols-[0.75rem_1fr] items-center gap-2 py-2 pl-2.5 pr-4 text-sm leading-4 outline-none data-[highlighted]:relative data-[highlighted]:z-0 data-[highlighted]:text-gray-50 data-[highlighted]:before:absolute data-[highlighted]:before:inset-x-1 data-[highlighted]:before:inset-y-0 data-[highlighted]:before:z-[-1] data-[highlighted]:before:rounded-sm data-[highlighted]:before:bg-gray-900 group-data-[side=none]:min-w-[calc(var(--anchor-width)+1rem)] group-data-[side=none]:pr-12 group-data-[side=none]:text-base group-data-[side=none]:leading-4"
                 value={option.value}
+                key={option.value}
               >
                 <BaseSelect.ItemIndicator className="col-start-1">
                   <CheckIcon className="size-3" />

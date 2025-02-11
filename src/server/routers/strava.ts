@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { getToken } from "next-auth/jwt";
 import strava from "strava-v3";
 import { z } from "zod";
@@ -8,23 +9,36 @@ import { activitiesTable } from "../../db/schema";
 import { authedProcedure, router } from "../trpc";
 
 export const stravaRouter = router({
-  activities: authedProcedure.query(async ({ ctx }) => {
-    const token = await getToken({
-      req: ctx.req,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+  activities: authedProcedure
+    .input(
+      z.object({ activityTypes: z.array(z.string()).optional() }).optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const token = await getToken({
+        req: ctx.req,
+        secret: process.env.NEXTAUTH_SECRET,
+      });
 
-    const db = getDB();
+      const db = getDB();
 
-    const activities = await db.query.activitiesTable.findMany({
-      where: (activity, { eq }) => eq(activity.athlete, Number(token?.sub)),
-      with: {
-        map_polyline: false,
-      },
-    });
+      const activities = await db.query.activitiesTable.findMany({
+        where: (activity, { eq, and, inArray }) => {
+          if (input?.activityTypes?.length) {
+            return and(
+              eq(activity.athlete, Number(token?.sub)),
+              inArray(activity.type, input.activityTypes),
+            );
+          }
 
-    return activities;
-  }),
+          return eq(activity.athlete, Number(token?.sub));
+        },
+        with: {
+          map_polyline: false,
+        },
+      });
+
+      return activities;
+    }),
   activitiesWithMap: authedProcedure.query(async ({ ctx }) => {
     const token = await getToken({
       req: ctx.req,
@@ -58,6 +72,21 @@ export const stravaRouter = router({
 
       return activity;
     }),
+  activityTypes: authedProcedure.query(async ({ ctx }) => {
+    const token = await getToken({
+      req: ctx.req,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+
+    const db = getDB();
+
+    const activityTypes = await db
+      .selectDistinct({ type: activitiesTable.type })
+      .from(activitiesTable)
+      .where(eq(activitiesTable.athlete, Number(token?.sub)));
+
+    return activityTypes.map((activity) => activity.type).sort();
+  }),
   loadOlderActivities: authedProcedure.mutation(async ({ ctx }) => {
     const token = await getToken({
       req: ctx.req,
