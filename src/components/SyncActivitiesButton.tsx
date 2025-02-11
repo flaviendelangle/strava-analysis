@@ -2,9 +2,13 @@ import { trpc } from "~/utils/trpc";
 
 export function SyncActivitiesButton() {
   const utils = trpc.useUtils();
-  const loadActivitiesMutation = trpc.strava.loadOlderActivities.useMutation({
-    onSuccess: () => utils.strava.activities.invalidate(),
-  });
+  const loadActivitiesMutation =
+    trpc.strava.loadOlderActivitiesFromStrava.useMutation({
+      onSuccess: () => {
+        utils.strava.activities.invalidate();
+        utils.strava.activitiesWithMap.invalidate();
+      },
+    });
 
   return (
     <button

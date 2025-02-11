@@ -1,7 +1,6 @@
 import * as React from "react";
 
 import dayjs from "dayjs";
-import Link from "next/link";
 
 import {
   Row,
@@ -21,6 +20,8 @@ import {
 import { RouterOutput } from "~/utils/trpc";
 
 import { ActivityMap } from "./ActivityMap";
+import { ReloadActivityFromStravaButton } from "./ReloadActivityFromStravaButton";
+import { PrimaryLink } from "./primitives/PrimaryLink";
 
 type Activity = RouterOutput["strava"]["activities"][number];
 
@@ -52,12 +53,12 @@ function ActivityRow(props: { row: Row<Activity>; index: number }) {
             )}
           </td>
           <td colSpan={row.getVisibleCells().length - 1} className="px-6">
-            <Link
-              className="inline-flex rounded-md bg-purple-800 px-4 py-2 text-white hover:bg-purple-700"
-              href={`/activities/${row.original.id}`}
-            >
-              See more details
-            </Link>
+            <div className="flex gap-4">
+              <PrimaryLink href={`/activities/${row.original.id}`}>
+                See more details
+              </PrimaryLink>
+              <ReloadActivityFromStravaButton id={row.original.id} />
+            </div>
           </td>
         </tr>
       )}

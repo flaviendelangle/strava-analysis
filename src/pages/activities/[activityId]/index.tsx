@@ -5,6 +5,7 @@ import { z } from "zod";
 import { skipToken } from "@tanstack/react-query";
 
 import { ActivityMap } from "~/components/ActivityMap";
+import { ReloadActivityFromStravaButton } from "~/components/ReloadActivityFromStravaButton";
 import { useTypedParams } from "~/hooks/useTypedParams";
 import { NextPageWithLayout } from "~/pages/_app";
 import { formatDistance, formatSpeed } from "~/utils/format";
@@ -66,9 +67,12 @@ const ActivitiesTablePage: NextPageWithLayout = () => {
             </div>
           )}
         </div>
-        <div className="h-full w-1/2 px-6 py-4">
+        <div className="flex h-full w-1/2 flex-col items-start gap-4 px-6 py-4">
           {activityQuery.data && (
-            <ActivityDetails activity={activityQuery.data} />
+            <React.Fragment>
+              <ActivityDetails activity={activityQuery.data} />
+              <ReloadActivityFromStravaButton id={activityQuery.data.id} />
+            </React.Fragment>
           )}
         </div>
       </div>
