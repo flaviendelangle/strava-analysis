@@ -1,6 +1,6 @@
 import { SlicePrecision } from "~/hooks/useTimeSlices";
 
-import { Select, SelectProps } from "./Select";
+import { Select, SelectProps } from "./primitives/Select";
 
 export const PRECISIONS: PrecisionConfig[] = [
   {
@@ -21,7 +21,9 @@ export const PRECISIONS: PrecisionConfig[] = [
   },
 ];
 
-export function PrecisionSelect(props: Omit<SelectProps, "options">) {
+export function PrecisionSelect(
+  props: Omit<SelectProps<SlicePrecision>, "options">,
+) {
   return <Select {...props} options={PRECISIONS} />;
 }
 

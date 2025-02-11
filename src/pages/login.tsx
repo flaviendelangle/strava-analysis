@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import stravaButton from "../../public/strava-connect-button-orange.svg";
-import { SharedLayout } from "../components/SharedLayout";
+import { SharedLayout } from "../components/layouts/SharedLayout";
 import { NextPageWithLayout } from "./_app";
 
 const LoginPage: NextPageWithLayout = () => {

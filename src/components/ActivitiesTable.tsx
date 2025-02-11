@@ -43,10 +43,10 @@ function ActivityRow(props: { row: Row<Activity>; index: number }) {
         <tr className="h-96 w-full">
           <td>
             {row.original.map_polyline ? (
-              <ActivityMap activityId={row.original.id} />
+              <ActivityMap activity={row.original} />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-4xl">
-                No map needed
+                No map available
               </div>
             )}
           </td>
@@ -150,8 +150,8 @@ export function ActivitiesTable() {
         {activitiesQuery.isLoading
           ? Array.from({ length: 25 }).map((_, index) => (
               <tr key={index} className="h-12 odd:bg-gray-900">
-                {table.getVisibleFlatColumns().map(() => (
-                  <td className="px-6">
+                {table.getVisibleFlatColumns().map((col) => (
+                  <td key={col.id} className="px-6">
                     <div className="h-4 w-32 animate-pulse bg-gray-600" />
                   </td>
                 ))}

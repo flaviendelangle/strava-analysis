@@ -22,3 +22,13 @@ export const formatDuration = (seconds: number) => {
 
 export const formatDistance = (meters: number) =>
   `${new Intl.NumberFormat().format(meters / 1000)}km`;
+
+export const formatSpeed = (metersPerSecond: number, activityType: string) => {
+  if (activityType === "Run") {
+    const timePerKm = 1000 / metersPerSecond;
+    const minutes = Math.floor(timePerKm / 60);
+    return `${minutes}:${Math.floor(timePerKm - minutes * 60)} /km`;
+  }
+
+  return `${(metersPerSecond * 3.6).toFixed(1)} km/h`;
+};

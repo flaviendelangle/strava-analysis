@@ -3,11 +3,9 @@ import type { ReactNode } from "react";
 import Head from "next/head";
 import Image from "next/image";
 
-import stravaBanner from "../../public/strava-banner.svg";
+import stravaBanner from "../../../public/strava-banner.svg";
 
-type DefaultLayoutProps = { children: ReactNode };
-
-export const SharedLayout = ({ children }: DefaultLayoutProps) => {
+export const SharedLayout = ({ children }: SharedLayoutProps) => {
   return (
     <>
       <Head>
@@ -16,7 +14,7 @@ export const SharedLayout = ({ children }: DefaultLayoutProps) => {
       </Head>
 
       <div className="h-screen">{children}</div>
-      <span className="absolute bottom-0 right-0 bg-gray-200 rounded-tl-lg">
+      <span className="absolute bottom-0 right-0 rounded-tl-lg bg-gray-200">
         <Image
           priority
           src={stravaBanner}
@@ -26,3 +24,7 @@ export const SharedLayout = ({ children }: DefaultLayoutProps) => {
     </>
   );
 };
+
+interface SharedLayoutProps {
+  children: ReactNode;
+}

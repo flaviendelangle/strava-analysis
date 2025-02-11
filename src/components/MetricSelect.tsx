@@ -1,6 +1,6 @@
 import { RouterOutput } from "~/utils/trpc";
 
-import { Select, SelectProps } from "./Select";
+import { Select, SelectProps } from "./primitives/Select";
 
 export const METRICS: MetricConfig[] = [
   {

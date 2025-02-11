@@ -8,7 +8,7 @@ import type { NextPage } from "next";
 import { SessionProvider } from "next-auth/react";
 import type { AppProps, AppType } from "next/app";
 
-import { LoggedInLayout } from "~/components/LoggedInLayout";
+import { LoggedInLayout } from "~/components/layouts/LoggedInLayout";
 import "~/styles/globals.css";
 import { trpc } from "~/utils/trpc";
 
