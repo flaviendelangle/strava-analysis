@@ -35,15 +35,28 @@ export const stravaRouter = router({
 
       return activities;
     }),
-  activitiesWithMap: authedProcedure.query(async ({ ctx }) => {
-    const { db, athleteId } = await getAuthContext(ctx.req);
+  activitiesWithMap: authedProcedure
+    .input(
+      z.object({ activityTypes: z.array(z.string()).optional() }).optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const { db, athleteId } = await getAuthContext(ctx.req);
 
-    const activities = await db.query.activitiesTable.findMany({
-      where: (activity, { eq }) => eq(activity.athlete, athleteId),
-    });
+      const activities = await db.query.activitiesTable.findMany({
+        where: (activity, { eq, and, inArray }) => {
+          if (input?.activityTypes?.length) {
+            return and(
+              eq(activity.athlete, athleteId),
+              inArray(activity.type, input.activityTypes),
+            );
+          }
 
-    return activities;
-  }),
+          return eq(activity.athlete, athleteId);
+        },
+      });
+
+      return activities;
+    }),
   activityWithMap: authedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
@@ -69,7 +82,7 @@ export const stravaRouter = router({
   reloadActivityFromStrava: authedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const { db, athleteId, accessToken } = await getAuthContext(ctx.req);
+      const { db, accessToken } = await getAuthContext(ctx.req);
 
       const activity = await strava.activities.get({
         access_token: accessToken,

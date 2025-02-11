@@ -51,7 +51,7 @@ export default function Map(props: MapProps) {
     <MapContainer
       center={{ lat: 0, lng: 0 }}
       zoom={14}
-      className="h-full w-full"
+      className="z-0 h-full w-full"
     >
       <TileLayer
         url={osm.maptiler.url}

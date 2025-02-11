@@ -9,7 +9,11 @@ export function ReloadActivityFromStravaButton(
 
   const utils = trpc.useUtils();
   const mutation = trpc.strava.reloadActivityFromStrava.useMutation({
-    onSuccess: () => utils.strava.activities.invalidate(),
+    onSuccess: () => {
+      utils.strava.activities.invalidate();
+      utils.strava.activitiesWithMap.invalidate();
+      utils.strava.activityWithMap.invalidate({ id });
+    },
   });
 
   return (

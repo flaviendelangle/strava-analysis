@@ -94,16 +94,16 @@ export default function ActivitiesTimeline() {
           style={{ height: "100%" }}
           option={{
             theme: "dark",
-            color: [
-              "#ffa600",
-              "#ff7c43",
-              "#f95d6a",
-              "#d45087",
-              "#a05195",
-              "#665191",
-              "#2f4b7c",
-              "#003f5c",
-            ],
+            // color: [
+            //   "#ffa600",
+            //   "#ff7c43",
+            //   "#f95d6a",
+            //   "#d45087",
+            //   "#a05195",
+            //   "#665191",
+            //   "#2f4b7c",
+            //   "#003f5c",
+            // ],
             textStyle: {
               color: "white",
             },
