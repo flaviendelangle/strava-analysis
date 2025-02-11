@@ -4,9 +4,9 @@ import dayjs from "dayjs";
 import ReactECharts from "echarts-for-react";
 import colors from "tailwindcss/colors";
 
+import { useActivitiesQuery } from "~/hooks/trpc/useActivitiesQuery";
 import { useGroupActivitiesByTimeSlice } from "~/hooks/useGroupActivitiesByTimeSlice";
 import { SlicePrecision, useTimeSlices } from "~/hooks/useTimeSlices";
-import { trpc } from "~/utils/trpc";
 
 import { METRICS, MetricSelect } from "../MetricSelect";
 import { PrecisionSelect } from "../PrecisionSelect";
@@ -14,7 +14,7 @@ import { PrecisionSelect } from "../PrecisionSelect";
 export default function ActivitiesTimeline() {
   const [metric, setMetric] = React.useState("distance");
   const [precision, setPrecision] = React.useState<SlicePrecision>("month");
-  const activitiesQuery = trpc.strava.activities.useQuery();
+  const activitiesQuery = useActivitiesQuery();
 
   const slices = useTimeSlices({
     precision,
