@@ -4,7 +4,7 @@ import { trpc } from "~/utils/trpc";
 
 export function useActivitiesQuery() {
   const [state] = useCookies(["activity-type"]);
-  const activitiesQuery = trpc.strava.activities.useQuery({
+  const activitiesQuery = trpc.activities.listActivitiesWithoutMap.useQuery({
     activityTypes: state["activity-type"],
   });
 

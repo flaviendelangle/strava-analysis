@@ -13,7 +13,9 @@ export const useTimeSlices = ({
   activities,
 }: {
   precision: SlicePrecision;
-  activities: RouterOutput["strava"]["activities"] | undefined;
+  activities:
+    | RouterOutput["activities"]["listActivitiesWithoutMap"]
+    | undefined;
 }) => {
   const boundaries = useActivitiesTimeBoundaries(activities);
 

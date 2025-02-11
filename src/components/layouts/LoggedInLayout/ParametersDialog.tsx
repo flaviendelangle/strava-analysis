@@ -13,7 +13,7 @@ import { trpc } from "~/utils/trpc";
 import { NavBarButton } from "./NavBarButton";
 
 export function ParametersDialog() {
-  const activityTypesQuery = trpc.strava.activityTypes.useQuery();
+  const activityTypesQuery = trpc.activities.activityTypes.useQuery();
   const [state, setState] = useCookies(["activity-type"]);
 
   return (

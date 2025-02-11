@@ -9,5 +9,5 @@ export function ActivityMap(props: ActivityMapProps) {
 }
 
 interface ActivityMapProps {
-  activity: RouterOutput["strava"]["activityWithMap"];
+  activity: RouterOutput["activities"]["getActivityWithMap"];
 }

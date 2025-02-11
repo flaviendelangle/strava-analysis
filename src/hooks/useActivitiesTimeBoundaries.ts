@@ -5,7 +5,7 @@ import dayjs, { Dayjs } from "dayjs";
 import { RouterOutput } from "~/utils/trpc";
 
 export const useActivitiesTimeBoundaries = (
-  activities?: RouterOutput["strava"]["activities"],
+  activities?: RouterOutput["activities"]["listActivitiesWithoutMap"],
 ) =>
   React.useMemo(() => {
     let oldestActivityDate: Dayjs | null = null;

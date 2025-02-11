@@ -7,7 +7,7 @@ import { trpc } from "~/utils/trpc";
 import { Select, SelectProps } from "./primitives/Select";
 
 export function ActivityTypeSelect(props: Omit<SelectProps, "options">) {
-  const activityTypesQuery = trpc.strava.activityTypes.useQuery();
+  const activityTypesQuery = trpc.activities.activityTypes.useQuery();
 
   const options = React.useMemo<ActivityTypeConfig[]>(() => {
     return (

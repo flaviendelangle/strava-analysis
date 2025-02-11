@@ -37,5 +37,7 @@ export function MetricSelect(props: Omit<SelectProps, "options">) {
 interface MetricConfig {
   value: string;
   label: string;
-  getValue: (activity: RouterOutput["strava"]["activities"][number]) => number;
+  getValue: (
+    activity: RouterOutput["activities"]["listActivitiesWithoutMap"][number],
+  ) => number;
 }

@@ -66,5 +66,5 @@ export default function Map(props: MapProps) {
 }
 
 interface MapProps {
-  activities: RouterOutput["strava"]["activitiesWithMap"] | null;
+  activities: RouterOutput["activities"]["listActivitiesWithMap"] | null;
 }

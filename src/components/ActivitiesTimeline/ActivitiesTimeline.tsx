@@ -51,15 +51,13 @@ export default function ActivitiesTimeline() {
           stack: "x",
           data: groupedActivities.map((group) => [
             group.date.toDate(),
-            Math.floor(
-              group.activities.reduce((acc, activity) => {
-                if (activity.type === activityType) {
-                  return metricConfig.getValue(activity) + acc;
-                }
+            group.activities.reduce((acc, activity) => {
+              if (activity.type === activityType) {
+                return metricConfig.getValue(activity) + acc;
+              }
 
-                return acc;
-              }, 0),
-            ),
+              return acc;
+            }, 0),
           ]),
         };
       });
@@ -72,11 +70,9 @@ export default function ActivitiesTimeline() {
         showSymbol: false,
         data: groupedActivities.map((group) => [
           group.date.toDate(),
-          Math.floor(
-            group.activities.reduce(
-              (acc, activity) => metricConfig.getValue(activity) + acc,
-              0,
-            ),
+          group.activities.reduce(
+            (acc, activity) => metricConfig.getValue(activity) + acc,
+            0,
           ),
         ]),
       },

@@ -4,9 +4,11 @@ import { trpc } from "~/utils/trpc";
 
 export function useActivitiesWithMapQuery() {
   const [state] = useCookies(["activity-type"]);
-  const activitiesWithMapQuery = trpc.strava.activitiesWithMap.useQuery({
-    activityTypes: state["activity-type"],
-  });
+  const activitiesWithMapQuery = trpc.activities.listActivitiesWithMap.useQuery(
+    {
+      activityTypes: state["activity-type"],
+    },
+  );
 
   return activitiesWithMapQuery;
 }

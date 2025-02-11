@@ -4,82 +4,15 @@ import { getToken } from "next-auth/jwt";
 import strava from "strava-v3";
 import { z } from "zod";
 
-import { getDB } from "~/db/getDB";
+import { Database, getDB } from "~/db/getDB";
 
 import { activitiesTable } from "../../db/schema";
 import { authedProcedure, router } from "../trpc";
 
+const PAGE_SIZE = 50;
+
 export const stravaRouter = router({
-  activities: authedProcedure
-    .input(
-      z.object({ activityTypes: z.array(z.string()).optional() }).optional(),
-    )
-    .query(async ({ ctx, input }) => {
-      const { db, athleteId } = await getAuthContext(ctx.req);
-
-      const activities = await db.query.activitiesTable.findMany({
-        where: (activity, { eq, and, inArray }) => {
-          if (input?.activityTypes?.length) {
-            return and(
-              eq(activity.athlete, athleteId),
-              inArray(activity.type, input.activityTypes),
-            );
-          }
-
-          return eq(activity.athlete, athleteId);
-        },
-        with: {
-          map_polyline: false,
-        },
-      });
-
-      return activities;
-    }),
-  activitiesWithMap: authedProcedure
-    .input(
-      z.object({ activityTypes: z.array(z.string()).optional() }).optional(),
-    )
-    .query(async ({ ctx, input }) => {
-      const { db, athleteId } = await getAuthContext(ctx.req);
-
-      const activities = await db.query.activitiesTable.findMany({
-        where: (activity, { eq, and, inArray }) => {
-          if (input?.activityTypes?.length) {
-            return and(
-              eq(activity.athlete, athleteId),
-              inArray(activity.type, input.activityTypes),
-            );
-          }
-
-          return eq(activity.athlete, athleteId);
-        },
-      });
-
-      return activities;
-    }),
-  activityWithMap: authedProcedure
-    .input(z.object({ id: z.number() }))
-    .query(async ({ ctx, input }) => {
-      const { db, athleteId } = await getAuthContext(ctx.req);
-
-      const activity = await db.query.activitiesTable.findFirst({
-        where: (activity, { eq, and }) =>
-          and(eq(activity.id, input.id), eq(activity.athlete, athleteId)),
-      });
-
-      return activity;
-    }),
-  activityTypes: authedProcedure.query(async ({ ctx }) => {
-    const { db, athleteId } = await getAuthContext(ctx.req);
-
-    const activityTypes = await db
-      .selectDistinct({ type: activitiesTable.type })
-      .from(activitiesTable)
-      .where(eq(activitiesTable.athlete, athleteId));
-
-    return activityTypes.map((activity) => activity.type).sort();
-  }),
-  reloadActivityFromStrava: authedProcedure
+  reloadActivity: authedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       const { db, accessToken } = await getAuthContext(ctx.req);
@@ -99,7 +32,46 @@ export const stravaRouter = router({
         .set(getModelFromStravaActivity(activity))
         .where(eq(activitiesTable.id, input.id));
     }),
-  loadOlderActivitiesFromStrava: authedProcedure.mutation(async ({ ctx }) => {
+  checkForNewActivities: authedProcedure.mutation(async ({ ctx }) => {
+    const { db, athleteId, accessToken } = await getAuthContext(ctx.req);
+
+    const latestActivity = await db.query.activitiesTable.findFirst({
+      where: (activity, { eq }) => eq(activity.athlete, athleteId),
+      orderBy: (activity, { desc }) => desc(activity.startDate),
+    });
+
+    let activities: any[] = [];
+    if (latestActivity) {
+      let page = 1;
+
+      while (page < 10) {
+        const pageActivities = await strava.athlete.listActivities({
+          access_token: accessToken,
+          page_size: PAGE_SIZE,
+          after: new Date(latestActivity.startDate).getTime() / 1000,
+        });
+
+        activities.push(...pageActivities);
+
+        page += 1;
+
+        if (pageActivities.length < PAGE_SIZE) {
+          break;
+        }
+      }
+    } else {
+      activities = await strava.athlete.listActivities({
+        access_token: accessToken,
+        per_page: PAGE_SIZE,
+      });
+    }
+
+    // TODO: Batch the insertions
+    await Promise.all(
+      activities.map((activity) => insertNewActivities(activity, db)),
+    );
+  }),
+  loadOlderActivities: authedProcedure.mutation(async ({ ctx }) => {
     const { db, athleteId, accessToken } = await getAuthContext(ctx.req);
 
     const oldestActivity = await db.query.activitiesTable.findFirst({
@@ -107,29 +79,18 @@ export const stravaRouter = router({
       orderBy: (activity, { asc }) => asc(activity.startDate),
     });
 
-    const activities = await strava.athlete.listActivities({
+    const activities: any[] = await strava.athlete.listActivities({
       access_token: accessToken,
-      per_page: 50,
-      before: new Date(oldestActivity!.startDate).getTime() / 1000,
+      per_page: PAGE_SIZE,
+      ...(oldestActivity && {
+        before: new Date(oldestActivity.startDate).getTime() / 1000,
+      }),
     });
 
     // TODO: Batch the insertions
-    for await (const activity of activities) {
-      const existingActivity = await db.query.activitiesTable.findFirst({
-        where: (dbActivity, { eq }) => eq(dbActivity.id, activity.id),
-      });
-
-      if (existingActivity) {
-        console.log(
-          `Activity ${activity.id} already exists, skipping insertion`,
-        );
-      } else {
-        console.log(`Inserting activity ${activity.id}`);
-        await db
-          .insert(activitiesTable)
-          .values(getModelFromStravaActivity(activity));
-      }
-    }
+    await Promise.all(
+      activities.map((activity) => insertNewActivities(activity, db)),
+    );
   }),
 });
 
@@ -174,4 +135,19 @@ function getModelFromStravaActivity(activity: any) {
     // Map data
     map_polyline: activity.map?.summary_polyline,
   };
+}
+
+async function insertNewActivities(activity: any, db: Database) {
+  const existingActivity = await db.query.activitiesTable.findFirst({
+    where: (dbActivity, { eq }) => eq(dbActivity.id, activity.id),
+  });
+
+  if (existingActivity) {
+    console.log(`Activity ${activity.id} already exists, skipping insertion`);
+  } else {
+    console.log(`Inserting activity ${activity.id}`);
+    await db
+      .insert(activitiesTable)
+      .values(getModelFromStravaActivity(activity));
+  }
 }

@@ -23,7 +23,7 @@ import { ActivityMap } from "./ActivityMap";
 import { ReloadActivityFromStravaButton } from "./ReloadActivityFromStravaButton";
 import { PrimaryLink } from "./primitives/PrimaryLink";
 
-type Activity = RouterOutput["strava"]["activities"][number];
+type Activity = RouterOutput["activities"]["listActivitiesWithoutMap"][number];
 
 function ActivityRow(props: { row: Row<Activity>; index: number }) {
   const { row, index } = props;
@@ -106,6 +106,9 @@ export function ActivitiesTable() {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getRowCanExpand: () => true,
+    initialState: {
+      sorting: [{ id: "startDateLocal", desc: true }],
+    },
   });
 
   return (

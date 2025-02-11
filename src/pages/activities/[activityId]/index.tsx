@@ -14,7 +14,10 @@ import { RouterOutput, trpc } from "~/utils/trpc";
 const routerSchema = z.object({ activityId: z.string() });
 
 function ActivityDetails(props: {
-  activity: Exclude<RouterOutput["strava"]["activityWithMap"], undefined>;
+  activity: Exclude<
+    RouterOutput["activities"]["getActivityWithMap"],
+    undefined
+  >;
 }) {
   const { activity } = props;
 
@@ -44,7 +47,7 @@ function ActivityDetails(props: {
 const ActivitiesTablePage: NextPageWithLayout = () => {
   const params = useTypedParams(routerSchema);
 
-  const activityQuery = trpc.strava.activityWithMap.useQuery(
+  const activityQuery = trpc.activities.getActivityWithMap.useQuery(
     params == null
       ? skipToken
       : {

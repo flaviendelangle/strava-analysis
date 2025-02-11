@@ -13,7 +13,9 @@ export const useGroupActivitiesByTimeSlice = ({
 }: {
   slices: Dayjs[];
   precision: SlicePrecision;
-  activities: RouterOutput["strava"]["activities"] | undefined;
+  activities:
+    | RouterOutput["activities"]["listActivitiesWithoutMap"]
+    | undefined;
 }) =>
   React.useMemo(() => {
     const temp = slices.reduce(
@@ -27,7 +29,10 @@ export const useGroupActivitiesByTimeSlice = ({
       },
       {} as Record<
         string,
-        { date: Dayjs; activities: RouterOutput["strava"]["activities"] }
+        {
+          date: Dayjs;
+          activities: RouterOutput["activities"]["listActivitiesWithoutMap"];
+        }
       >,
     );
 
