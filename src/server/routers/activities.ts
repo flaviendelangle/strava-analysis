@@ -1,4 +1,6 @@
 import { eq } from "drizzle-orm";
+import strava from "strava-v3";
+import { ac } from "vitest/dist/chunks/reporters.nr4dxCkA.js";
 import { z } from "zod";
 
 import { activitiesTable } from "../../db/schema";
@@ -62,6 +64,32 @@ export const activitiesRouter = router({
         where: (activity, { eq, and }) =>
           and(eq(activity.id, input.id), eq(activity.athlete, athleteId)),
       });
+
+      return activity;
+    }),
+  getActivityStreams: authedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const { db, accessToken } = await getAuthContext(ctx.req);
+
+      const activity = await strava.streams.activity({
+        access_token: accessToken,
+        id: input.id,
+        types: [
+          "distance",
+          "watts",
+          // "altitude",
+          "heartrate",
+          "cadence",
+          // "temp",
+          "velocity_smooth",
+        ],
+        key_by_type: true,
+      });
+
+      if (!activity) {
+        throw new Error(`Activity ${input.id} not found on Strava`);
+      }
 
       return activity;
     }),

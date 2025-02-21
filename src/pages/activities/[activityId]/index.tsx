@@ -5,6 +5,7 @@ import { z } from "zod";
 import { skipToken } from "@tanstack/react-query";
 
 import { ActivityMap } from "~/components/ActivityMap";
+import { ActivityStream } from "~/components/ActivityStream";
 import { ReloadActivityFromStravaButton } from "~/components/ReloadActivityFromStravaButton";
 import { useTypedParams } from "~/hooks/useTypedParams";
 import { NextPageWithLayout } from "~/pages/_app";
@@ -74,6 +75,7 @@ const ActivitiesTablePage: NextPageWithLayout = () => {
           {activityQuery.data && (
             <React.Fragment>
               <ActivityDetails activity={activityQuery.data} />
+              <ActivityStream id={activityQuery.data.id} type="heartrate" />
               <ReloadActivityFromStravaButton id={activityQuery.data.id} />
             </React.Fragment>
           )}
