@@ -1,9 +1,8 @@
 import { eq } from "drizzle-orm";
 import strava from "strava-v3";
-import { ac } from "vitest/dist/chunks/reporters.nr4dxCkA.js";
 import { z } from "zod";
 
-import { activitiesTable } from "../../db/schema";
+import { activitiesTable, activityStreamTable } from "../../db/schema";
 import { authedProcedure, router } from "../trpc";
 import { getAuthContext } from "../utils";
 
@@ -27,7 +26,7 @@ export const activitiesRouter = router({
           return eq(activity.athlete, athleteId);
         },
         with: {
-          map_polyline: false,
+          mapPolyline: false,
         },
       });
 
@@ -72,26 +71,68 @@ export const activitiesRouter = router({
     .query(async ({ ctx, input }) => {
       const { db, accessToken } = await getAuthContext(ctx.req);
 
-      const activity = await strava.streams.activity({
+      const response = await db
+        .select({ areStreamsLoaded: activitiesTable.areStreamsLoaded })
+        .from(activitiesTable)
+        .where(eq(activitiesTable.id, input.id));
+
+      console.log(response);
+
+      if (!response[0]) {
+        throw new Error(`Activity ${input.id} not found in the database`);
+      }
+
+      if (response[0].areStreamsLoaded) {
+        const activityStreamsFromDb = await db
+          .select({
+            type: activityStreamTable.type,
+            data: activityStreamTable.data,
+          })
+          .from(activityStreamTable)
+          .where(eq(activityStreamTable.activity, input.id));
+
+        return activityStreamsFromDb;
+      }
+
+      const activityStreamsFromStrava = await strava.streams.activity({
         access_token: accessToken,
         id: input.id,
         types: [
           "distance",
           "watts",
-          // "altitude",
+          "altitude",
           "heartrate",
           "cadence",
-          // "temp",
+          "temp",
           "velocity_smooth",
         ],
         key_by_type: true,
       });
 
-      if (!activity) {
+      if (!activityStreamsFromStrava) {
         throw new Error(`Activity ${input.id} not found on Strava`);
       }
 
-      return activity;
+      const activityStreamsFromDb = await db
+        .insert(activityStreamTable)
+        .values(
+          activityStreamsFromStrava.map((stream: any) => ({
+            activity: input.id,
+            type: stream.type,
+            seriesType: stream.series_type,
+            originalSize: stream.original_size,
+            resolution: stream.resolution,
+            data: stream.data,
+          })),
+        )
+        .returning();
+
+      await db
+        .update(activitiesTable)
+        .set({ areStreamsLoaded: true })
+        .where(eq(activitiesTable.id, input.id));
+
+      return activityStreamsFromDb;
     }),
   activityTypes: authedProcedure.query(async ({ ctx }) => {
     const { db, athleteId } = await getAuthContext(ctx.req);

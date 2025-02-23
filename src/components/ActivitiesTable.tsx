@@ -44,7 +44,7 @@ function ActivityRow(props: { row: Row<Activity>; index: number }) {
       {row.getIsExpanded() && (
         <tr className="h-96 w-full">
           <td>
-            {row.original.map_polyline ? (
+            {row.original.mapPolyline ? (
               <ActivityMap activity={row.original} />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-4xl">

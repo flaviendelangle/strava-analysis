@@ -58,12 +58,15 @@ const ActivitiesTablePage: NextPageWithLayout = () => {
 
   return (
     <div className="flex h-full w-full flex-col">
-      <nav className="border-b border-gray-600 bg-gray-800 p-4 text-white">
-        {activityQuery.data?.name ?? "Loading..."}
+      <nav className="flex justify-between border-b border-gray-600 bg-gray-800 p-4 text-white">
+        <div>{activityQuery.data?.name ?? "Loading..."}</div>
+        {activityQuery.data && (
+          <ReloadActivityFromStravaButton id={activityQuery.data.id} />
+        )}
       </nav>
       <div className="flex h-full w-full">
         <div className="h-full w-1/2">
-          {activityQuery.data?.map_polyline ? (
+          {activityQuery.data?.mapPolyline ? (
             <ActivityMap activity={activityQuery.data} />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-4xl">
@@ -71,12 +74,11 @@ const ActivitiesTablePage: NextPageWithLayout = () => {
             </div>
           )}
         </div>
-        <div className="flex h-full w-1/2 flex-col items-start gap-4 px-6 py-4">
+        <div className="flex h-full w-1/2 flex-col gap-4 px-6 py-4">
           {activityQuery.data && (
             <React.Fragment>
               <ActivityDetails activity={activityQuery.data} />
-              <ActivityStream id={activityQuery.data.id} type="heartrate" />
-              <ReloadActivityFromStravaButton id={activityQuery.data.id} />
+              <ActivityStream id={activityQuery.data.id} />
             </React.Fragment>
           )}
         </div>

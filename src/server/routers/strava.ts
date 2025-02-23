@@ -133,7 +133,8 @@ function getModelFromStravaActivity(activity: any) {
     elapsedTime: activity.elapsed_time,
 
     // Map data
-    map_polyline: activity.map?.summary_polyline,
+    mapPolyline: activity.map?.summary_polyline,
+    areStreamsLoaded: false,
   };
 }
 

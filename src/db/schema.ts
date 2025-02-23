@@ -1,12 +1,10 @@
 import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const activitiesTable = sqliteTable("activities", {
-  primaryKey: integer("primaryKey", { mode: "number" }).primaryKey({
+  // General information
+  id: integer("id", { mode: "number" }).primaryKey({
     autoIncrement: true,
   }),
-
-  // General information
-  id: integer("id").notNull(),
   athlete: integer("athlete").notNull(),
   type: text("type").notNull(),
   name: text("name").notNull(),
@@ -23,5 +21,25 @@ export const activitiesTable = sqliteTable("activities", {
   elapsedTime: integer("elapsed_time").notNull(),
 
   // Map data
-  map_polyline: text("map_polyline"),
+  mapPolyline: text("map_polyline"),
+
+  // Meta data
+  areStreamsLoaded: integer("are_streams_loaded", {
+    mode: "boolean",
+  }).notNull(),
+});
+
+export const activityStreamTable = sqliteTable("activity_streams", {
+  primaryKey: integer("primaryKey", { mode: "number" }).primaryKey({
+    autoIncrement: true,
+  }),
+
+  activity: integer("activity")
+    .references(() => activitiesTable.id)
+    .notNull(),
+  type: text("name").notNull(), // "heartrate" | "watts" | "cadence" | "distance" | "altitude"
+  seriesType: text("series_type").notNull(), // "distance" | ???
+  originalSize: integer("original_size").notNull(),
+  resolution: text("resolution").notNull(),
+  data: text("data", { mode: "json" }).notNull(),
 });

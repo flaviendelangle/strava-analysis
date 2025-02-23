@@ -1,4 +1,7 @@
+import { config } from "dotenv";
 import { Config } from "drizzle-kit";
+
+config({ path: ".env" });
 
 export default {
   dialect: "sqlite",
@@ -6,6 +9,7 @@ export default {
   out: "./src/db/migrations",
   driver: "turso",
   dbCredentials: {
-    url: "file:./local.db",
+    url: "libsql://strava-analysis-flaviendelangle.turso.io",
+    authToken: process.env.TURSO_AUTH_TOKEN,
   },
 } satisfies Config;

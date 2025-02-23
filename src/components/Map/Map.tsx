@@ -41,8 +41,8 @@ export default function Map(props: MapProps) {
   const polylines = React.useMemo(() => {
     return (activities ?? [])
       .map((activity) => {
-        if (!activity?.map_polyline) return null;
-        return { id: activity.id, polyline: decode(activity.map_polyline) };
+        if (!activity?.mapPolyline) return null;
+        return { id: activity.id, polyline: decode(activity.mapPolyline) };
       })
       .filter((activity) => !!activity);
   }, [activities]);
