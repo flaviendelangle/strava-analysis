@@ -64,8 +64,8 @@ const ActivitiesTablePage: NextPageWithLayout = () => {
           <ReloadActivityFromStravaButton id={activityQuery.data.id} />
         )}
       </nav>
-      <div className="flex h-full w-full">
-        <div className="h-full w-1/2">
+      <div className="flex h-full w-full flex-col 2xl:flex-row">
+        <div className="h-96 2xl:h-full 2xl:w-1/2">
           {activityQuery.data?.mapPolyline ? (
             <ActivityMap activity={activityQuery.data} />
           ) : (
@@ -74,7 +74,7 @@ const ActivitiesTablePage: NextPageWithLayout = () => {
             </div>
           )}
         </div>
-        <div className="flex h-full w-1/2 flex-col gap-4 px-6 py-4">
+        <div className="flex flex-col gap-4 px-6 py-4 2xl:w-1/2">
           {activityQuery.data && (
             <React.Fragment>
               <ActivityDetails activity={activityQuery.data} />

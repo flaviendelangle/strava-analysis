@@ -6,7 +6,8 @@ import { z } from "zod";
 
 import { Database, getDB } from "~/db/getDB";
 
-import { activitiesTable } from "../../db/schema";
+import { activitiesTable, activityStreamTable } from "../../db/schema";
+import { fetchAndStoreActivityStreams } from "../strava";
 import { authedProcedure, router } from "../trpc";
 
 const PAGE_SIZE = 50;
@@ -17,10 +18,17 @@ export const stravaRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { db, accessToken } = await getAuthContext(ctx.req);
 
-      const activity = await strava.activities.get({
-        access_token: accessToken,
-        id: input.id,
-      });
+      await db
+        .delete(activityStreamTable)
+        .where(eq(activityStreamTable.activity, input.id));
+
+      const [activity] = await Promise.all([
+        strava.activities.get({
+          access_token: accessToken,
+          id: input.id,
+        }),
+        fetchAndStoreActivityStreams(input.id, db, accessToken),
+      ]);
 
       if (!activity) {
         throw new Error(`Activity ${input.id} not found on Strava`);

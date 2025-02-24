@@ -1,6 +1,6 @@
 import { trpc } from "~/utils/trpc";
 
-import { PrimaryButton } from "./primitives/PrimaryButton";
+import { LoadingButton } from "./primitives/LoadingButton";
 
 export function ReloadActivityFromStravaButton(
   props: ReloadActivityFromStravaButtonProps,
@@ -13,19 +13,17 @@ export function ReloadActivityFromStravaButton(
       utils.activities.listActivitiesWithoutMap.invalidate();
       utils.activities.listActivitiesWithMap.invalidate();
       utils.activities.getActivityWithMap.invalidate({ id });
+      utils.activities.getActivityStreams.invalidate({ id });
     },
   });
 
   return (
-    <PrimaryButton
-      onClick={() =>
-        mutation.mutate({
-          id,
-        })
-      }
+    <LoadingButton
+      loading={mutation.isPending}
+      onClick={() => mutation.mutate({ id })}
     >
       Reload from Strava
-    </PrimaryButton>
+    </LoadingButton>
   );
 }
 
