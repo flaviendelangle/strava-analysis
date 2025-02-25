@@ -49,3 +49,7 @@ export const useGroupActivitiesByTimeSlice = ({
       a.date.isAfter(b.date) ? 1 : -1,
     );
   }, [slices, activities, precision]);
+
+export type GroupedActivities = ReturnType<
+  typeof useGroupActivitiesByTimeSlice
+>;

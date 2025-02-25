@@ -52,5 +52,5 @@ function getSlicesInInterval({
     current = current.add(1, precision as any);
   }
 
-  return elements.reverse();
+  return elements;
 }

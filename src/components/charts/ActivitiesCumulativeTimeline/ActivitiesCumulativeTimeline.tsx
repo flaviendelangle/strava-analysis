@@ -5,28 +5,27 @@ import ReactECharts from "echarts-for-react";
 import colors from "tailwindcss/colors";
 
 import { useActivitiesQuery } from "~/hooks/trpc/useActivitiesQuery";
-import { useGroupActivitiesByTimeSlice } from "~/hooks/useGroupActivitiesByTimeSlice";
-import { SlicePrecision, useTimeSlices } from "~/hooks/useTimeSlices";
+import {
+  GroupedActivities,
+  useGroupActivitiesByTimeSlice,
+} from "~/hooks/useGroupActivitiesByTimeSlice";
+import { useTimeSlices } from "~/hooks/useTimeSlices";
 
-import { METRICS, MetricSelect } from "../MetricSelect";
-import { PrecisionSelect } from "../PrecisionSelect";
+import { METRICS, MetricSelect } from "../../MetricSelect";
 
-const GROUP_BY_ACTIVITY_TYPE = true;
-
-export default function ActivitiesTimeline() {
+export default function ActivitiesCumulativeTimeline() {
   const [metric, setMetric] = React.useState("distance");
-  const [precision, setPrecision] = React.useState<SlicePrecision>("month");
   const activitiesQuery = useActivitiesQuery();
 
   const slices = useTimeSlices({
-    precision,
+    precision: "month",
     activities: activitiesQuery.data,
   });
 
   const groupedActivities = useGroupActivitiesByTimeSlice({
     activities: activitiesQuery.data,
     slices,
-    precision,
+    precision: "month",
   });
 
   const series = React.useMemo(() => {
@@ -35,55 +34,41 @@ export default function ActivitiesTimeline() {
       return [];
     }
 
-    if (GROUP_BY_ACTIVITY_TYPE) {
-      const activityTypes = new Set<string>();
-      activitiesQuery.data?.forEach((activity) => {
-        if (!activityTypes.has(activity.type)) {
-          activityTypes.add(activity.type);
+    const groupedPerYearActivities = groupedActivities.reduce(
+      (acc, group) => {
+        const year = group.date.year();
+        if (!acc[year]) {
+          acc[year] = [];
         }
-      });
 
-      return Array.from(activityTypes).map((activityType) => {
-        return {
-          name: `${metricConfig.label} - ${activityType}`,
-          type: "bar",
-          showSymbol: false,
-          stack: "x",
-          data: groupedActivities.map((group) => [
-            group.date.toDate(),
-            group.activities.reduce((acc, activity) => {
-              if (activity.type === activityType) {
-                return metricConfig.getValue(activity) + acc;
-              }
+        acc[year].push(group);
 
-              return acc;
-            }, 0),
-          ]),
-        };
-      });
-    }
-
-    return [
-      {
-        name: metricConfig.label,
-        type: "bar",
-        showSymbol: false,
-        data: groupedActivities.map((group) => [
-          group.date.toDate(),
-          group.activities.reduce(
-            (acc, activity) => metricConfig.getValue(activity) + acc,
-            0,
-          ),
-        ]),
+        return acc;
       },
-    ];
+      {} as Record<string, GroupedActivities>,
+    );
+
+    const years = Object.keys(groupedPerYearActivities).sort();
+
+    return years.map((year) => ({
+      name: year,
+      type: "line",
+      showSymbol: false,
+      smooth: true,
+      data: groupedPerYearActivities[year].map((group) => [
+        group.date.month(),
+        group.activities.reduce(
+          (acc, activity) => metricConfig.getValue(activity) + acc,
+          0,
+        ),
+      ]),
+    }));
   }, [groupedActivities, metric]);
 
   return (
     <div className="flex h-96 w-full flex-col rounded-md bg-gray-900">
       <div className="flex gap-4 border-b border-gray-600 p-4">
         <MetricSelect value={metric} onValueChange={setMetric} />
-        <PrecisionSelect value={precision} onValueChange={setPrecision} />
       </div>
       <div className="flex-1">
         <ReactECharts
@@ -145,7 +130,8 @@ export default function ActivitiesTimeline() {
             },
             xAxis: [
               {
-                type: "time",
+                type: "category",
+                data: dayjs.months(),
                 boundaryGap: false,
               },
             ],
