@@ -8,7 +8,7 @@ const envSchema = z.object({
   STRAVA_CLIENT_ID: z.string(),
   STRAVA_CLIENT_SECRET: z.string(),
   TURSO_AUTH_TOKEN: z.string(),
-  AUTH_SECRET: z.string(),
+  NEXTAUTH_SECRET: z.string(),
   NODE_ENV: z.enum(["development", "test", "production"]),
 });
 
