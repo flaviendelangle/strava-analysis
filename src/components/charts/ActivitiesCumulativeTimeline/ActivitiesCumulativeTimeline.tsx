@@ -2,6 +2,7 @@ import * as React from "react";
 
 import dayjs from "dayjs";
 import ReactECharts from "echarts-for-react";
+import { validateHeaderValue } from "http";
 import colors from "tailwindcss/colors";
 
 import { useActivitiesQuery } from "~/hooks/trpc/useActivitiesQuery";
@@ -75,16 +76,6 @@ export default function ActivitiesCumulativeTimeline() {
           style={{ height: "100%" }}
           option={{
             theme: "dark",
-            // color: [
-            //   "#ffa600",
-            //   "#ff7c43",
-            //   "#f95d6a",
-            //   "#d45087",
-            //   "#a05195",
-            //   "#665191",
-            //   "#2f4b7c",
-            //   "#003f5c",
-            // ],
             textStyle: {
               color: "white",
             },
@@ -101,7 +92,7 @@ export default function ActivitiesCumulativeTimeline() {
                       return Math.round(params.value).toLocaleString();
                     }
 
-                    return dayjs(params.value).format("MM/YYYY");
+                    return params.value;
                   },
                 },
               },
