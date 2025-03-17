@@ -6,7 +6,7 @@ import { skipToken } from "@tanstack/react-query";
 
 import { ActivityMap } from "~/components/ActivityMap";
 import { ReloadActivityFromStravaButton } from "~/components/ReloadActivityFromStravaButton";
-import { ActivityStream } from "~/components/charts/ActivityStream";
+import { ActivityStreams } from "~/components/charts/ActivityStreams";
 import { useTypedParams } from "~/hooks/useTypedParams";
 import { NextPageWithLayout } from "~/pages/_app";
 import { formatDistance, formatSpeed } from "~/utils/format";
@@ -78,7 +78,7 @@ const ActivitiesTablePage: NextPageWithLayout = () => {
           {activityQuery.data && (
             <React.Fragment>
               <ActivityDetails activity={activityQuery.data} />
-              <ActivityStream id={activityQuery.data.id} />
+              <ActivityStreams id={activityQuery.data.id} />
             </React.Fragment>
           )}
         </div>

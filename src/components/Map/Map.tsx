@@ -6,13 +6,11 @@ import { MapContainer, Polyline, TileLayer, useMap } from "react-leaflet";
 import { decode } from "~/utils/polyline";
 import { RouterOutput } from "~/utils/trpc";
 
-const osm = {
-  maptiler: {
-    url: "https://api.maptiler.com/maps/basic/256/{z}/{x}/{y}.png?key=fXmTwJM642uPLZiwzhA1",
-    attribution:
-      '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
-  },
-};
+// List available here: https://wiki.openstreetmap.org/wiki/Raster_tile_providers
+const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png	";
+
+const TILE_ATTRIBUTION =
+  'Map data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
 interface FitBoundsProps {
   polylines: { id: number; polyline: [number, number][] }[];
@@ -53,10 +51,7 @@ export default function Map(props: MapProps) {
       zoom={14}
       className="z-0 h-full w-full"
     >
-      <TileLayer
-        url={osm.maptiler.url}
-        attribution={osm.maptiler.attribution}
-      />
+      <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
       {polylines?.map((activity) => (
         <Polyline key={activity.id} positions={activity.polyline} color="red" />
       ))}

@@ -24,7 +24,7 @@ const STREAMS_TO_PLOT = [
   },
 ];
 
-export default function ActivitiesStream(props: ActivitiesStreamProps) {
+export default function ActivityStreams(props: ActivityStreams) {
   const { id } = props;
 
   const activityQuery = trpc.activities.getActivityWithMap.useQuery({ id });
@@ -64,7 +64,7 @@ export default function ActivitiesStream(props: ActivitiesStreamProps) {
   return (
     <div className="flex flex-col rounded-md bg-gray-700">
       {streams.map((stream) => (
-        <article className="flex h-48">
+        <article className="flex h-48" key={stream.name}>
           <h4
             className="rotate-180 transform cursor-default text-center"
             style={{ writingMode: "vertical-rl" }}
@@ -102,6 +102,6 @@ export default function ActivitiesStream(props: ActivitiesStreamProps) {
   );
 }
 
-interface ActivitiesStreamProps {
+interface ActivityStreams {
   id: number;
 }
