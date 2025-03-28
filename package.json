@@ -18,7 +18,7 @@
   "dependencies": {
     "@base-ui-components/react": "1.0.0-alpha.6",
     "@libsql/client": "^0.14.0",
-    "@tanstack/react-query": "^5.62.8",
+    "@tanstack/react-query": "^5.69.3",
     "@tanstack/react-table": "^8.20.6",
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/next": "npm:@trpc/next@next",
