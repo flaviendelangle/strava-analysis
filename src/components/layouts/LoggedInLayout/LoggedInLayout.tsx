@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { SettingsToolbar } from "~/components/settings/SettingsToolbar";
+import { ErgModeProvider } from "~/hooks/useErgMode";
 import { ExplorerTilesProvider } from "~/hooks/useExplorerTilesToggle";
 import { RiderSettingsProvider } from "~/hooks/useRiderSettings";
 
@@ -14,13 +15,15 @@ export const LoggedInLayout = (props: LoggedInLayoutProps) => {
     <SharedLayout>
       <ExplorerTilesProvider>
         <RiderSettingsProvider>
-          <div className="flex h-screen">
-            <NavBar />
-            <main className="flex flex-1 flex-col overflow-hidden">
-              <SettingsToolbar />
-              <div className="flex-1 overflow-y-auto">{children}</div>
-            </main>
-          </div>
+          <ErgModeProvider>
+            <div className="flex h-screen">
+              <NavBar />
+              <main className="flex flex-1 flex-col overflow-hidden">
+                <SettingsToolbar />
+                <div className="flex-1 overflow-y-auto">{children}</div>
+              </main>
+            </div>
+          </ErgModeProvider>
         </RiderSettingsProvider>
       </ExplorerTilesProvider>
     </SharedLayout>

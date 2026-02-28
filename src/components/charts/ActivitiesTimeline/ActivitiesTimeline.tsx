@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { format } from "date-fns";
+import { format, subYears } from "date-fns";
 import ReactECharts from "echarts-for-react";
 
 import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
@@ -9,15 +9,30 @@ import { SlicePrecision, useTimeSlices } from "~/hooks/useTimeSlices";
 
 import { METRICS, MetricSelect } from "../../MetricSelect";
 import { PrecisionSelect } from "../../PrecisionSelect";
+import { TimeSpan, TimeSpanSelect } from "../../TimeSpanSelect";
 
 export default function ActivitiesTimeline() {
   const [metric, setMetric] = React.useState("distance");
   const [precision, setPrecision] = React.useState<SlicePrecision>("month");
+  const [timeSpan, setTimeSpan] = React.useState<TimeSpan>("all-time");
   const activitiesQuery = useActivitiesQuery();
+
+  const minDate = React.useMemo(() => {
+    const now = new Date();
+    switch (timeSpan) {
+      case "last-year":
+        return subYears(now, 1);
+      case "last-2-years":
+        return subYears(now, 2);
+      case "all-time":
+        return null;
+    }
+  }, [timeSpan]);
 
   const slices = useTimeSlices({
     precision,
     activities: activitiesQuery.data,
+    minDate,
   });
 
   const groupedActivities = useGroupActivitiesByTimeSlice({
@@ -64,6 +79,7 @@ export default function ActivitiesTimeline() {
       <div className="flex gap-4 border-b border-border p-4">
         <MetricSelect value={metric} onValueChange={setMetric} />
         <PrecisionSelect value={precision} onValueChange={setPrecision} />
+        <TimeSpanSelect value={timeSpan} onValueChange={setTimeSpan} />
       </div>
       <div className="flex-1">
         <ReactECharts

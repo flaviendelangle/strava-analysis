@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { BleConnection } from "~/sensors/ble/connection";
+import { FtmsControlPoint } from "~/sensors/ble/ftmsControl";
 import {
   parseIndoorBikeData,
   parseCyclingPowerMeasurement,
@@ -10,6 +11,7 @@ import {
   CYCLING_POWER_MEASUREMENT,
   CYCLING_POWER_SERVICE,
   FITNESS_MACHINE_SERVICE,
+  FTMS_CONTROL_POINT,
   HEART_RATE_SERVICE,
   INDOOR_BIKE_DATA,
 } from "~/sensors/ble/services";
@@ -22,7 +24,9 @@ export function useBleTrainer() {
   const [data, setData] = useState<TrainerData | null>(null);
   const [deviceName, setDeviceName] = useState<string | null>(null);
   const [protocol, setProtocol] = useState<TrainerProtocol | null>(null);
+  const [supportsControl, setSupportsControl] = useState(false);
   const connectionRef = useRef(new BleConnection());
+  const ftmsControlRef = useRef<FtmsControlPoint | null>(null);
 
   const connect = useCallback(async () => {
     setState("connecting");
@@ -60,11 +64,38 @@ export function useBleTrainer() {
             setState("disconnected");
             setDeviceName(null);
             setProtocol(null);
+            setSupportsControl(false);
+            ftmsControlRef.current = null;
           },
         });
         setState("connected");
         setDeviceName(device.name ?? null);
         setProtocol(config.proto);
+
+        // Try to acquire FTMS Control Point for ERG mode
+        if (config.proto === "ftms") {
+          try {
+            const controlChar =
+              await connectionRef.current.getCharacteristic(
+                FITNESS_MACHINE_SERVICE,
+                FTMS_CONTROL_POINT,
+              );
+            const control = new FtmsControlPoint(controlChar);
+            await control.startNotifications((opCode, result) => {
+              if (result !== 0x01) {
+                console.warn(
+                  `[BLE] FTMS control response: opCode=0x${opCode.toString(16)} result=0x${result.toString(16)}`,
+                );
+              }
+            });
+            ftmsControlRef.current = control;
+            setSupportsControl(true);
+          } catch (e) {
+            console.warn("[BLE] FTMS Control Point not available:", e);
+            setSupportsControl(false);
+          }
+        }
+
         return;
       } catch (e) {
         // User cancelled the pairing dialog
@@ -81,11 +112,23 @@ export function useBleTrainer() {
   }, []);
 
   const disconnect = useCallback(async () => {
+    if (ftmsControlRef.current) {
+      await ftmsControlRef.current.reset();
+      await ftmsControlRef.current.dispose();
+      ftmsControlRef.current = null;
+    }
     await connectionRef.current.disconnect();
     setState("disconnected");
     setData(null);
     setDeviceName(null);
     setProtocol(null);
+    setSupportsControl(false);
+  }, []);
+
+  const setTargetPower = useCallback(async (watts: number) => {
+    if (ftmsControlRef.current) {
+      await ftmsControlRef.current.setTargetPower(watts);
+    }
   }, []);
 
   useEffect(() => {
@@ -95,5 +138,14 @@ export function useBleTrainer() {
     };
   }, []);
 
-  return { state, data, deviceName, protocol, connect, disconnect };
+  return {
+    state,
+    data,
+    deviceName,
+    protocol,
+    connect,
+    disconnect,
+    supportsControl,
+    setTargetPower,
+  };
 }

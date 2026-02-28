@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { isBefore } from "date-fns";
+import { isAfter, isBefore } from "date-fns";
 
 import { addUnit, endOf, startOf } from "~/utils/dateUtils";
 
@@ -12,9 +12,11 @@ export type SlicePrecision = "year" | "quarter" | "month" | "week";
 export const useTimeSlices = ({
   precision,
   activities,
+  minDate,
 }: {
   precision: SlicePrecision;
   activities: Omit<Doc<"activities">, "mapPolyline">[] | undefined;
+  minDate?: Date | null;
 }) => {
   const boundaries = useActivitiesTimeBoundaries(activities);
 
@@ -23,12 +25,17 @@ export const useTimeSlices = ({
       return [];
     }
 
+    const start =
+      minDate != null && isAfter(minDate, boundaries.oldest)
+        ? minDate
+        : boundaries.oldest;
+
     return getSlicesInInterval({
       precision,
-      start: boundaries.oldest,
+      start,
       end: boundaries.newest,
     });
-  }, [boundaries, precision]);
+  }, [boundaries, precision, minDate]);
 };
 
 function getSlicesInInterval({

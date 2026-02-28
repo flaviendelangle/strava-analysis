@@ -33,13 +33,14 @@ export const DEFAULT_RIDER_SETTINGS: RiderSettings = {
   weightKg: 75,
   ftp: 200,
   cdA: 0.35,
-  crr: 0.005,
+  crr: 0.004,
 };
 
 export interface SessionDataPoint {
   timestamp: number;
   elapsed: number;
   power: number | null;
+  targetPower: number | null;
   heartRate: number | null;
   cadence: number | null;
   speed: number | null;

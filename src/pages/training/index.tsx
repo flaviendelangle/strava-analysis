@@ -11,6 +11,7 @@ import { useAntHeartRate } from "~/hooks/useAntHeartRate";
 import { useAntTrainer } from "~/hooks/useAntTrainer";
 import { useBleHeartRate } from "~/hooks/useBleHeartRate";
 import { useBleTrainer } from "~/hooks/useBleTrainer";
+import { useErgMode } from "~/hooks/useErgMode";
 import { useRiderSettings } from "~/hooks/useRiderSettings";
 import { useTrainingRecorder } from "~/hooks/useTrainingRecorder";
 import { useTrainingSession } from "~/hooks/useTrainingSession";
@@ -33,6 +34,9 @@ export default function TrainingPage() {
   const hr = hrSource === "ble" ? bleHr : antHr;
   const trainer = trainerSource === "ble" ? bleTrainer : antTrainer;
 
+  // ERG mode
+  const ergMode = useErgMode();
+
   // Session management
   const session = useTrainingSession();
   const recorder = useTrainingRecorder();
@@ -53,6 +57,10 @@ export default function TrainingPage() {
   riderSettingsRef.current = riderSettings;
   const elapsedRef = useRef(session.elapsedSeconds);
   elapsedRef.current = session.elapsedSeconds;
+  const ergEnabledRef = useRef(ergMode.ergEnabled);
+  ergEnabledRef.current = ergMode.ergEnabled;
+  const targetPowerRef = useRef(ergMode.targetPower);
+  targetPowerRef.current = ergMode.targetPower;
 
   // Speed simulator with inertia
   const speedSimRef = useRef(new SpeedSimulator());
@@ -90,6 +98,7 @@ export default function TrainingPage() {
 
       addDataPoint({
         power,
+        targetPower: ergEnabledRef.current ? targetPowerRef.current : null,
         heartRate,
         cadence,
         speed: speedMs,
@@ -109,6 +118,29 @@ export default function TrainingPage() {
     }
     return stopRecording;
   }, [session.state, startRecording, stopRecording]);
+
+  // Sync trainer control capability into ERG mode context
+  useEffect(() => {
+    ergMode.setSupportsControl(trainer.supportsControl ?? false);
+  }, [trainer.supportsControl]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-disable ERG when trainer disconnects
+  useEffect(() => {
+    if (trainer.state !== "connected") {
+      ergMode.setErgEnabled(false);
+    }
+  }, [trainer.state]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Send target power to trainer when ERG is enabled and target changes
+  useEffect(() => {
+    if (!ergMode.ergEnabled || !trainer.supportsControl) return;
+    const timer = setTimeout(() => {
+      trainer.setTargetPower(ergMode.targetPower).catch((err) => {
+        console.error("[ERG] Failed to set target power:", err);
+      });
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [ergMode.ergEnabled, ergMode.targetPower, trainer.supportsControl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-start when power is detected while idle
   const sessionRef = useRef(session);
@@ -181,6 +213,7 @@ export default function TrainingPage() {
         speed={currentSpeedKmh}
         elapsedSeconds={session.elapsedSeconds}
         distanceKm={distanceKm}
+        ergTargetPower={ergMode.ergEnabled ? ergMode.targetPower : null}
       />
 
       {/* Session controls */}

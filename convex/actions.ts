@@ -23,6 +23,34 @@ async function getAccessToken(
   return athlete.accessToken;
 }
 
+function normalizeStreams(
+  streams: unknown,
+): { type: string; seriesType: string; originalSize: number; resolution: string; data: number[] }[] {
+  // When key_by_type is true, Strava returns an object keyed by stream type
+  // When false or unset, it returns an array of stream objects
+  if (Array.isArray(streams)) {
+    return streams.map((s: any) => ({
+      type: s.type as string,
+      seriesType: s.series_type as string,
+      originalSize: s.original_size as number,
+      resolution: s.resolution as string,
+      data: s.data as number[],
+    }));
+  }
+
+  if (streams && typeof streams === "object") {
+    return Object.entries(streams).map(([type, s]: [string, any]) => ({
+      type,
+      seriesType: s.series_type as string,
+      originalSize: s.original_size as number,
+      resolution: s.resolution as string,
+      data: s.data as number[],
+    }));
+  }
+
+  return [];
+}
+
 function getModelFromStravaActivity(activity: any) {
   return {
     stravaId: activity.id as number,
@@ -175,13 +203,7 @@ export const reloadActivity = action({
     if (streams) {
       await ctx.runMutation(internal.mutations.storeActivityStreams, {
         stravaId: args.stravaId,
-        streams: (streams as any[]).map((s: any) => ({
-          type: s.type as string,
-          seriesType: s.series_type as string,
-          originalSize: s.original_size as number,
-          resolution: s.resolution as string,
-          data: s.data as number[],
-        })),
+        streams: normalizeStreams(streams),
       });
     }
   },
@@ -218,13 +240,7 @@ export const fetchActivityStreams = action({
 
     await ctx.runMutation(internal.mutations.storeActivityStreams, {
       stravaId: args.stravaId,
-      streams: (streams as any[]).map((s: any) => ({
-        type: s.type as string,
-        seriesType: s.series_type as string,
-        originalSize: s.original_size as number,
-        resolution: s.resolution as string,
-        data: s.data as number[],
-      })),
+      streams: normalizeStreams(streams),
     });
   },
 });

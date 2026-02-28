@@ -29,6 +29,8 @@ export function PowerHrChart(props: PowerHrChartProps) {
 
     const powerData = points.map((p, i) => [i, p.power ?? 0]);
     const hrData = points.map((p, i) => [i, p.heartRate ?? 0]);
+    const targetData = points.map((p, i) => [i, p.targetPower ?? null]);
+    const hasTargetPower = points.some((p) => p.targetPower != null);
     const powerColors = points.map((p) =>
       p.power != null && p.power > 0
         ? getPowerZoneColor(p.power, ftp)
@@ -101,6 +103,25 @@ export function PowerHrChart(props: PowerHrChartProps) {
             itemStyle: { color: "#EF4444" },
             yAxisIndex: 1,
           },
+          ...(hasTargetPower
+            ? [
+                {
+                  name: "Target",
+                  type: "line",
+                  data: targetData,
+                  step: "middle" as const,
+                  showSymbol: false,
+                  lineStyle: {
+                    color: "#FACC15",
+                    width: 2,
+                    type: "dashed" as const,
+                  },
+                  itemStyle: { color: "#FACC15" },
+                  yAxisIndex: 0,
+                  connectNulls: false,
+                },
+              ]
+            : []),
         ],
         grid: {
           left: 40,

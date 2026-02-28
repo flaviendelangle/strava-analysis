@@ -3,10 +3,11 @@ interface LiveMetricCardProps {
   value: string | number | null;
   unit: string;
   accentColor: string;
+  subtitle?: string;
 }
 
 export function LiveMetricCard(props: LiveMetricCardProps) {
-  const { label, value, unit, accentColor } = props;
+  const { label, value, unit, accentColor, subtitle } = props;
 
   return (
     <div
@@ -20,6 +21,9 @@ export function LiveMetricCard(props: LiveMetricCardProps) {
         {value ?? "--"}
       </span>
       <span className="mt-1 text-sm text-gray-400">{unit}</span>
+      {subtitle && (
+        <span className="mt-0.5 text-xs text-yellow-400">{subtitle}</span>
+      )}
     </div>
   );
 }

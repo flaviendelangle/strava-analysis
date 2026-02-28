@@ -15,10 +15,11 @@ interface LiveDashboardProps {
   speed: number | null;
   elapsedSeconds: number;
   distanceKm: number;
+  ergTargetPower?: number | null;
 }
 
 export function LiveDashboard(props: LiveDashboardProps) {
-  const { heartRate, power, cadence, speed, elapsedSeconds, distanceKm } =
+  const { heartRate, power, cadence, speed, elapsedSeconds, distanceKm, ergTargetPower } =
     props;
 
   return (
@@ -34,6 +35,7 @@ export function LiveDashboard(props: LiveDashboardProps) {
         value={power}
         unit="W"
         accentColor="#9333EA"
+        subtitle={ergTargetPower != null ? `Target: ${ergTargetPower}W` : undefined}
       />
       <LiveMetricCard
         label="Cadence"

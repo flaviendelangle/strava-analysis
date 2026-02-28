@@ -8,6 +8,7 @@ export interface BleDeviceInfo {
 
 export class BleConnection {
   private device: BluetoothDevice | null = null;
+  private server: BluetoothRemoteGATTServer | null = null;
   private characteristic: BluetoothRemoteGATTCharacteristic | null = null;
   private onDataCallback: ((event: Event) => void) | null = null;
   private onDisconnectCallback: (() => void) | null = null;
@@ -52,8 +53,8 @@ export class BleConnection {
       this.disconnectHandler,
     );
 
-    const server = await this.device.gatt!.connect();
-    const service = await server.getPrimaryService(serviceUuid);
+    this.server = await this.device.gatt!.connect();
+    const service = await this.server.getPrimaryService(serviceUuid);
     this.characteristic = await service.getCharacteristic(characteristicUuid);
 
     await this.characteristic.startNotifications();
@@ -63,6 +64,21 @@ export class BleConnection {
     );
 
     return this.device;
+  }
+
+  /**
+   * Returns a characteristic from the already-connected GATT server.
+   * The caller is responsible for using it (write, subscribe, etc).
+   */
+  async getCharacteristic(
+    serviceUuid: number,
+    characteristicUuid: number,
+  ): Promise<BluetoothRemoteGATTCharacteristic> {
+    if (!this.server?.connected) {
+      throw new Error("Not connected to GATT server");
+    }
+    const service = await this.server.getPrimaryService(serviceUuid);
+    return service.getCharacteristic(characteristicUuid);
   }
 
   async disconnect(): Promise<void> {
@@ -90,6 +106,7 @@ export class BleConnection {
     }
 
     this.device = null;
+    this.server = null;
     this.characteristic = null;
     this.onDataCallback = null;
     this.disconnectHandler = null;

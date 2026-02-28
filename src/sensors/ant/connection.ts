@@ -265,6 +265,19 @@ export class AntTrainerConnection {
     }, 5_000);
   }
 
+  get supportsControl(): boolean {
+    return this.feSensor !== null;
+  }
+
+  async setTargetPower(watts: number): Promise<void> {
+    if (!this.feSensor) {
+      throw new Error("FE-C sensor not connected — cannot set target power");
+    }
+    await this.feSensor.setTargetPower(
+      Math.max(0, Math.min(4000, Math.round(watts))),
+    );
+  }
+
   async disconnect(): Promise<void> {
     if (this.fallbackTimeout != null) {
       clearTimeout(this.fallbackTimeout);

@@ -10,6 +10,7 @@ export function useTrainingRecorder() {
   const addDataPoint = useCallback(
     (data: {
       power: number | null;
+      targetPower: number | null;
       heartRate: number | null;
       cadence: number | null;
       speed: number | null;
@@ -28,6 +29,7 @@ export function useTrainingRecorder() {
         timestamp: Date.now(),
         elapsed: data.elapsed,
         power: data.power,
+        targetPower: data.targetPower,
         heartRate: data.heartRate,
         cadence: data.cadence,
         speed: data.speed,

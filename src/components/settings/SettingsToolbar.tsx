@@ -6,6 +6,7 @@ import { useCurrentPageSettings } from "~/hooks/useCurrentPageSettings";
 import { useExplorerTilesToggle } from "~/hooks/useExplorerTilesToggle";
 
 import { ActivityTypeFilterPopover } from "./ActivityTypeFilterPopover";
+import { ErgModeControl } from "./ErgModeControl";
 import { RiderSettingsDialog } from "./RiderSettingsDialog";
 
 function ExplorerTilesToggleButton() {
@@ -38,7 +39,11 @@ export function SettingsToolbar() {
   return (
     <div className="flex shrink-0 items-center gap-1.5 border-b border-border px-4 py-1.5">
       {hasRiderSettings ? (
-        <RiderSettingsDialog />
+        <>
+          <RiderSettingsDialog />
+          <div className="mx-1 h-4 w-px bg-border" />
+          <ErgModeControl />
+        </>
       ) : (
         <>
           <ActivityTypeFilterPopover />

@@ -28,6 +28,10 @@ export function useAntTrainer() {
     setData(null);
   }, []);
 
+  const setTargetPower = useCallback(async (watts: number) => {
+    await connectionRef.current.setTargetPower(watts);
+  }, []);
+
   useEffect(() => {
     const connection = connectionRef.current;
     return () => {
@@ -42,5 +46,7 @@ export function useAntTrainer() {
     protocol: "ant+" as const,
     connect,
     disconnect,
+    supportsControl: state === "connected" && connectionRef.current.supportsControl,
+    setTargetPower,
   };
 }
