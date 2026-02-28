@@ -1,11 +1,10 @@
 import * as React from "react";
 
-import dayjs from "dayjs";
+import { format, getMonth, getYear } from "date-fns";
+import { enGB } from "date-fns/locale/en-GB";
 import ReactECharts from "echarts-for-react";
-import { validateHeaderValue } from "http";
-import colors from "tailwindcss/colors";
 
-import { useActivitiesQuery } from "~/hooks/trpc/useActivitiesQuery";
+import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
 import {
   GroupedActivities,
   useGroupActivitiesByTimeSlice,
@@ -37,7 +36,7 @@ export default function ActivitiesCumulativeTimeline() {
 
     const groupedPerYearActivities = groupedActivities.reduce(
       (acc, group) => {
-        const year = group.date.year();
+        const year = getYear(group.date);
         if (!acc[year]) {
           acc[year] = [];
         }
@@ -57,7 +56,7 @@ export default function ActivitiesCumulativeTimeline() {
       showSymbol: false,
       smooth: true,
       data: groupedPerYearActivities[year].map((group) => [
-        group.date.month(),
+        getMonth(group.date),
         group.activities.reduce(
           (acc, activity) => metricConfig.getValue(activity) + acc,
           0,
@@ -98,7 +97,7 @@ export default function ActivitiesCumulativeTimeline() {
               },
               valueFormatter: (value: number) =>
                 Math.round(value).toLocaleString(),
-              backgroundColor: colors.gray[900],
+              backgroundColor: "#111827",
               textStyle: {
                 color: "white",
               },
@@ -122,7 +121,9 @@ export default function ActivitiesCumulativeTimeline() {
             xAxis: [
               {
                 type: "category",
-                data: dayjs.months(),
+                data: Array.from({ length: 12 }, (_, i) =>
+                  format(new Date(2024, i, 1), "MMMM", { locale: enGB }),
+                ),
                 boundaryGap: false,
               },
             ],

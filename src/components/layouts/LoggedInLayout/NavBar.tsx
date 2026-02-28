@@ -10,8 +10,10 @@ import { NavBarButton } from "./NavBarButton";
 import { NavBarContext } from "./NavBarContext";
 import { ParametersDialog } from "./ParametersDialog";
 
-interface NavBarLinkProps
-  extends Omit<LinkProps, "aria-label" | "children" | "className" | "href"> {
+interface NavBarLinkProps extends Omit<
+  LinkProps,
+  "aria-label" | "children" | "className" | "href"
+> {
   svgPath: string;
   label: string;
   href: string;

@@ -1,27 +1,27 @@
 import * as React from "react";
 
-import dayjs, { Dayjs } from "dayjs";
+import { isBefore, isAfter } from "date-fns";
 
-import { RouterOutput } from "~/utils/trpc";
+import { Doc } from "../../convex/_generated/dataModel";
 
 export const useActivitiesTimeBoundaries = (
-  activities?: RouterOutput["activities"]["listActivitiesWithoutMap"],
+  activities?: Omit<Doc<"activities">, "mapPolyline">[],
 ) =>
   React.useMemo(() => {
-    let oldestActivityDate: Dayjs | null = null;
-    let newestActivityDate: Dayjs | null = null;
+    let oldestActivityDate: Date | null = null;
+    let newestActivityDate: Date | null = null;
 
     for (const activity of activities ?? []) {
-      const activityDate = dayjs(activity.startDate);
+      const activityDate = new Date(activity.startDate);
       if (
         oldestActivityDate == null ||
-        activityDate.isBefore(oldestActivityDate)
+        isBefore(activityDate, oldestActivityDate)
       ) {
         oldestActivityDate = activityDate;
       }
       if (
         newestActivityDate == null ||
-        activityDate.isAfter(newestActivityDate)
+        isAfter(activityDate, newestActivityDate)
       ) {
         newestActivityDate = activityDate;
       }

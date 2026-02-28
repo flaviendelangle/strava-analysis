@@ -1,13 +1,12 @@
+import { ConvexHttpClient } from "convex/browser";
 import NextAuth, { AuthOptions } from "next-auth";
 
-// import StravaProvider from "next-auth/providers/strava";
+import { api } from "../../../../convex/_generated/api";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export const authOptions: AuthOptions = {
   providers: [
-    // StravaProvider({
-    //   clientId: process.env.STRAVA_CLIENT_ID!,
-    //   clientSecret: process.env.STRAVA_CLIENT_SECRET!,
-    // }),
     {
       id: "strava",
       name: "Strava",
@@ -45,12 +44,24 @@ export const authOptions: AuthOptions = {
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ account, token }) {
+    async jwt({ account, token, profile }) {
       if (account?.access_token) {
         token.accessToken = account.access_token;
+
+        await convex.mutation(api.mutations.upsertAthlete, {
+          stravaAthleteId: Number(token.sub),
+          accessToken: account.access_token,
+          name: profile
+            ? `${(profile as any).firstname} ${(profile as any).lastname}`
+            : undefined,
+        });
       }
 
       return token;
+    },
+    async session({ session, token }) {
+      (session as any).athleteId = Number(token.sub);
+      return session;
     },
   },
 };

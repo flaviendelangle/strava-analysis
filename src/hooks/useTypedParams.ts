@@ -1,10 +1,8 @@
 import { useParams } from "next/navigation";
-import { z } from "zod";
 
-export const useTypedParams = <T extends z.Schema>(schema: T) => {
+export const useTypedParams = <T extends Record<string, "string">>(
+  _schema: T,
+): { [K in keyof T]: string } | null => {
   const params = useParams();
-
-  return params == null
-    ? null
-    : (schema.parse(params) as z.infer<typeof schema>);
+  return params as { [K in keyof T]: string } | null;
 };

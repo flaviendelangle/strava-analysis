@@ -1,37 +1,46 @@
 import * as React from "react";
 
-import { trpc } from "~/utils/trpc";
+import { useAction } from "convex/react";
 
+import { useAthleteId } from "~/hooks/useAthleteId";
+
+import { api } from "../../convex/_generated/api";
 import { LoadingButton } from "./primitives/LoadingButton";
 
 export function SyncActivitiesButtons() {
-  const utils = trpc.useUtils();
-  const loadOlderActivitiesMutation =
-    trpc.strava.loadOlderActivities.useMutation({
-      onSuccess: () => {
-        utils.activities.listActivitiesWithoutMap.invalidate();
-        utils.activities.listActivitiesWithoutMap.invalidate();
-      },
-    });
-  const checkForNewActivitiesMutation =
-    trpc.strava.checkForNewActivities.useMutation({
-      onSuccess: () => {
-        utils.activities.listActivitiesWithoutMap.invalidate();
-        utils.activities.listActivitiesWithoutMap.invalidate();
-      },
-    });
+  const athleteId = useAthleteId();
+  const checkForNew = useAction(api.actions.checkForNewActivities);
+  const loadOlder = useAction(api.actions.loadOlderActivities);
+  const [isCheckingNew, setIsCheckingNew] = React.useState(false);
+  const [isLoadingOlder, setIsLoadingOlder] = React.useState(false);
 
   return (
     <div className="flex gap-4">
       <LoadingButton
-        loading={checkForNewActivitiesMutation.isPending}
-        onClick={() => checkForNewActivitiesMutation.mutate()}
+        loading={isCheckingNew}
+        onClick={async () => {
+          if (!athleteId) return;
+          setIsCheckingNew(true);
+          try {
+            await checkForNew({ athleteId });
+          } finally {
+            setIsCheckingNew(false);
+          }
+        }}
       >
         Check for new activities
       </LoadingButton>
       <LoadingButton
-        loading={loadOlderActivitiesMutation.isPending}
-        onClick={() => loadOlderActivitiesMutation.mutate()}
+        loading={isLoadingOlder}
+        onClick={async () => {
+          if (!athleteId) return;
+          setIsLoadingOlder(true);
+          try {
+            await loadOlder({ athleteId });
+          } finally {
+            setIsLoadingOlder(false);
+          }
+        }}
       >
         Load older activities
       </LoadingButton>

@@ -1,27 +1,28 @@
 import * as React from "react";
 
-import dayjs, { Dayjs } from "dayjs";
+import { isAfter } from "date-fns";
 
-import { RouterOutput } from "~/utils/trpc";
+import { isSameUnit } from "~/utils/dateUtils";
 
+import { Doc } from "../../convex/_generated/dataModel";
 import { SlicePrecision } from "./useTimeSlices";
+
+type ActivityWithoutMap = Omit<Doc<"activities">, "mapPolyline">;
 
 export const useGroupActivitiesByTimeSlice = ({
   slices,
   precision,
   activities,
 }: {
-  slices: Dayjs[];
+  slices: Date[];
   precision: SlicePrecision;
-  activities:
-    | RouterOutput["activities"]["listActivitiesWithoutMap"]
-    | undefined;
+  activities: ActivityWithoutMap[] | undefined;
 }) =>
   React.useMemo(() => {
     const temp = slices.reduce(
       (acc, date) => {
         acc[date.toISOString()] = {
-          date: dayjs(date),
+          date,
           activities: [],
         };
 
@@ -30,15 +31,15 @@ export const useGroupActivitiesByTimeSlice = ({
       {} as Record<
         string,
         {
-          date: Dayjs;
-          activities: RouterOutput["activities"]["listActivitiesWithoutMap"];
+          date: Date;
+          activities: ActivityWithoutMap[];
         }
       >,
     );
 
     for (const activity of activities ?? []) {
       const month = slices.find((date) =>
-        date.isSame(dayjs(activity.startDate), precision as any),
+        isSameUnit(date, new Date(activity.startDate), precision),
       );
       if (month) {
         temp[month.toISOString()].activities.push(activity);
@@ -46,7 +47,7 @@ export const useGroupActivitiesByTimeSlice = ({
     }
 
     return Object.values(temp).sort((a, b) =>
-      a.date.isAfter(b.date) ? 1 : -1,
+      isAfter(a.date, b.date) ? 1 : -1,
     );
   }, [slices, activities, precision]);
 

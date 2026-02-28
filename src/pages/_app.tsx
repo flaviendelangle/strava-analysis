@@ -1,23 +1,15 @@
 import type { ReactElement, ReactNode } from "react";
 
-import dayjs from "dayjs";
-import "dayjs/locale/en-gb";
-import localeData from "dayjs/plugin/localeData";
-import localizedFormat from "dayjs/plugin/localizedFormat";
-import quarterOfYear from "dayjs/plugin/quarterOfYear";
+import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { CookiesProvider } from "react-cookie";
 import type { NextPage } from "next";
 import { SessionProvider } from "next-auth/react";
 import type { AppProps, AppType } from "next/app";
 
 import { LoggedInLayout } from "~/components/layouts/LoggedInLayout";
 import "~/styles/globals.css";
-import { trpc } from "~/utils/trpc";
 
-dayjs.extend(localizedFormat);
-dayjs.extend(quarterOfYear);
-dayjs.extend(localeData);
-
-dayjs.locale("en-gb");
+const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export type NextPageWithLayout<
   TProps = Record<string, unknown>,
@@ -37,11 +29,15 @@ const App = (({
   const getLayout =
     Component.getLayout ?? ((page) => <LoggedInLayout>{page}</LoggedInLayout>);
 
-  return getLayout(
-    <SessionProvider session={session}>
-      <Component {...pageProps} />
-    </SessionProvider>,
+  return (
+    <CookiesProvider>
+      <SessionProvider session={session}>
+        <ConvexProvider client={convex}>
+          {getLayout(<Component {...pageProps} />)}
+        </ConvexProvider>
+      </SessionProvider>
+    </CookiesProvider>
   );
 }) as AppType;
 
-export default trpc.withTRPC(App);
+export default App;

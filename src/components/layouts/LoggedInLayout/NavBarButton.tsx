@@ -2,11 +2,10 @@ import * as React from "react";
 
 import { NavBarContext } from "./NavBarContext";
 
-interface NavBarButtonProps
-  extends Omit<
-    React.HTMLAttributes<HTMLButtonElement>,
-    "aria-label" | "children" | "className"
-  > {
+interface NavBarButtonProps extends Omit<
+  React.HTMLAttributes<HTMLButtonElement>,
+  "aria-label" | "children" | "className"
+> {
   svgPath: string;
   label: string;
 }

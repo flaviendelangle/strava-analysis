@@ -1,9 +1,10 @@
 import * as React from "react";
 
-import { Dayjs } from "dayjs";
+import { isBefore } from "date-fns";
 
-import { RouterOutput } from "~/utils/trpc";
+import { addUnit, endOf, startOf } from "~/utils/dateUtils";
 
+import { Doc } from "../../convex/_generated/dataModel";
 import { useActivitiesTimeBoundaries } from "./useActivitiesTimeBoundaries";
 
 export type SlicePrecision = "year" | "quarter" | "month" | "week";
@@ -13,9 +14,7 @@ export const useTimeSlices = ({
   activities,
 }: {
   precision: SlicePrecision;
-  activities:
-    | RouterOutput["activities"]["listActivitiesWithoutMap"]
-    | undefined;
+  activities: Omit<Doc<"activities">, "mapPolyline">[] | undefined;
 }) => {
   const boundaries = useActivitiesTimeBoundaries(activities);
 
@@ -38,18 +37,18 @@ function getSlicesInInterval({
   end,
 }: {
   precision: SlicePrecision;
-  start: Dayjs;
-  end: Dayjs;
+  start: Date;
+  end: Date;
 }) {
-  const elements: Dayjs[] = [];
+  const elements: Date[] = [];
 
-  const startDate = start.startOf(precision as any);
-  const endDate = end.endOf(precision as any);
+  const startDate = startOf(start, precision);
+  const endDate = endOf(end, precision);
 
   let current = startDate;
-  while (current.isBefore(endDate)) {
+  while (isBefore(current, endDate)) {
     elements.push(current);
-    current = current.add(1, precision as any);
+    current = addUnit(current, 1, precision);
   }
 
   return elements;

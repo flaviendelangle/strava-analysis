@@ -1,9 +1,12 @@
 import * as React from "react";
 
-import dayjs from "dayjs";
+import { useAction, useQuery } from "convex/react";
+import { addSeconds } from "date-fns";
 import ReactECharts from "echarts-for-react";
 
-import { trpc } from "~/utils/trpc";
+import { useAthleteId } from "~/hooks/useAthleteId";
+
+import { api } from "../../../../convex/_generated/api";
 
 const STREAMS_TO_PLOT = [
   {
@@ -24,24 +27,31 @@ const STREAMS_TO_PLOT = [
   },
 ];
 
-export default function ActivityStreams(props: ActivityStreams) {
-  const { id } = props;
+export default function ActivityStreams(props: ActivityStreamsProps) {
+  const { stravaId } = props;
+  const athleteId = useAthleteId();
 
-  const activityQuery = trpc.activities.getActivityWithMap.useQuery({ id });
+  const activity = useQuery(api.queries.getActivity, { stravaId });
+  const streamsData = useQuery(api.queries.getActivityStreams, { stravaId });
+  const fetchStreams = useAction(api.actions.fetchActivityStreams);
+  const [isFetching, setIsFetching] = React.useState(false);
 
-  const activityStreamsQuery = trpc.activities.getActivityStreams.useQuery({
-    id,
-  });
+  React.useEffect(() => {
+    if (streamsData === null && athleteId && !isFetching) {
+      setIsFetching(true);
+      fetchStreams({ stravaId, athleteId }).finally(() => setIsFetching(false));
+    }
+  }, [streamsData, athleteId, stravaId, isFetching, fetchStreams]);
 
   const streams = React.useMemo(() => {
-    if (!activityQuery.data || !activityStreamsQuery.data) {
+    if (!activity || !streamsData) {
       return [];
     }
 
-    const startDate = dayjs(activityQuery.data.startDateLocal);
+    const startDate = new Date(activity.startDateLocal);
 
     return STREAMS_TO_PLOT.map((streamConfig) => {
-      const stream = activityStreamsQuery.data?.find(
+      const stream = streamsData.find(
         (element) => element.type === streamConfig.type,
       );
       if (!stream) {
@@ -53,13 +63,13 @@ export default function ActivityStreams(props: ActivityStreams) {
         type: "line",
         showSymbol: false,
         color: streamConfig.color,
-        data: (stream.data as number[]).map((el, index) => [
-          startDate.add(index, "second").toDate(),
+        data: stream.data.map((el, index) => [
+          addSeconds(startDate, index),
           el,
         ]),
       };
     }).filter((stream) => stream !== null);
-  }, [activityStreamsQuery.data]);
+  }, [streamsData, activity]);
 
   return (
     <div className="flex flex-col rounded-md bg-gray-700">
@@ -102,6 +112,6 @@ export default function ActivityStreams(props: ActivityStreams) {
   );
 }
 
-interface ActivityStreams {
-  id: number;
+interface ActivityStreamsProps {
+  stravaId: number;
 }

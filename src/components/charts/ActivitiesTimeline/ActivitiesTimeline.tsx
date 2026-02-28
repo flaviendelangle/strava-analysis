@@ -1,10 +1,9 @@
 import * as React from "react";
 
-import dayjs from "dayjs";
+import { format } from "date-fns";
 import ReactECharts from "echarts-for-react";
-import colors from "tailwindcss/colors";
 
-import { useActivitiesQuery } from "~/hooks/trpc/useActivitiesQuery";
+import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
 import { useGroupActivitiesByTimeSlice } from "~/hooks/useGroupActivitiesByTimeSlice";
 import { SlicePrecision, useTimeSlices } from "~/hooks/useTimeSlices";
 
@@ -50,7 +49,7 @@ export default function ActivitiesTimeline() {
           showSymbol: false,
           stack: "x",
           data: groupedActivities.map((group) => [
-            group.date.toDate(),
+            group.date,
             group.activities.reduce((acc, activity) => {
               if (activity.type === activityType) {
                 return metricConfig.getValue(activity) + acc;
@@ -77,7 +76,7 @@ export default function ActivitiesTimeline() {
         ]),
       },
     ];
-  }, [groupedActivities, metric]);
+  }, [groupedActivities, metric, activitiesQuery.data]);
 
   return (
     <div className="flex h-96 w-full flex-col rounded-md bg-gray-900">
@@ -116,13 +115,13 @@ export default function ActivitiesTimeline() {
                       return Math.round(params.value).toLocaleString();
                     }
 
-                    return dayjs(params.value).format("MM/YYYY");
+                    return format(new Date(params.value), "MM/yyyy");
                   },
                 },
               },
               valueFormatter: (value: number) =>
                 Math.round(value).toLocaleString(),
-              backgroundColor: colors.gray[900],
+              backgroundColor: "#111827",
               textStyle: {
                 color: "white",
               },

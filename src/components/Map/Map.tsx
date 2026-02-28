@@ -4,7 +4,11 @@ import "leaflet/dist/leaflet.css";
 import { MapContainer, Polyline, TileLayer, useMap } from "react-leaflet";
 
 import { decode } from "~/utils/polyline";
-import { RouterOutput } from "~/utils/trpc";
+
+import { Doc } from "../../../convex/_generated/dataModel";
+import { ExplorerTilesLayer } from "./ExplorerTilesLayer";
+import { ExplorerTilesStats } from "./ExplorerTilesStats";
+import { ExplorerTilesToggle } from "./ExplorerTilesToggle";
 
 // List available here: https://wiki.openstreetmap.org/wiki/Raster_tile_providers
 const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png	";
@@ -13,7 +17,7 @@ const TILE_ATTRIBUTION =
   'Map data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
 interface FitBoundsProps {
-  polylines: { id: number; polyline: [number, number][] }[];
+  polylines: { id: string; polyline: [number, number][] }[];
 }
 
 function FitBounds(props: FitBoundsProps) {
@@ -35,31 +39,50 @@ function FitBounds(props: FitBoundsProps) {
 
 export default function Map(props: MapProps) {
   const { activities } = props;
+  const [showExplorerTiles, setShowExplorerTiles] = React.useState(false);
 
   const polylines = React.useMemo(() => {
     return (activities ?? [])
       .map((activity) => {
         if (!activity?.mapPolyline) return null;
-        return { id: activity.id, polyline: decode(activity.mapPolyline) };
+        return { id: activity._id, polyline: decode(activity.mapPolyline) };
       })
       .filter((activity) => !!activity);
   }, [activities]);
 
   return (
-    <MapContainer
-      center={{ lat: 0, lng: 0 }}
-      zoom={14}
-      className="z-0 h-full w-full"
-    >
-      <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
-      {polylines?.map((activity) => (
-        <Polyline key={activity.id} positions={activity.polyline} color="red" />
-      ))}
-      <FitBounds polylines={polylines} />
-    </MapContainer>
+    <div className="relative h-full w-full">
+      <MapContainer
+        center={{ lat: 0, lng: 0 }}
+        zoom={14}
+        className="z-0 h-full w-full"
+      >
+        <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
+        <ExplorerTilesLayer
+          activities={activities}
+          visible={showExplorerTiles}
+        />
+        {polylines?.map((activity) => (
+          <Polyline
+            key={activity.id}
+            positions={activity.polyline}
+            color="red"
+          />
+        ))}
+        <FitBounds polylines={polylines} />
+        <ExplorerTilesToggle
+          enabled={showExplorerTiles}
+          onToggle={setShowExplorerTiles}
+        />
+      </MapContainer>
+      <ExplorerTilesStats
+        activities={activities}
+        visible={showExplorerTiles}
+      />
+    </div>
   );
 }
 
 interface MapProps {
-  activities: RouterOutput["activities"]["listActivitiesWithMap"] | null;
+  activities: Doc<"activities">[] | null;
 }

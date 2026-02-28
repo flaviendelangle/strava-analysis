@@ -1,19 +1,25 @@
 import * as React from "react";
 
+import { useQuery } from "convex/react";
 import { useCookies } from "react-cookie";
 
-import { Checkbox } from "@base-ui-components/react/checkbox";
-import { CheckboxGroup } from "@base-ui-components/react/checkbox-group";
-import { Dialog } from "@base-ui-components/react/dialog";
+import { Checkbox } from "@base-ui/react/checkbox";
+import { CheckboxGroup } from "@base-ui/react/checkbox-group";
+import { Dialog } from "@base-ui/react/dialog";
 
 import { Tooltip } from "~/components/primitives/Tooltip";
+import { useAthleteId } from "~/hooks/useAthleteId";
 import { formatActivityType } from "~/utils/format";
-import { trpc } from "~/utils/trpc";
 
+import { api } from "../../../../convex/_generated/api";
 import { NavBarButton } from "./NavBarButton";
 
 export function ParametersDialog() {
-  const activityTypesQuery = trpc.activities.activityTypes.useQuery();
+  const athleteId = useAthleteId();
+  const activityTypes = useQuery(
+    api.queries.activityTypes,
+    athleteId != null ? { athleteId } : "skip",
+  );
   const [state, setState] = useCookies(["activity-type"]);
 
   return (
@@ -44,7 +50,7 @@ export function ParametersDialog() {
               <div className="font-medium" id="activity-type-caption">
                 Activity type
               </div>
-              {activityTypesQuery.data?.map((activityType) => (
+              {activityTypes?.map((activityType) => (
                 <label className="flex items-center gap-2" key={activityType}>
                   <Checkbox.Root
                     name={activityType}

@@ -1,4 +1,4 @@
-import { Select as BaseSelect } from "@base-ui-components/react/select";
+import { Select as BaseSelect } from "@base-ui/react/select";
 
 export function Select<TValue extends string = string>(
   props: SelectProps<TValue>,
@@ -90,7 +90,9 @@ function CheckIcon(props: React.ComponentProps<"svg">) {
   );
 }
 
-export interface SelectProps<TValue extends string = string>
-  extends Pick<BaseSelect.Root.Props<TValue>, "value" | "onValueChange"> {
+export interface SelectProps<TValue extends string = string> extends Pick<
+  BaseSelect.Root.Props<TValue>,
+  "value" | "onValueChange"
+> {
   options: { value: TValue; label: string }[];
 }

@@ -1,4 +1,4 @@
-import { useActivitiesWithMapQuery } from "~/hooks/trpc/useActivitiesWithMapQuery";
+import { useActivitiesWithMapQuery } from "~/hooks/useActivitiesWithMapQuery";
 
 import { Map } from "./Map";
 

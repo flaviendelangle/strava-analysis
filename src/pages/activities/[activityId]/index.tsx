@@ -1,8 +1,6 @@
 import * as React from "react";
 
-import { z } from "zod";
-
-import { skipToken } from "@tanstack/react-query";
+import { useQuery } from "convex/react";
 
 import { ActivityMap } from "~/components/ActivityMap";
 import { ReloadActivityFromStravaButton } from "~/components/ReloadActivityFromStravaButton";
@@ -10,16 +8,13 @@ import { ActivityStreams } from "~/components/charts/ActivityStreams";
 import { useTypedParams } from "~/hooks/useTypedParams";
 import { NextPageWithLayout } from "~/pages/_app";
 import { formatDistance, formatSpeed } from "~/utils/format";
-import { RouterOutput, trpc } from "~/utils/trpc";
 
-const routerSchema = z.object({ activityId: z.string() });
+import { api } from "../../../../convex/_generated/api";
+import { Doc } from "../../../../convex/_generated/dataModel";
 
-function ActivityDetails(props: {
-  activity: Exclude<
-    RouterOutput["activities"]["getActivityWithMap"],
-    undefined
-  >;
-}) {
+const routerSchema = { activityId: "string" as const };
+
+function ActivityDetails(props: { activity: Doc<"activities"> }) {
   const { activity } = props;
 
   return (
@@ -48,26 +43,25 @@ function ActivityDetails(props: {
 const ActivitiesTablePage: NextPageWithLayout = () => {
   const params = useTypedParams(routerSchema);
 
-  const activityQuery = trpc.activities.getActivityWithMap.useQuery(
-    params == null
-      ? skipToken
-      : {
-          id: Number(params.activityId),
-        },
+  const stravaId = params?.activityId ? Number(params.activityId) : undefined;
+
+  const activity = useQuery(
+    api.queries.getActivity,
+    stravaId != null ? { stravaId } : "skip",
   );
 
   return (
     <div className="flex h-full w-full flex-col">
       <nav className="flex justify-between border-b border-gray-600 bg-gray-800 p-4 text-white">
-        <div>{activityQuery.data?.name ?? "Loading..."}</div>
-        {activityQuery.data && (
-          <ReloadActivityFromStravaButton id={activityQuery.data.id} />
+        <div>{activity?.name ?? "Loading..."}</div>
+        {activity && (
+          <ReloadActivityFromStravaButton stravaId={activity.stravaId} />
         )}
       </nav>
       <div className="flex h-full w-full flex-col 2xl:flex-row">
         <div className="h-96 2xl:h-full 2xl:w-1/2">
-          {activityQuery.data?.mapPolyline ? (
-            <ActivityMap activity={activityQuery.data} />
+          {activity?.mapPolyline ? (
+            <ActivityMap activity={activity} />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-4xl">
               No map available
@@ -75,10 +69,10 @@ const ActivitiesTablePage: NextPageWithLayout = () => {
           )}
         </div>
         <div className="flex flex-col gap-4 px-6 py-4 2xl:w-1/2">
-          {activityQuery.data && (
+          {activity && (
             <React.Fragment>
-              <ActivityDetails activity={activityQuery.data} />
-              <ActivityStreams id={activityQuery.data.id} />
+              <ActivityDetails activity={activity} />
+              <ActivityStreams stravaId={activity.stravaId} />
             </React.Fragment>
           )}
         </div>

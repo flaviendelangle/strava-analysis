@@ -1,5 +1,4 @@
-import { RouterOutput } from "~/utils/trpc";
-
+import { Doc } from "../../convex/_generated/dataModel";
 import { Select, SelectProps } from "./primitives/Select";
 
 export const METRICS: MetricConfig[] = [
@@ -37,7 +36,5 @@ export function MetricSelect(props: Omit<SelectProps, "options">) {
 interface MetricConfig {
   value: string;
   label: string;
-  getValue: (
-    activity: RouterOutput["activities"]["listActivitiesWithoutMap"][number],
-  ) => number;
+  getValue: (activity: Omit<Doc<"activities">, "mapPolyline">) => number;
 }

@@ -1,22 +1,29 @@
 import * as React from "react";
 
-import { Field } from "@base-ui-components/react/field";
+import { useQuery } from "convex/react";
 
-import { trpc } from "~/utils/trpc";
+import { Field } from "@base-ui/react/field";
 
+import { useAthleteId } from "~/hooks/useAthleteId";
+
+import { api } from "../../convex/_generated/api";
 import { Select, SelectProps } from "./primitives/Select";
 
 export function ActivityTypeSelect(props: Omit<SelectProps, "options">) {
-  const activityTypesQuery = trpc.activities.activityTypes.useQuery();
+  const athleteId = useAthleteId();
+  const activityTypes = useQuery(
+    api.queries.activityTypes,
+    athleteId != null ? { athleteId } : "skip",
+  );
 
   const options = React.useMemo<ActivityTypeConfig[]>(() => {
     return (
-      activityTypesQuery.data?.map((activityType) => ({
+      activityTypes?.map((activityType) => ({
         value: activityType,
         label: activityType,
       })) ?? []
     );
-  }, [activityTypesQuery.data]);
+  }, [activityTypes]);
 
   return (
     <Field.Root className="flex w-full items-center justify-between gap-1 align-baseline">

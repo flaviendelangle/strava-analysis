@@ -1,5 +1,4 @@
-import { RouterOutput } from "~/utils/trpc";
-
+import { Doc } from "../../convex/_generated/dataModel";
 import { Map } from "./Map";
 
 export function ActivityMap(props: ActivityMapProps) {
@@ -9,5 +8,5 @@ export function ActivityMap(props: ActivityMapProps) {
 }
 
 interface ActivityMapProps {
-  activity: RouterOutput["activities"]["getActivityWithMap"];
+  activity: Doc<"activities"> | null | undefined;
 }

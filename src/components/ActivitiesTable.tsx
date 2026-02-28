@@ -1,7 +1,7 @@
 import * as React from "react";
 
-import dayjs from "dayjs";
-
+import { format } from "date-fns";
+import { enGB } from "date-fns/locale/en-GB";
 import {
   Row,
   createColumnHelper,
@@ -11,19 +11,19 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
-import { useActivitiesQuery } from "~/hooks/trpc/useActivitiesQuery";
+import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
 import {
   formatActivityType,
   formatDistance,
   formatDuration,
 } from "~/utils/format";
-import { RouterOutput } from "~/utils/trpc";
 
+import { Doc } from "../../convex/_generated/dataModel";
 import { ActivityMap } from "./ActivityMap";
 import { ReloadActivityFromStravaButton } from "./ReloadActivityFromStravaButton";
 import { PrimaryLink } from "./primitives/PrimaryLink";
 
-type Activity = RouterOutput["activities"]["listActivitiesWithoutMap"][number];
+type Activity = Omit<Doc<"activities">, "mapPolyline">;
 
 function ActivityRow(props: { row: Row<Activity>; index: number }) {
   const { row, index } = props;
@@ -54,10 +54,12 @@ function ActivityRow(props: { row: Row<Activity>; index: number }) {
           </td>
           <td colSpan={row.getVisibleCells().length - 1} className="px-6">
             <div className="flex gap-4">
-              <PrimaryLink href={`/activities/${row.original.id}`}>
+              <PrimaryLink href={`/activities/${row.original.stravaId}`}>
                 See more details
               </PrimaryLink>
-              <ReloadActivityFromStravaButton id={row.original.id} />
+              <ReloadActivityFromStravaButton
+                stravaId={row.original.stravaId}
+              />
             </div>
           </td>
         </tr>
@@ -74,7 +76,7 @@ const columns = [
     header: () => <span>Title</span>,
   }),
   columnHelper.accessor("startDateLocal", {
-    cell: (info) => dayjs(info.getValue()).format("L LT"),
+    cell: (info) => format(new Date(info.getValue()), "P p", { locale: enGB }),
     header: () => <span>Date</span>,
   }),
   columnHelper.accessor("type", {
