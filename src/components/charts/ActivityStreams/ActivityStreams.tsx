@@ -72,7 +72,7 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
   }, [streamsData, activity]);
 
   return (
-    <div className="flex flex-col rounded-md bg-gray-700">
+    <div className="flex flex-col rounded-md bg-card">
       {streams.map((stream) => (
         <article className="flex h-48" key={stream.name}>
           <h4

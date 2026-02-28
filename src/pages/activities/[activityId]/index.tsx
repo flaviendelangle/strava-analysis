@@ -18,7 +18,7 @@ function ActivityDetails(props: { activity: Doc<"activities"> }) {
   const { activity } = props;
 
   return (
-    <div className="w-96 rounded-md bg-gray-700 px-6 py-4">
+    <div className="w-96 rounded-md bg-card px-6 py-4">
       <div className="mb-4 text-2xl font-bold">Activity Details</div>
       <div className="flex justify-between">
         <span>Distance:</span>
@@ -52,7 +52,7 @@ const ActivitiesTablePage: NextPageWithLayout = () => {
 
   return (
     <div className="flex h-full w-full flex-col">
-      <nav className="flex justify-between border-b border-gray-600 bg-gray-800 p-4 text-white">
+      <nav className="flex justify-between border-b border-border bg-background p-4 text-foreground">
         <div>{activity?.name ?? "Loading..."}</div>
         {activity && (
           <ReloadActivityFromStravaButton stravaId={activity.stravaId} />

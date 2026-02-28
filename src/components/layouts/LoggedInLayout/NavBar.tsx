@@ -8,7 +8,6 @@ import { Tooltip, TooltipProps } from "~/components/primitives/Tooltip";
 
 import { NavBarButton } from "./NavBarButton";
 import { NavBarContext } from "./NavBarContext";
-import { ParametersDialog } from "./ParametersDialog";
 
 interface NavBarLinkProps extends Omit<
   LinkProps,
@@ -27,7 +26,7 @@ function NavBarLink(props: NavBarLinkProps) {
 
   return (
     <Link
-      className="flex h-12 items-center gap-2 p-2 hover:bg-gray-600 data-[active=true]:bg-gray-700 hover:data-[active=true]:bg-gray-600"
+      className="flex h-12 items-center gap-2 whitespace-nowrap p-2 hover:bg-accent/80 data-[active=true]:bg-accent hover:data-[active=true]:bg-accent/80"
       data-active={isActive}
       aria-label={label}
       href={href}
@@ -35,7 +34,7 @@ function NavBarLink(props: NavBarLinkProps) {
     >
       <span className="px-1">
         <svg
-          className="w-5 fill-gray-300"
+          className="w-5 fill-muted-foreground"
           viewBox="0 0 24 24"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -64,7 +63,7 @@ export function NavBar() {
     <NavBarContext value={{ isMenuExpanded }}>
       <nav
         data-expanded={isMenuExpanded}
-        className="flex-0 flex h-full w-12 flex-col justify-between border-r border-gray-600 py-4 data-[expanded=true]:w-64"
+        className="flex h-full w-12 shrink-0 flex-col justify-between border-r border-border py-4 data-[expanded=true]:w-64"
       >
         <div className="flex flex-col justify-start">
           <TooltipIfMenuCollapsed
@@ -97,11 +96,15 @@ export function NavBar() {
               href="/statistics"
             />
           </TooltipIfMenuCollapsed>
+          <TooltipIfMenuCollapsed label="Live Training">
+            <NavBarLink
+              label="Live Training"
+              svgPath="M15.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2M5 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5m0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5m5.8-10 2.4-2.4.8.8c1.3 1.3 3 2.1 5 2.1V9c-1.5 0-2.7-.6-3.6-1.5l-1.9-1.9c-.5-.4-1-.6-1.6-.6s-1.1.2-1.4.6L7.8 8.4c-.4.4-.6.9-.6 1.4 0 .6.2 1.1.6 1.4L11 14v5h2v-6.2zM19 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5m0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5"
+              href="/training"
+            />
+          </TooltipIfMenuCollapsed>
         </div>
         <div className="flex flex-col justify-start">
-          <TooltipIfMenuCollapsed label="Parameters">
-            <ParametersDialog />
-          </TooltipIfMenuCollapsed>
           <TooltipIfMenuCollapsed label="Sign out">
             <NavBarButton
               label="Sign out"

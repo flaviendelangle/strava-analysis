@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7B5EBF"/>
+      <stop offset="100%" stop-color="#3A2470"/>
+    </linearGradient>
+    <linearGradient id="summit" x1="0" y1="20" x2="0" y2="10" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF7A3D"/>
+      <stop offset="100%" stop-color="#FC4C02"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+
+  <!-- Subtle chart grid lines — reinforces "data" reading -->
+  <g stroke="white" stroke-width="0.5" opacity="0.1">
+    <line x1="10" y1="44" x2="54" y2="44"/>
+    <line x1="10" y1="36" x2="54" y2="36"/>
+    <line x1="10" y1="28" x2="54" y2="28"/>
+    <line x1="10" y1="20" x2="54" y2="20"/>
+  </g>
+
+  <!-- Mountain range / ascending chart silhouette -->
+  <path d="
+    M 8 52
+    L 18 36
+    L 24 42
+    L 34 24
+    L 38 30
+    L 48 12
+    L 56 52
+    Z
+  " fill="white" fill-opacity="0.92"/>
+
+  <!-- Orange accent cap on tallest peak -->
+  <path d="
+    M 43 20
+    L 48 12
+    L 53 20
+    Z
+  " fill="url(#summit)"/>
+
+  <!-- Small summit marker dot -->
+  <circle cx="48" cy="11" r="2.5" fill="#FC4C02"/>
+  <circle cx="48" cy="11" r="1" fill="white" opacity="0.5"/>
+</svg>

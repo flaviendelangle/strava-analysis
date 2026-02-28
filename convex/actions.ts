@@ -58,7 +58,7 @@ export const checkForNewActivities = action({
       while (page < 10) {
         const pageActivities = await strava.athlete.listActivities({
           access_token: accessToken,
-          page_size: PAGE_SIZE,
+          per_page: PAGE_SIZE,
           after: new Date(latestActivity.startDate).getTime() / 1000,
         });
         activities.push(...pageActivities);
@@ -129,12 +129,12 @@ export const reloadActivity = action({
     const [activity, streams] = await Promise.all([
       strava.activities.get({
         access_token: accessToken,
-        id: args.stravaId,
+        id: String(args.stravaId),
       }),
       strava.streams.activity({
         access_token: accessToken,
-        id: args.stravaId,
-        types: [
+        id: String(args.stravaId),
+        keys: [
           "distance",
           "watts",
           "altitude",
@@ -197,8 +197,8 @@ export const fetchActivityStreams = action({
 
     const streams = await strava.streams.activity({
       access_token: accessToken,
-      id: args.stravaId,
-      types: [
+      id: String(args.stravaId),
+      keys: [
         "distance",
         "watts",
         "altitude",

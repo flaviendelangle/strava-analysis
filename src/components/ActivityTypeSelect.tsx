@@ -2,8 +2,7 @@ import * as React from "react";
 
 import { useQuery } from "convex/react";
 
-import { Field } from "@base-ui/react/field";
-
+import { Label } from "~/components/ui/label";
 import { useAthleteId } from "~/hooks/useAthleteId";
 
 import { api } from "../../convex/_generated/api";
@@ -26,12 +25,10 @@ export function ActivityTypeSelect(props: Omit<SelectProps, "options">) {
   }, [activityTypes]);
 
   return (
-    <Field.Root className="flex w-full items-center justify-between gap-1 align-baseline">
-      <Field.Label className="text-sm font-medium text-gray-100">
-        Name
-      </Field.Label>
+    <div className="flex w-full items-center justify-between gap-1 align-baseline">
+      <Label className="text-foreground">Name</Label>
       <Select {...props} options={options} />
-    </Field.Root>
+    </div>
   );
 }
 

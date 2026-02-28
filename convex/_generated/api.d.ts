@@ -7,20 +7,23 @@
  * To regenerate, run `npx convex dev`.
  * @module
  */
+
+import type * as actions from "../actions.js";
+import type * as mutations from "../mutations.js";
+import type * as queries from "../queries.js";
+import type * as stravaUpload from "../stravaUpload.js";
+
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
 
-import type * as actions from "../actions.js";
-import type * as mutations from "../mutations.js";
-import type * as queries from "../queries.js";
-
 declare const fullApi: ApiFromModules<{
   actions: typeof actions;
   mutations: typeof mutations;
   queries: typeof queries;
+  stravaUpload: typeof stravaUpload;
 }>;
 
 /**

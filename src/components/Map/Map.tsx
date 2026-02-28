@@ -3,12 +3,12 @@ import * as React from "react";
 import "leaflet/dist/leaflet.css";
 import { MapContainer, Polyline, TileLayer, useMap } from "react-leaflet";
 
+import { useExplorerTilesToggle } from "~/hooks/useExplorerTilesToggle";
 import { decode } from "~/utils/polyline";
 
 import { Doc } from "../../../convex/_generated/dataModel";
 import { ExplorerTilesLayer } from "./ExplorerTilesLayer";
 import { ExplorerTilesStats } from "./ExplorerTilesStats";
-import { ExplorerTilesToggle } from "./ExplorerTilesToggle";
 
 // List available here: https://wiki.openstreetmap.org/wiki/Raster_tile_providers
 const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png	";
@@ -39,7 +39,7 @@ function FitBounds(props: FitBoundsProps) {
 
 export default function Map(props: MapProps) {
   const { activities } = props;
-  const [showExplorerTiles, setShowExplorerTiles] = React.useState(false);
+  const { showExplorerTiles } = useExplorerTilesToggle();
 
   const polylines = React.useMemo(() => {
     return (activities ?? [])
@@ -70,10 +70,6 @@ export default function Map(props: MapProps) {
           />
         ))}
         <FitBounds polylines={polylines} />
-        <ExplorerTilesToggle
-          enabled={showExplorerTiles}
-          onToggle={setShowExplorerTiles}
-        />
       </MapContainer>
       <ExplorerTilesStats
         activities={activities}

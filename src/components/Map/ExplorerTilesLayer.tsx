@@ -6,6 +6,7 @@ import type { Doc } from "../../../convex/_generated/dataModel";
 import { useExplorerTiles } from "~/hooks/useExplorerTiles";
 import { tileToBounds, type TileCategory } from "~/utils/explorerTiles";
 
+
 const TILE_COLORS: Record<TileCategory, { fill: string; stroke: string }> = {
   maxSquare: { fill: "#7c3aed", stroke: "#6d28d9" },
   cluster: { fill: "#3b82f6", stroke: "#2563eb" },
@@ -54,10 +55,10 @@ export function ExplorerTilesLayer({
     }
 
     layer.clearLayers();
-    const { tiles, system } = tilesData;
+    const { tiles } = tilesData;
 
     for (const tile of tiles) {
-      const bounds = tileToBounds(tile.tx, tile.ty, system);
+      const bounds = tileToBounds(tile.tx, tile.ty);
       const colors = TILE_COLORS[tile.category];
 
       L.rectangle(

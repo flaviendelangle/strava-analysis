@@ -66,8 +66,8 @@ export default function ActivitiesCumulativeTimeline() {
   }, [groupedActivities, metric]);
 
   return (
-    <div className="flex h-96 w-full flex-col rounded-md bg-gray-900">
-      <div className="flex gap-4 border-b border-gray-600 p-4">
+    <div className="flex h-96 w-full flex-col rounded-md bg-secondary">
+      <div className="flex gap-4 border-b border-border p-4">
         <MetricSelect value={metric} onValueChange={setMetric} />
       </div>
       <div className="flex-1">
@@ -75,6 +75,15 @@ export default function ActivitiesCumulativeTimeline() {
           style={{ height: "100%" }}
           option={{
             theme: "dark",
+            color: [
+              "#818cf8", // indigo-400
+              "#34d399", // emerald-400
+              "#fb923c", // orange-400
+              "#f472b6", // pink-400
+              "#38bdf8", // sky-400
+              "#a78bfa", // violet-400
+              "#fbbf24", // amber-400
+            ],
             textStyle: {
               color: "white",
             },
@@ -103,7 +112,6 @@ export default function ActivitiesCumulativeTimeline() {
               },
             },
             legend: {
-              data: ["Distance"],
               textStyle: {
                 color: "white",
               },

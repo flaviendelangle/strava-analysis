@@ -11,6 +11,14 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
 import {
   formatActivityType,
@@ -19,7 +27,6 @@ import {
 } from "~/utils/format";
 
 import { Doc } from "../../convex/_generated/dataModel";
-import { ActivityMap } from "./ActivityMap";
 import { ReloadActivityFromStravaButton } from "./ReloadActivityFromStravaButton";
 import { PrimaryLink } from "./primitives/PrimaryLink";
 
@@ -30,29 +37,23 @@ function ActivityRow(props: { row: Row<Activity>; index: number }) {
 
   return (
     <React.Fragment>
-      <tr
-        className="h-12 cursor-pointer select-none hover:bg-gray-600 data-[odd=true]:bg-gray-900 data-[odd=true]:hover:bg-gray-700"
+      <TableRow
+        className="h-12 cursor-pointer select-none data-[odd=true]:bg-secondary data-[odd=true]:hover:bg-accent"
         data-odd={index % 2 === 1}
         onClick={row.getToggleExpandedHandler()}
       >
         {row.getVisibleCells().map((cell) => (
-          <td className="px-6" key={cell.id}>
+          <TableCell className="px-6" key={cell.id}>
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
-          </td>
+          </TableCell>
         ))}
-      </tr>
+      </TableRow>
       {row.getIsExpanded() && (
-        <tr className="h-96 w-full">
-          <td>
-            {row.original.mapPolyline ? (
-              <ActivityMap activity={row.original} />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-4xl">
-                No map available
-              </div>
-            )}
-          </td>
-          <td colSpan={row.getVisibleCells().length - 1} className="px-6">
+        <TableRow className="h-12 w-full">
+          <TableCell
+            colSpan={row.getVisibleCells().length}
+            className="px-6"
+          >
             <div className="flex gap-4">
               <PrimaryLink href={`/activities/${row.original.stravaId}`}>
                 See more details
@@ -61,8 +62,8 @@ function ActivityRow(props: { row: Row<Activity>; index: number }) {
                 stravaId={row.original.stravaId}
               />
             </div>
-          </td>
-        </tr>
+          </TableCell>
+        </TableRow>
       )}
     </React.Fragment>
   );
@@ -114,12 +115,12 @@ export function ActivitiesTable() {
   });
 
   return (
-    <table className="h-full w-full border border-solid border-gray-600 text-left text-sm text-gray-500 rtl:text-right dark:text-gray-400">
-      <thead className="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-gray-700 dark:text-gray-400">
+    <Table className="h-full w-full border border-solid border-border text-left text-sm text-muted-foreground">
+      <TableHeader className="bg-accent text-xs uppercase text-muted-foreground">
         {table.getHeaderGroups().map((headerGroup) => (
-          <tr key={headerGroup.id}>
+          <TableRow key={headerGroup.id}>
             {headerGroup.headers.map((header) => (
-              <th
+              <TableHead
                 key={header.id}
                 onClick={header.column.getToggleSortingHandler()}
                 title={
@@ -143,33 +144,33 @@ export function ActivitiesTable() {
                       header.getContext(),
                     )}
                     {{
-                      asc: <span>&nbsp;▲</span>,
-                      desc: <span>&nbsp;▼</span>,
+                      asc: <span>&nbsp;&#9650;</span>,
+                      desc: <span>&nbsp;&#9660;</span>,
                     }[header.column.getIsSorted() as string] ?? null}
                   </div>
                 )}
-              </th>
+              </TableHead>
             ))}
-          </tr>
+          </TableRow>
         ))}
-      </thead>
-      <tbody>
+      </TableHeader>
+      <TableBody>
         {activitiesQuery.isLoading
           ? Array.from({ length: 25 }).map((_, index) => (
-              <tr key={index} className="h-12 odd:bg-gray-900">
+              <TableRow key={index} className="h-12 odd:bg-secondary">
                 {table.getVisibleFlatColumns().map((col) => (
-                  <td key={col.id} className="px-6">
-                    <div className="h-4 w-32 animate-pulse bg-gray-600" />
-                  </td>
+                  <TableCell key={col.id} className="px-6">
+                    <div className="h-4 w-32 animate-pulse bg-border" />
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
             ))
           : table
               .getRowModel()
               .rows.map((row, rowIndex) => (
                 <ActivityRow key={row.id} row={row} index={rowIndex} />
               ))}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   );
 }

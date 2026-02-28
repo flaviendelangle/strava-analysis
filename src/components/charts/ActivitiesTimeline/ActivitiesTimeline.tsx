@@ -10,8 +10,6 @@ import { SlicePrecision, useTimeSlices } from "~/hooks/useTimeSlices";
 import { METRICS, MetricSelect } from "../../MetricSelect";
 import { PrecisionSelect } from "../../PrecisionSelect";
 
-const GROUP_BY_ACTIVITY_TYPE = true;
-
 export default function ActivitiesTimeline() {
   const [metric, setMetric] = React.useState("distance");
   const [precision, setPrecision] = React.useState<SlicePrecision>("month");
@@ -34,53 +32,36 @@ export default function ActivitiesTimeline() {
       return [];
     }
 
-    if (GROUP_BY_ACTIVITY_TYPE) {
-      const activityTypes = new Set<string>();
-      activitiesQuery.data?.forEach((activity) => {
-        if (!activityTypes.has(activity.type)) {
-          activityTypes.add(activity.type);
-        }
-      });
+    const activityTypes = new Set<string>();
+    activitiesQuery.data?.forEach((activity) => {
+      if (!activityTypes.has(activity.type)) {
+        activityTypes.add(activity.type);
+      }
+    });
 
-      return Array.from(activityTypes).map((activityType) => {
-        return {
-          name: `${metricConfig.label} - ${activityType}`,
-          type: "bar",
-          showSymbol: false,
-          stack: "x",
-          data: groupedActivities.map((group) => [
-            group.date,
-            group.activities.reduce((acc, activity) => {
-              if (activity.type === activityType) {
-                return metricConfig.getValue(activity) + acc;
-              }
-
-              return acc;
-            }, 0),
-          ]),
-        };
-      });
-    }
-
-    return [
-      {
-        name: metricConfig.label,
+    return Array.from(activityTypes).map((activityType) => {
+      return {
+        name: `${metricConfig.label} - ${activityType}`,
         type: "bar",
         showSymbol: false,
+        stack: "x",
         data: groupedActivities.map((group) => [
-          group.date.toDate(),
-          group.activities.reduce(
-            (acc, activity) => metricConfig.getValue(activity) + acc,
-            0,
-          ),
+          group.date,
+          group.activities.reduce((acc, activity) => {
+            if (activity.type === activityType) {
+              return metricConfig.getValue(activity) + acc;
+            }
+
+            return acc;
+          }, 0),
         ]),
-      },
-    ];
+      };
+    });
   }, [groupedActivities, metric, activitiesQuery.data]);
 
   return (
-    <div className="flex h-96 w-full flex-col rounded-md bg-gray-900">
-      <div className="flex gap-4 border-b border-gray-600 p-4">
+    <div className="flex h-96 w-full flex-col rounded-md bg-secondary">
+      <div className="flex gap-4 border-b border-border p-4">
         <MetricSelect value={metric} onValueChange={setMetric} />
         <PrecisionSelect value={precision} onValueChange={setPrecision} />
       </div>

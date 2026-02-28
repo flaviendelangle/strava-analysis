@@ -1,61 +1,47 @@
 import type { LatLngTuple } from "./polyline";
 
-// --- Web Mercator (EPSG:3857) projection helpers ---
+// --- Standard OSM slippy map tiles at zoom level 14 ---
+// This matches the tile system used by StatShunters, RideEveryTile, etc.
 
-const R = 6_378_137; // WGS84 semi-major axis in meters
+const ZOOM = 14;
+const N = 2 ** ZOOM; // 16384
 
-function lngToMx(lng: number): number {
-  return R * lng * (Math.PI / 180);
+/** Convert longitude to fractional tile X coordinate. */
+function lngToTileX(lng: number): number {
+  return ((lng + 180) / 360) * N;
 }
 
-function latToMy(lat: number): number {
-  const latRad = lat * (Math.PI / 180);
-  return R * Math.log(Math.tan(Math.PI / 4 + latRad / 2));
-}
-
-function mxToLng(mx: number): number {
-  return (mx / R) * (180 / Math.PI);
-}
-
-function myToLat(my: number): number {
-  return (2 * Math.atan(Math.exp(my / R)) - Math.PI / 2) * (180 / Math.PI);
-}
-
-// --- Tile coordinate system ---
-// Tiles are a uniform grid in Mercator space → always perfectly square on the map.
-// `step` is in Mercator meters. At refLat the real-world side ≈ 1 km.
-
-export interface TileCoordSystem {
-  step: number; // Mercator meters per tile side
-}
-
-export function createTileCoordSystem(refLat: number): TileCoordSystem {
-  const cosLat = Math.max(Math.cos((refLat * Math.PI) / 180), 0.01);
-  const step = 1000 / cosLat; // ~1 km real-world at refLat
-  return { step };
+/** Convert latitude to fractional tile Y coordinate. */
+function latToTileY(lat: number): number {
+  const latRad = (lat * Math.PI) / 180;
+  return (
+    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) *
+    N
+  );
 }
 
 export function pointToTile(
   lat: number,
   lng: number,
-  system: TileCoordSystem,
 ): { tx: number; ty: number } {
   return {
-    tx: Math.floor(lngToMx(lng) / system.step),
-    ty: Math.floor(latToMy(lat) / system.step),
+    tx: Math.floor(lngToTileX(lng)),
+    ty: Math.floor(latToTileY(lat)),
   };
 }
 
 export function tileToBounds(
   tx: number,
   ty: number,
-  system: TileCoordSystem,
 ): { south: number; west: number; north: number; east: number } {
   return {
-    south: myToLat(ty * system.step),
-    north: myToLat((ty + 1) * system.step),
-    west: mxToLng(tx * system.step),
-    east: mxToLng((tx + 1) * system.step),
+    west: (tx / N) * 360 - 180,
+    east: ((tx + 1) / N) * 360 - 180,
+    north:
+      Math.atan(Math.sinh(Math.PI * (1 - (2 * ty) / N))) * (180 / Math.PI),
+    south:
+      Math.atan(Math.sinh(Math.PI * (1 - (2 * (ty + 1)) / N))) *
+      (180 / Math.PI),
   };
 }
 
@@ -80,7 +66,7 @@ function parseTileKey(key: TileKey): { tx: number; ty: number } {
 const MAX_SEGMENT_DISTANCE_DEG = 0.05; // ~5.5 km — skip GPS dropouts
 
 /**
- * Walk a line segment in Mercator space and collect every grid cell
+ * Walk a line segment in tile coordinate space and collect every grid cell
  * the segment passes through (Amanatides & Woo grid traversal).
  */
 function walkTiles(
@@ -88,38 +74,34 @@ function walkTiles(
   lng1: number,
   lat2: number,
   lng2: number,
-  system: TileCoordSystem,
   visited: Set<TileKey>,
 ): void {
-  const mx1 = lngToMx(lng1);
-  const my1 = latToMy(lat1);
-  const mx2 = lngToMx(lng2);
-  const my2 = latToMy(lat2);
+  const fx1 = lngToTileX(lng1);
+  const fy1 = latToTileY(lat1);
+  const fx2 = lngToTileX(lng2);
+  const fy2 = latToTileY(lat2);
 
-  const startTx = Math.floor(mx1 / system.step);
-  const startTy = Math.floor(my1 / system.step);
-  const endTx = Math.floor(mx2 / system.step);
-  const endTy = Math.floor(my2 / system.step);
+  const startTx = Math.floor(fx1);
+  const startTy = Math.floor(fy1);
+  const endTx = Math.floor(fx2);
+  const endTy = Math.floor(fy2);
 
   visited.add(tileKey(startTx, startTy));
 
   if (startTx === endTx && startTy === endTy) return;
 
-  const dmx = mx2 - mx1;
-  const dmy = my2 - my1;
+  const dfx = fx2 - fx1;
+  const dfy = fy2 - fy1;
 
-  const stepX = dmx > 0 ? 1 : dmx < 0 ? -1 : 0;
-  const stepY = dmy > 0 ? 1 : dmy < 0 ? -1 : 0;
+  const stepX = dfx > 0 ? 1 : dfx < 0 ? -1 : 0;
+  const stepY = dfy > 0 ? 1 : dfy < 0 ? -1 : 0;
 
   let tMaxX: number;
   let tDeltaX: number;
   if (stepX !== 0) {
-    const nextBoundary =
-      stepX > 0
-        ? (startTx + 1) * system.step
-        : startTx * system.step;
-    tMaxX = (nextBoundary - mx1) / dmx;
-    tDeltaX = Math.abs(system.step / dmx);
+    const nextBoundary = stepX > 0 ? startTx + 1 : startTx;
+    tMaxX = (nextBoundary - fx1) / dfx;
+    tDeltaX = Math.abs(1 / dfx);
   } else {
     tMaxX = Infinity;
     tDeltaX = Infinity;
@@ -128,12 +110,9 @@ function walkTiles(
   let tMaxY: number;
   let tDeltaY: number;
   if (stepY !== 0) {
-    const nextBoundary =
-      stepY > 0
-        ? (startTy + 1) * system.step
-        : startTy * system.step;
-    tMaxY = (nextBoundary - my1) / dmy;
-    tDeltaY = Math.abs(system.step / dmy);
+    const nextBoundary = stepY > 0 ? startTy + 1 : startTy;
+    tMaxY = (nextBoundary - fy1) / dfy;
+    tDeltaY = Math.abs(1 / dfy);
   } else {
     tMaxY = Infinity;
     tDeltaY = Infinity;
@@ -157,17 +136,14 @@ function walkTiles(
   }
 }
 
-export function discoverTiles(
-  polylines: LatLngTuple[][],
-  system: TileCoordSystem,
-): Set<TileKey> {
+export function discoverTiles(polylines: LatLngTuple[][]): Set<TileKey> {
   const visited = new Set<TileKey>();
 
   for (const polyline of polylines) {
     if (polyline.length === 0) continue;
 
     const [lat0, lng0] = polyline[0];
-    const t0 = pointToTile(lat0, lng0, system);
+    const t0 = pointToTile(lat0, lng0);
     visited.add(tileKey(t0.tx, t0.ty));
 
     for (let i = 1; i < polyline.length; i++) {
@@ -179,12 +155,12 @@ export function discoverTiles(
         Math.abs(curLat - prevLat) > MAX_SEGMENT_DISTANCE_DEG ||
         Math.abs(curLng - prevLng) > MAX_SEGMENT_DISTANCE_DEG
       ) {
-        const t = pointToTile(curLat, curLng, system);
+        const t = pointToTile(curLat, curLng);
         visited.add(tileKey(t.tx, t.ty));
         continue;
       }
 
-      walkTiles(prevLat, prevLng, curLat, curLng, system, visited);
+      walkTiles(prevLat, prevLng, curLat, curLng, visited);
     }
   }
 
@@ -332,7 +308,6 @@ export interface ClassifiedTile {
 
 export interface ExplorerTilesResult {
   tiles: ClassifiedTile[];
-  system: TileCoordSystem;
   stats: {
     totalVisited: number;
     maxSquareSide: number;
@@ -376,14 +351,12 @@ export function classifyTiles(
  */
 export function computeExplorerTiles(
   polylines: LatLngTuple[][],
-  system: TileCoordSystem,
 ): ExplorerTilesResult {
-  const visited = discoverTiles(polylines, system);
+  const visited = discoverTiles(polylines);
 
   if (visited.size === 0) {
     return {
       tiles: [],
-      system,
       stats: {
         totalVisited: 0,
         maxSquareSide: 0,
@@ -399,7 +372,6 @@ export function computeExplorerTiles(
 
   return {
     tiles: classified,
-    system,
     stats: {
       totalVisited: visited.size,
       maxSquareSide: maxSquare.side,
