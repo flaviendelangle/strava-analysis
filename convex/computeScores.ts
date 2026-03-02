@@ -88,6 +88,9 @@ interface SettingsTimeline {
 
 /**
  * Resolves rider settings for a specific date by walking the change timeline.
+ *
+ * NOTE: The core logic is duplicated in src/utils/resolveRiderSettings.ts for
+ * client-side use (which also resolves cdA/crr/bikeWeightKg). Keep both in sync.
  */
 export function resolveRiderSettings(
   timeline: SettingsTimeline,

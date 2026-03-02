@@ -7,6 +7,9 @@ import type { RiderSettings, RiderSettingsTimeline } from "~/sensors/types";
  *
  * Walks through change points (sorted ascending by date) and applies each
  * field that has a value, stopping once past the target date.
+ *
+ * NOTE: The core logic is duplicated in convex/computeScores.ts for server-side
+ * score computation (which only resolves HR/power fields). Keep both in sync.
  */
 export function resolveRiderSettings(
   timeline: RiderSettingsTimeline,

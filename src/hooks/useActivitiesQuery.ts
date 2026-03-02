@@ -8,12 +8,16 @@ export function useActivitiesQuery() {
   const [state] = useCookies(["activity-type"]);
   const athleteId = useAthleteId();
 
-  const data = useQuery(
+  const result = useQuery(
     api.queries.listActivities,
     athleteId != null
       ? { athleteId, activityTypes: state["activity-type"] }
       : "skip",
   );
 
-  return { data, isLoading: data === undefined };
+  return {
+    data: result?.activities,
+    allTypes: result?.allTypes,
+    isLoading: result === undefined,
+  };
 }

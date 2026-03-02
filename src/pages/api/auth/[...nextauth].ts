@@ -60,7 +60,7 @@ export const authOptions: AuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      (session as any).athleteId = Number(token.sub);
+      session.athleteId = Number(token.sub);
       return session;
     },
   },

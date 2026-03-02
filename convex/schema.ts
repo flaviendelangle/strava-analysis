@@ -89,5 +89,7 @@ export default defineSchema({
     resolution: v.string(),
     chunkIndex: v.optional(v.number()),
     data: v.string(),
-  }).index("by_activity", ["activity"]),
+  })
+    .index("by_activity", ["activity"])
+    .index("by_activity_and_type", ["activity", "type"]),
 });

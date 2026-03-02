@@ -2,8 +2,8 @@ import * as React from "react";
 
 import { useMutation, useQuery } from "convex/react";
 import {
-  CheckCircle2Icon,
   AlertCircleIcon,
+  CheckCircle2Icon,
   Loader2,
   RefreshCwIcon,
 } from "lucide-react";
@@ -18,13 +18,13 @@ function ProgressBar(props: { value: number; max: number }) {
 
   return (
     <div className="flex items-center gap-2">
-      <div className="h-1.5 flex-1 rounded-full bg-muted">
+      <div className="bg-muted h-1.5 flex-1 rounded-full">
         <div
-          className="h-full rounded-full bg-primary transition-all duration-500"
+          className="bg-primary h-full rounded-full transition-all duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="min-w-[3ch] text-right text-xs tabular-nums text-muted-foreground">
+      <span className="text-muted-foreground min-w-[3ch] text-right text-xs tabular-nums">
         {pct}%
       </span>
     </div>
@@ -43,8 +43,8 @@ function SyncProgress(props: {
   const { syncJob } = props;
 
   return (
-    <div className="flex flex-col gap-2 rounded-md border border-border bg-card p-3 text-sm">
-      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+    <div className="border-border bg-card flex flex-col gap-2 rounded-md border p-3 text-sm">
+      <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
         <Loader2 className="size-3 animate-spin" />
         Syncing Strava data...
       </div>
@@ -54,7 +54,7 @@ function SyncProgress(props: {
         {syncJob.activitiesPagesComplete ? (
           <CheckCircle2Icon className="size-3.5 shrink-0 text-green-500" />
         ) : (
-          <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" />
+          <Loader2 className="text-muted-foreground size-3.5 shrink-0 animate-spin" />
         )}
         <span className="text-xs">
           Activities: {syncJob.activitiesFetched} loaded
@@ -63,7 +63,7 @@ function SyncProgress(props: {
 
       {/* Streams phase */}
       {syncJob.status === "fetching_activities" && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
           <div className="size-3.5 shrink-0" />
           <span>Streams: waiting...</span>
         </div>
@@ -75,14 +75,14 @@ function SyncProgress(props: {
             {syncJob.status === "computing_scores" ? (
               <CheckCircle2Icon className="size-3.5 shrink-0 text-green-500" />
             ) : (
-              <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" />
+              <Loader2 className="text-muted-foreground size-3.5 shrink-0 animate-spin" />
             )}
             <span className="text-xs">
               Streams: {syncJob.streamsFetched} / {syncJob.streamsTotal}
             </span>
           </div>
           {syncJob.streamsTotal > 0 && (
-            <div className="pl-[22px]">
+            <div className="pl-5.5">
               <ProgressBar
                 value={syncJob.streamsFetched}
                 max={syncJob.streamsTotal}
@@ -94,7 +94,7 @@ function SyncProgress(props: {
 
       {/* Score computation phase */}
       {syncJob.status === "computing_scores" && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
           <Loader2 className="size-3.5 shrink-0 animate-spin" />
           <span>Computing training scores...</span>
         </div>
@@ -125,7 +125,7 @@ export function SyncPanel() {
       <Button
         variant="ghost"
         size="sm"
-        className="gap-1.5 text-muted-foreground"
+        className="text-muted-foreground gap-1.5"
         onClick={async () => {
           if (!athleteId) return;
           await startSync({ athleteId });
@@ -143,7 +143,7 @@ export function SyncPanel() {
       )}
 
       {syncJob?.status === "completed" && (
-        <span className="text-xs text-muted-foreground">
+        <span className="text-muted-foreground text-xs">
           Last synced:{" "}
           {new Date(syncJob.startedAt).toLocaleDateString(undefined, {
             month: "short",

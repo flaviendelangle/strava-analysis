@@ -5,6 +5,7 @@ import strava from "strava-v3";
 
 import { internal } from "./_generated/api";
 import { action, internalAction } from "./_generated/server";
+import { getAccessToken } from "./helpers";
 
 const PAGE_SIZE = 50;
 
@@ -19,21 +20,6 @@ const STREAM_KEYS = [
 ];
 
 // ── Helpers ─────────────────────────────────────────────────────────────
-
-async function getAccessToken(
-  ctx: { runQuery: Function },
-  athleteId: number,
-): Promise<string> {
-  const athlete = await ctx.runQuery(internal.queries.getAthleteByStravaId, {
-    stravaAthleteId: athleteId,
-  });
-
-  if (!athlete) {
-    throw new Error(`Athlete ${athleteId} not found`);
-  }
-
-  return athlete.accessToken;
-}
 
 function normalizeStreams(
   streams: unknown,
@@ -306,12 +292,8 @@ export const reloadActivity = action({
   handler: async (ctx, args) => {
     const accessToken = await getAccessToken(ctx, args.athleteId);
 
-    // Delete existing streams
-    await ctx.runMutation(internal.mutations.deleteActivityStreams, {
-      stravaId: args.stravaId,
-    });
-
-    // Fetch fresh data from Strava
+    // Fetch fresh data from Strava before deleting anything, so that a
+    // network failure doesn't leave the activity without stream data.
     const [activity, normalized] = await Promise.all([
       strava.activities.get({
         access_token: accessToken,
@@ -323,6 +305,11 @@ export const reloadActivity = action({
     if (!activity) {
       throw new Error(`Activity ${args.stravaId} not found on Strava`);
     }
+
+    // Delete existing streams now that we have fresh data
+    await ctx.runMutation(internal.mutations.deleteActivityStreams, {
+      stravaId: args.stravaId,
+    });
 
     // Update activity metadata
     const model = getModelFromStravaActivity(activity);
@@ -364,11 +351,8 @@ export const fetchActivityStreams = action({
   handler: async (ctx, args) => {
     const accessToken = await getAccessToken(ctx, args.athleteId);
 
-    // Delete existing streams before re-fetching
-    await ctx.runMutation(internal.mutations.deleteActivityStreams, {
-      stravaId: args.stravaId,
-    });
-
+    // Fetch first, so that a network failure doesn't leave the activity
+    // without stream data.
     const normalized = await fetchStreamsFromStrava(
       accessToken,
       args.stravaId,
@@ -379,6 +363,11 @@ export const fetchActivityStreams = action({
         `Streams for activity ${args.stravaId} not found on Strava`,
       );
     }
+
+    // Delete existing streams now that we have fresh data
+    await ctx.runMutation(internal.mutations.deleteActivityStreams, {
+      stravaId: args.stravaId,
+    });
 
     // Store streams and schedule score recomputation
     await storeStreams(ctx, args.stravaId, normalized, true);

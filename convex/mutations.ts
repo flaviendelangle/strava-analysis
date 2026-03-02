@@ -357,13 +357,11 @@ export const computeScoresBatch = internalMutation({
           const hrDocs = (
             await ctx.db
               .query("activityStreams")
-              .withIndex("by_activity", (q) =>
-                q.eq("activity", activity._id),
+              .withIndex("by_activity_and_type", (q) =>
+                q.eq("activity", activity._id).eq("type", "heartrate"),
               )
               .collect()
-          )
-            .filter((s) => s.type === "heartrate")
-            .sort((a, b) => (a.chunkIndex ?? 0) - (b.chunkIndex ?? 0));
+          ).sort((a, b) => (a.chunkIndex ?? 0) - (b.chunkIndex ?? 0));
 
           if (hrDocs.length > 0) {
             const hrData: number[] = [];
@@ -502,11 +500,11 @@ export const computeActivityScores = internalMutation({
       const hrDocs = (
         await ctx.db
           .query("activityStreams")
-          .withIndex("by_activity", (q) => q.eq("activity", activity._id))
+          .withIndex("by_activity_and_type", (q) =>
+            q.eq("activity", activity._id).eq("type", "heartrate"),
+          )
           .collect()
-      )
-        .filter((s) => s.type === "heartrate")
-        .sort((a, b) => (a.chunkIndex ?? 0) - (b.chunkIndex ?? 0));
+      ).sort((a, b) => (a.chunkIndex ?? 0) - (b.chunkIndex ?? 0));
 
       if (hrDocs.length > 0) {
         const hrData: number[] = [];
@@ -524,18 +522,80 @@ export const computeActivityScores = internalMutation({
 });
 
 export const recomputeAllScores = internalMutation({
-  args: { athleteId: v.number() },
+  args: {
+    athleteId: v.number(),
+    cursor: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
-    const activities = await ctx.db
-      .query("activities")
-      .withIndex("by_athlete", (q) => q.eq("athlete", args.athleteId))
-      .collect();
+    const BATCH_SIZE = 50;
 
-    for (const activity of activities) {
+    const batch = await ctx.db
+      .query("activities")
+      .withIndex("by_athlete_and_start_date", (q) => {
+        const base = q.eq("athlete", args.athleteId);
+        return args.cursor ? base.gt("startDate", args.cursor) : base;
+      })
+      .order("asc")
+      .take(BATCH_SIZE);
+
+    if (batch.length === 0) return;
+
+    const settingsDoc = await ctx.db
+      .query("riderSettings")
+      .withIndex("by_athlete", (q) => q.eq("athlete", args.athleteId))
+      .first();
+
+    if (settingsDoc) {
+      for (const activity of batch) {
+        const activityDate = activity.startDateLocal.slice(0, 10);
+        const settings = resolveRiderSettings(settingsDoc, activityDate);
+
+        const patch: { tss?: number; hrss?: number } = {};
+
+        if (activity.weightedAverageWatts != null) {
+          patch.tss = Math.round(
+            calculateTSS(
+              activity.weightedAverageWatts,
+              activity.movingTime,
+              settings.ftp,
+            ),
+          );
+        }
+
+        if (activity.areStreamsLoaded) {
+          const hrDocs = (
+            await ctx.db
+              .query("activityStreams")
+              .withIndex("by_activity_and_type", (q) =>
+                q.eq("activity", activity._id).eq("type", "heartrate"),
+              )
+              .collect()
+          ).sort((a, b) => (a.chunkIndex ?? 0) - (b.chunkIndex ?? 0));
+
+          if (hrDocs.length > 0) {
+            const hrData: number[] = [];
+            for (const doc of hrDocs) {
+              hrData.push(...(JSON.parse(doc.data) as number[]));
+            }
+            patch.hrss = Math.round(calculateHRSS(hrData, settings));
+          }
+        }
+
+        if (Object.keys(patch).length > 0) {
+          await ctx.db.patch(activity._id, patch);
+        }
+      }
+    }
+
+    if (batch.length === BATCH_SIZE) {
+      const lastActivity = batch[batch.length - 1];
       await ctx.scheduler.runAfter(
         0,
-        internal.mutations.computeActivityScores,
-        { activityId: activity._id },
+        internal.mutations.recomputeAllScores,
+        {
+          athleteId: args.athleteId,
+          cursor: lastActivity.startDate,
+        },
       );
     }
   },

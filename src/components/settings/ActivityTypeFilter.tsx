@@ -1,19 +1,12 @@
-import { useQuery } from "convex/react";
 import { useCookies } from "react-cookie";
 
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
-import { useAthleteId } from "~/hooks/useAthleteId";
+import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
 import { formatActivityType } from "~/utils/format";
 
-import { api } from "../../../convex/_generated/api";
-
 export function ActivityTypeFilter() {
-  const athleteId = useAthleteId();
-  const activityTypes = useQuery(
-    api.queries.activityTypes,
-    athleteId != null ? { athleteId } : "skip",
-  );
+  const { allTypes: activityTypes } = useActivitiesQuery();
   const [state, setState] = useCookies(["activity-type"]);
 
   const currentValues: string[] = state["activity-type"] ?? [];

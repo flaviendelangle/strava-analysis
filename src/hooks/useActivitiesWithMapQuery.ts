@@ -8,12 +8,12 @@ export function useActivitiesWithMapQuery() {
   const [state] = useCookies(["activity-type"]);
   const athleteId = useAthleteId();
 
-  const data = useQuery(
-    api.queries.listActivitiesWithMap,
+  const result = useQuery(
+    api.queries.listActivities,
     athleteId != null
-      ? { athleteId, activityTypes: state["activity-type"] }
+      ? { athleteId, activityTypes: state["activity-type"], includeMap: true }
       : "skip",
   );
 
-  return { data, isLoading: data === undefined };
+  return { data: result?.activities, isLoading: result === undefined };
 }

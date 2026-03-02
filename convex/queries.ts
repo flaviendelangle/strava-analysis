@@ -8,41 +8,29 @@ export const listActivities = query({
   args: {
     athleteId: v.number(),
     activityTypes: v.optional(v.array(v.string())),
+    includeMap: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    let activities = await ctx.db
+    const allActivities = await ctx.db
       .query("activities")
       .withIndex("by_athlete", (q) => q.eq("athlete", args.athleteId))
       .collect();
 
-    if (args.activityTypes && args.activityTypes.length > 0) {
-      activities = activities.filter((a) =>
-        args.activityTypes!.includes(a.type),
-      );
-    }
+    // Derive distinct types from the full (unfiltered) set so that
+    // callers don't need a separate query just to populate a filter UI.
+    const allTypes = [...new Set(allActivities.map((a) => a.type))].sort();
 
-    return activities.map(({ mapPolyline, ...rest }) => rest);
-  },
-});
+    const filtered =
+      args.activityTypes && args.activityTypes.length > 0
+        ? allActivities.filter((a) => args.activityTypes!.includes(a.type))
+        : allActivities;
 
-export const listActivitiesWithMap = query({
-  args: {
-    athleteId: v.number(),
-    activityTypes: v.optional(v.array(v.string())),
-  },
-  handler: async (ctx, args) => {
-    let activities = await ctx.db
-      .query("activities")
-      .withIndex("by_athlete", (q) => q.eq("athlete", args.athleteId))
-      .collect();
-
-    if (args.activityTypes && args.activityTypes.length > 0) {
-      activities = activities.filter((a) =>
-        args.activityTypes!.includes(a.type),
-      );
-    }
-
-    return activities;
+    return {
+      activities: args.includeMap
+        ? filtered
+        : filtered.map(({ mapPolyline, ...rest }) => rest),
+      allTypes,
+    };
   },
 });
 
@@ -112,19 +100,6 @@ export const getActivityStreams = query({
               chunks.flatMap((c) => JSON.parse(c) as number[]),
             ),
     }));
-  },
-});
-
-export const activityTypes = query({
-  args: { athleteId: v.number() },
-  handler: async (ctx, args) => {
-    const activities = await ctx.db
-      .query("activities")
-      .withIndex("by_athlete", (q) => q.eq("athlete", args.athleteId))
-      .collect();
-
-    const types = [...new Set(activities.map((a) => a.type))];
-    return types.sort();
   },
 });
 

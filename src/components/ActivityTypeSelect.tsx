@@ -1,19 +1,12 @@
 import * as React from "react";
 
-import { useQuery } from "convex/react";
-
 import { Label } from "~/components/ui/label";
-import { useAthleteId } from "~/hooks/useAthleteId";
+import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
 
-import { api } from "../../convex/_generated/api";
 import { Select, SelectProps } from "./primitives/Select";
 
 export function ActivityTypeSelect(props: Omit<SelectProps, "options">) {
-  const athleteId = useAthleteId();
-  const activityTypes = useQuery(
-    api.queries.activityTypes,
-    athleteId != null ? { athleteId } : "skip",
-  );
+  const { allTypes: activityTypes } = useActivitiesQuery();
 
   const options = React.useMemo<ActivityTypeConfig[]>(() => {
     return (

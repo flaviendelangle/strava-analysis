@@ -1,25 +1,7 @@
+import { StatCard } from "~/components/primitives/StatCard";
 import type { SessionSummary as SessionSummaryType } from "~/sensors/types";
 import { formatHumanDuration } from "~/utils/format";
 import { getSportConfig } from "~/utils/sportConfig";
-
-function StatCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | number | null;
-}) {
-  return (
-    <div className="rounded-md bg-gray-800 px-3 py-2">
-      <div className="text-xs uppercase tracking-wider text-gray-400">
-        {label}
-      </div>
-      <div className="font-mono text-lg font-bold text-white">
-        {value ?? "--"}
-      </div>
-    </div>
-  );
-}
 
 interface SessionSummaryProps {
   summary: SessionSummaryType;
