@@ -11,7 +11,7 @@ import { ExplorerTilesLayer } from "./ExplorerTilesLayer";
 import { ExplorerTilesStats } from "./ExplorerTilesStats";
 
 // List available here: https://wiki.openstreetmap.org/wiki/Raster_tile_providers
-const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png	";
+const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 
 const TILE_ATTRIBUTION =
   'Map data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';

@@ -63,7 +63,7 @@ function parseTileKey(key: TileKey): { tx: number; ty: number } {
 
 // --- Tile discovery ---
 
-const MAX_SEGMENT_DISTANCE_DEG = 0.05; // ~5.5 km — skip GPS dropouts
+const MAX_SEGMENT_DISTANCE_DEG = 0.5; // ~55 km — skip GPS teleportation glitches
 
 /**
  * Walk a line segment in tile coordinate space and collect every grid cell
@@ -127,8 +127,17 @@ function walkTiles(
     if (tMaxX < tMaxY) {
       cx += stepX;
       tMaxX += tDeltaX;
-    } else {
+    } else if (tMaxY < tMaxX) {
       cy += stepY;
+      tMaxY += tDeltaY;
+    } else {
+      // Line passes exactly through a tile corner — visit both adjacent tiles
+      // before making a diagonal step
+      visited.add(tileKey(cx + stepX, cy));
+      visited.add(tileKey(cx, cy + stepY));
+      cx += stepX;
+      cy += stepY;
+      tMaxX += tDeltaX;
       tMaxY += tDeltaY;
     }
     visited.add(tileKey(cx, cy));

@@ -1,5 +1,4 @@
 import { useQuery } from "convex/react";
-import { useSyncExternalStore } from "react";
 import { useCookies } from "react-cookie";
 
 import { Checkbox } from "~/components/ui/checkbox";
@@ -43,18 +42,9 @@ export function ActivityTypeFilter() {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-const noop = () => {};
-const subscribe = () => noop;
-const getServerSnapshot = () => 0;
-
 export function useActivityTypeFilterCount() {
   const [state] = useCookies(["activity-type"]);
   const currentValues: string[] = state["activity-type"] ?? [];
 
-  return useSyncExternalStore(
-    subscribe,
-    () => currentValues.length,
-    getServerSnapshot,
-  );
+  return currentValues.length;
 }

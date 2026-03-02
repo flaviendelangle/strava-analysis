@@ -43,10 +43,17 @@ export function useTrainingRecorder() {
     const points = dataPointsRef.current;
     if (points.length === 0) return null;
 
-    const powers = points.map((p) => p.power).filter((v): v is number => v !== null);
-    const heartRates = points.map((p) => p.heartRate).filter((v): v is number => v !== null);
-    const cadences = points.map((p) => p.cadence).filter((v): v is number => v !== null);
-    const speeds = points.map((p) => p.speed).filter((v): v is number => v !== null);
+    // Single-pass extraction of non-null values
+    const powers: number[] = [];
+    const heartRates: number[] = [];
+    const cadences: number[] = [];
+    const speeds: number[] = [];
+    for (const p of points) {
+      if (p.power != null) powers.push(p.power);
+      if (p.heartRate != null) heartRates.push(p.heartRate);
+      if (p.cadence != null) cadences.push(p.cadence);
+      if (p.speed != null) speeds.push(p.speed);
+    }
 
     const avg = (arr: number[]) => (arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : null);
     const max = (arr: number[]) => (arr.length > 0 ? Math.max(...arr) : null);
@@ -65,16 +72,20 @@ export function useTrainingRecorder() {
       normalizedPower = Math.round(Math.pow(fourthPowerMean, 0.25));
     }
 
+    const avgPower = avg(powers);
+    const avgHeartRate = avg(heartRates);
+    const avgCadence = avg(cadences);
+
     const result: SessionSummary = {
       startTime: startTimeRef.current ?? new Date(),
       elapsedSeconds: points[points.length - 1].elapsed,
       totalDistance: points[points.length - 1].distance,
-      avgPower: avg(powers) !== null ? Math.round(avg(powers)!) : null,
+      avgPower: avgPower !== null ? Math.round(avgPower) : null,
       maxPower: max(powers),
       normalizedPower,
-      avgHeartRate: avg(heartRates) !== null ? Math.round(avg(heartRates)!) : null,
+      avgHeartRate: avgHeartRate !== null ? Math.round(avgHeartRate) : null,
       maxHeartRate: max(heartRates),
-      avgCadence: avg(cadences) !== null ? Math.round(avg(cadences)!) : null,
+      avgCadence: avgCadence !== null ? Math.round(avgCadence) : null,
       maxCadence: max(cadences),
       avgSpeed: avg(speeds),
       maxSpeed: max(speeds),

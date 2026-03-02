@@ -1,5 +1,7 @@
-import { GridIcon } from "lucide-react";
+import { GridIcon, SettingsIcon } from "lucide-react";
+import Link from "next/link";
 
+import { SyncActivitiesButtons } from "~/components/SyncActivitiesButtons";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { useCurrentPageSettings } from "~/hooks/useCurrentPageSettings";
@@ -7,7 +9,6 @@ import { useExplorerTilesToggle } from "~/hooks/useExplorerTilesToggle";
 
 import { ActivityTypeFilterPopover } from "./ActivityTypeFilterPopover";
 import { ErgModeControl } from "./ErgModeControl";
-import { RiderSettingsDialog } from "./RiderSettingsDialog";
 
 function ExplorerTilesToggleButton() {
   const { showExplorerTiles, setShowExplorerTiles } = useExplorerTilesToggle();
@@ -29,7 +30,7 @@ function ExplorerTilesToggleButton() {
 }
 
 export function SettingsToolbar() {
-  const { hasExplorerTilesToggle, hasRiderSettings, hideSettings } =
+  const { hasExplorerTilesToggle, hasRiderSettings, hasSyncButtons, hideSettings } =
     useCurrentPageSettings();
 
   if (hideSettings) {
@@ -40,7 +41,16 @@ export function SettingsToolbar() {
     <div className="flex shrink-0 items-center gap-1.5 border-b border-border px-4 py-1.5">
       {hasRiderSettings ? (
         <>
-          <RiderSettingsDialog />
+          <Link href="/settings">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-muted-foreground"
+            >
+              <SettingsIcon className="size-3.5" />
+              <span>Rider</span>
+            </Button>
+          </Link>
           <div className="mx-1 h-4 w-px bg-border" />
           <ErgModeControl />
         </>
@@ -52,6 +62,13 @@ export function SettingsToolbar() {
             <>
               <div className="mx-1 h-4 w-px bg-border" />
               <ExplorerTilesToggleButton />
+            </>
+          )}
+
+          {hasSyncButtons && (
+            <>
+              <div className="mx-1 h-4 w-px bg-border" />
+              <SyncActivitiesButtons />
             </>
           )}
         </>

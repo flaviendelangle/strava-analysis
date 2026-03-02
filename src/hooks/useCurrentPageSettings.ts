@@ -3,14 +3,12 @@ import { usePathname } from "next/navigation";
 export function useCurrentPageSettings() {
   const pathname = usePathname() ?? "";
 
-  const isActivityDetail =
-    pathname.startsWith("/activities/") &&
-    pathname !== "/activities/table" &&
-    pathname !== "/activities/map";
+  const isActivityDetail = pathname.startsWith("/activities/");
 
   return {
-    hasExplorerTilesToggle: pathname === "/activities/map",
+    hasExplorerTilesToggle: pathname === "/heatmap",
     hasRiderSettings: pathname.startsWith("/training"),
-    hideSettings: isActivityDetail,
+    hasSyncButtons: pathname === "/activities",
+    hideSettings: isActivityDetail || pathname.startsWith("/settings"),
   };
 }

@@ -9,6 +9,7 @@
  */
 
 import type * as actions from "../actions.js";
+import type * as computeScores from "../computeScores.js";
 import type * as mutations from "../mutations.js";
 import type * as queries from "../queries.js";
 import type * as stravaUpload from "../stravaUpload.js";
@@ -21,6 +22,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   actions: typeof actions;
+  computeScores: typeof computeScores;
   mutations: typeof mutations;
   queries: typeof queries;
   stravaUpload: typeof stravaUpload;

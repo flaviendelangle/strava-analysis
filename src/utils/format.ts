@@ -1,6 +1,6 @@
 export const formatDuration = (seconds: number) => {
   if (seconds < 0) {
-    return (seconds = -seconds);
+    seconds = -seconds;
   }
 
   const time = [
@@ -20,18 +20,14 @@ export const formatDuration = (seconds: number) => {
     .join(":");
 };
 
-export const formatDistance = (meters: number) =>
-  `${new Intl.NumberFormat().format(meters / 1000)}km`;
-
-export const formatSpeed = (metersPerSecond: number, activityType: string) => {
-  if (activityType === "Run") {
-    const timePerKm = 1000 / metersPerSecond;
-    const minutes = Math.floor(timePerKm / 60);
-    return `${minutes}:${Math.floor(timePerKm - minutes * 60)} /km`;
-  }
-
-  return `${(metersPerSecond * 3.6).toFixed(1)} km/h`;
+export const formatHumanDuration = (seconds: number) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  return `${m}m ${s}s`;
 };
+
 
 export function formatActivityType(activityType: string): string {
   return activityType.replace(/([A-Z])/g, " $1").trim();

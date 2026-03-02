@@ -1,16 +1,6 @@
 import type { SessionSummary as SessionSummaryType } from "~/sensors/types";
-
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  if (h > 0) return `${h}h ${m}m ${s}s`;
-  return `${m}m ${s}s`;
-}
-
-function formatDistance(meters: number): string {
-  return (meters / 1000).toFixed(2) + " km";
-}
+import { formatHumanDuration } from "~/utils/format";
+import { getSportConfig } from "~/utils/sportConfig";
 
 function StatCard({
   label,
@@ -35,6 +25,8 @@ interface SessionSummaryProps {
   summary: SessionSummaryType;
 }
 
+const sportConfig = getSportConfig("Ride");
+
 export function SessionSummary(props: SessionSummaryProps) {
   const { summary } = props;
 
@@ -44,11 +36,11 @@ export function SessionSummary(props: SessionSummaryProps) {
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
         <StatCard
           label="Duration"
-          value={formatDuration(summary.elapsedSeconds)}
+          value={formatHumanDuration(summary.elapsedSeconds)}
         />
         <StatCard
           label="Distance"
-          value={formatDistance(summary.totalDistance)}
+          value={sportConfig.formatPreciseDistance(summary.totalDistance)}
         />
         <StatCard
           label="Avg Power"
@@ -72,7 +64,7 @@ export function SessionSummary(props: SessionSummaryProps) {
         />
         <StatCard
           label="Avg Cadence"
-          value={summary.avgCadence != null ? `${summary.avgCadence} rpm` : null}
+          value={summary.avgCadence != null ? `${summary.avgCadence} ${sportConfig.cadenceUnit}` : null}
         />
       </div>
     </div>

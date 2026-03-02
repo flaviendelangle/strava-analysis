@@ -75,7 +75,42 @@ export const getActivityStreams = query({
       .withIndex("by_activity", (q) => q.eq("activity", activity._id))
       .collect();
 
-    return streams.map((s) => ({ type: s.type, data: s.data }));
+    const USABLE_TYPES = new Set([
+      "heartrate",
+      "watts",
+      "cadence",
+      "velocity_smooth",
+      "altitude",
+      "distance",
+    ]);
+
+    // Group by type and merge chunks (rare, only for ultra-long activities)
+    const grouped = new Map<string, string[]>();
+    for (const s of streams) {
+      if (!USABLE_TYPES.has(s.type)) continue;
+      const existing = grouped.get(s.type);
+      if (existing) {
+        existing.push(s.data);
+      } else {
+        grouped.set(s.type, [s.data]);
+      }
+    }
+
+    // If no usable streams exist, return null to trigger a re-fetch
+    if (grouped.size === 0) {
+      return null;
+    }
+
+    return Array.from(grouped, ([type, chunks]) => ({
+      type,
+      // Most types have a single chunk; merge only if multiple exist
+      data:
+        chunks.length === 1
+          ? chunks[0]
+          : JSON.stringify(
+              chunks.flatMap((c) => JSON.parse(c) as number[]),
+            ),
+    }));
   },
 });
 
@@ -138,6 +173,31 @@ export const getActivityByStravaId = internalQuery({
     return await ctx.db
       .query("activities")
       .withIndex("by_strava_id", (q) => q.eq("stravaId", args.stravaId))
+      .first();
+  },
+});
+
+export const getActivitiesWithoutStreams = internalQuery({
+  args: { athleteId: v.number(), limit: v.number() },
+  handler: async (ctx, args) => {
+    const activities = await ctx.db
+      .query("activities")
+      .withIndex("by_athlete", (q) => q.eq("athlete", args.athleteId))
+      .collect();
+
+    return activities
+      .filter((a) => !a.areStreamsLoaded && a.averageHeartrate != null)
+      .slice(0, args.limit)
+      .map((a) => ({ stravaId: a.stravaId, _id: a._id }));
+  },
+});
+
+export const getRiderSettings = query({
+  args: { athleteId: v.number() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("riderSettings")
+      .withIndex("by_athlete", (q) => q.eq("athlete", args.athleteId))
       .first();
   },
 });

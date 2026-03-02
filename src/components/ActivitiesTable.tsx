@@ -2,6 +2,7 @@ import * as React from "react";
 
 import { format } from "date-fns";
 import { enGB } from "date-fns/locale/en-GB";
+import Link from "next/link";
 import {
   Row,
   createColumnHelper,
@@ -20,52 +21,37 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
-import {
-  formatActivityType,
-  formatDistance,
-  formatDuration,
-} from "~/utils/format";
+import { formatActivityType, formatDuration } from "~/utils/format";
+import { getSportConfig } from "~/utils/sportConfig";
 
 import { Doc } from "../../convex/_generated/dataModel";
-import { ReloadActivityFromStravaButton } from "./ReloadActivityFromStravaButton";
-import { PrimaryLink } from "./primitives/PrimaryLink";
 
 type Activity = Omit<Doc<"activities">, "mapPolyline">;
 
 function ActivityRow(props: { row: Row<Activity>; index: number }) {
   const { row, index } = props;
+  const activityHref = `/activities/${row.original.stravaId}`;
 
   return (
-    <React.Fragment>
-      <TableRow
-        className="h-12 cursor-pointer select-none data-[odd=true]:bg-secondary data-[odd=true]:hover:bg-accent"
-        data-odd={index % 2 === 1}
-        onClick={row.getToggleExpandedHandler()}
-      >
-        {row.getVisibleCells().map((cell) => (
-          <TableCell className="px-6" key={cell.id}>
-            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-          </TableCell>
-        ))}
-      </TableRow>
-      {row.getIsExpanded() && (
-        <TableRow className="h-12 w-full">
-          <TableCell
-            colSpan={row.getVisibleCells().length}
-            className="px-6"
-          >
-            <div className="flex gap-4">
-              <PrimaryLink href={`/activities/${row.original.stravaId}`}>
-                See more details
-              </PrimaryLink>
-              <ReloadActivityFromStravaButton
-                stravaId={row.original.stravaId}
-              />
-            </div>
-          </TableCell>
-        </TableRow>
-      )}
-    </React.Fragment>
+    <TableRow
+      className="relative h-12 data-[odd=true]:bg-secondary data-[odd=true]:hover:bg-accent"
+      data-odd={index % 2 === 1}
+    >
+      {row.getVisibleCells().map((cell, cellIndex) => (
+        <TableCell className="px-6" key={cell.id}>
+          {cellIndex === 0 ? (
+            <Link
+              href={activityHref}
+              className="after:absolute after:inset-0"
+            >
+              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            </Link>
+          ) : (
+            flexRender(cell.column.columnDef.cell, cell.getContext())
+          )}
+        </TableCell>
+      ))}
+    </TableRow>
   );
 }
 
@@ -84,14 +70,28 @@ const columns = [
     cell: (info) => formatActivityType(info.getValue()),
     header: () => <span>Type</span>,
   }),
-  columnHelper.accessor("distance", {
-    cell: (info) =>
-      info.getValue() === 0 ? "" : formatDistance(info.getValue()),
+  columnHelper.display({
+    id: "distance",
+    cell: (info) => {
+      const activity = info.row.original;
+      return activity.distance === 0
+        ? ""
+        : getSportConfig(activity.type).formatDistance(activity.distance);
+    },
     header: () => <span>Distance</span>,
   }),
   columnHelper.accessor("movingTime", {
     cell: (info) => formatDuration(info.getValue()),
     header: () => <span>Moving Time</span>,
+    sortingFn: "basic",
+  }),
+  columnHelper.accessor("hrss", {
+    cell: (info) => {
+      const value = info.getValue();
+      return value == null ? "" : Math.round(value);
+    },
+    header: () => <span>HRSS</span>,
+    sortingFn: "basic",
   }),
 ];
 
@@ -108,7 +108,6 @@ export function ActivitiesTable() {
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getRowCanExpand: () => true,
     initialState: {
       sorting: [{ id: "startDateLocal", desc: true }],
     },

@@ -91,7 +91,7 @@ export default function TrainingPage() {
 
       // Simulate speed with inertia (coasts realistically when power drops)
       const speedMs = speedSimRef.current.update(power ?? 0, 1, {
-        riderMassKg: settings.weightKg,
+        riderMassKg: settings.weightKg + settings.bikeWeightKg,
         cdA: settings.cdA,
         crr: settings.crr,
       });

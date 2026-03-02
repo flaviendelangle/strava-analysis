@@ -3,44 +3,18 @@ import * as React from "react";
 import { useQuery } from "convex/react";
 
 import { ActivityMap } from "~/components/ActivityMap";
+import { ActivityStats } from "~/components/ActivityStats";
 import { ReloadActivityFromStravaButton } from "~/components/ReloadActivityFromStravaButton";
 import { ActivityStreams } from "~/components/charts/ActivityStreams";
 import { useTypedParams } from "~/hooks/useTypedParams";
 import { NextPageWithLayout } from "~/pages/_app";
-import { formatDistance, formatSpeed } from "~/utils/format";
+import { formatActivityType } from "~/utils/format";
 
 import { api } from "../../../../convex/_generated/api";
-import { Doc } from "../../../../convex/_generated/dataModel";
 
 const routerSchema = { activityId: "string" as const };
 
-function ActivityDetails(props: { activity: Doc<"activities"> }) {
-  const { activity } = props;
-
-  return (
-    <div className="w-96 rounded-md bg-card px-6 py-4">
-      <div className="mb-4 text-2xl font-bold">Activity Details</div>
-      <div className="flex justify-between">
-        <span>Distance:</span>
-        <span>{formatDistance(activity.distance)}</span>
-      </div>
-      <div className="flex justify-between">
-        <span>Total elevation gain:</span>
-        <span>{activity.totalElevationGain}m</span>
-      </div>
-      <div className="flex justify-between">
-        <span>Average speed:</span>
-        <span>{formatSpeed(activity.averageSpeed, activity.type)}</span>
-      </div>
-      <div className="flex justify-between">
-        <span>Average watts:</span>
-        <span>{activity.averageWatts}W</span>
-      </div>
-    </div>
-  );
-}
-
-const ActivitiesTablePage: NextPageWithLayout = () => {
+const ActivityPage: NextPageWithLayout = () => {
   const params = useTypedParams(routerSchema);
 
   const stravaId = params?.activityId ? Number(params.activityId) : undefined;
@@ -52,33 +26,56 @@ const ActivitiesTablePage: NextPageWithLayout = () => {
 
   return (
     <div className="flex h-full w-full flex-col">
-      <nav className="flex justify-between border-b border-border bg-background p-4 text-foreground">
-        <div>{activity?.name ?? "Loading..."}</div>
+      <nav className="flex items-center justify-between border-b border-border bg-background p-4 text-foreground">
+        <div className="flex items-center gap-3">
+          <span className="text-lg font-semibold">
+            {activity?.name ?? "Loading..."}
+          </span>
+          {activity && (
+            <React.Fragment>
+              <span className="rounded bg-gray-700 px-2 py-0.5 text-xs uppercase">
+                {formatActivityType(activity.type)}
+              </span>
+              <span className="text-sm text-gray-400">
+                {new Date(activity.startDateLocal).toLocaleDateString(
+                  undefined,
+                  {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  },
+                )}
+              </span>
+            </React.Fragment>
+          )}
+        </div>
         {activity && (
           <ReloadActivityFromStravaButton stravaId={activity.stravaId} />
         )}
       </nav>
-      <div className="flex h-full w-full flex-col 2xl:flex-row">
-        <div className="h-96 2xl:h-full 2xl:w-1/2">
-          {activity?.mapPolyline ? (
-            <ActivityMap activity={activity} />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-4xl">
-              No map available
+
+      <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-6">
+        {activity && (
+          <React.Fragment>
+            <div className="flex flex-col gap-6 lg:flex-row">
+              <div className="lg:flex-1">
+                <ActivityStats activity={activity} />
+              </div>
+
+              {activity.mapPolyline && (
+                <div className="h-96 w-full overflow-hidden rounded-lg lg:h-auto lg:min-h-96 lg:flex-1">
+                  <ActivityMap activity={activity} />
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        <div className="flex flex-col gap-4 px-6 py-4 2xl:w-1/2">
-          {activity && (
-            <React.Fragment>
-              <ActivityDetails activity={activity} />
-              <ActivityStreams stravaId={activity.stravaId} />
-            </React.Fragment>
-          )}
-        </div>
+
+            <ActivityStreams stravaId={activity.stravaId} />
+          </React.Fragment>
+        )}
       </div>
     </div>
   );
 };
 
-export default ActivitiesTablePage;
+export default ActivityPage;

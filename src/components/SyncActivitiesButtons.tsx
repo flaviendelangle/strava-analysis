@@ -1,11 +1,12 @@
 import * as React from "react";
 
+import { Loader2, RefreshCwIcon, HistoryIcon } from "lucide-react";
 import { useAction } from "convex/react";
 
+import { Button } from "~/components/ui/button";
 import { useAthleteId } from "~/hooks/useAthleteId";
 
 import { api } from "../../convex/_generated/api";
-import { LoadingButton } from "./primitives/LoadingButton";
 
 export function SyncActivitiesButtons() {
   const athleteId = useAthleteId();
@@ -15,9 +16,12 @@ export function SyncActivitiesButtons() {
   const [isLoadingOlder, setIsLoadingOlder] = React.useState(false);
 
   return (
-    <div className="flex gap-4">
-      <LoadingButton
-        loading={isCheckingNew}
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="gap-1.5 text-muted-foreground"
+        disabled={isCheckingNew}
         onClick={async () => {
           if (!athleteId) return;
           setIsCheckingNew(true);
@@ -28,10 +32,18 @@ export function SyncActivitiesButtons() {
           }
         }}
       >
-        Check for new activities
-      </LoadingButton>
-      <LoadingButton
-        loading={isLoadingOlder}
+        {isCheckingNew ? (
+          <Loader2 className="size-3.5 animate-spin" />
+        ) : (
+          <RefreshCwIcon className="size-3.5" />
+        )}
+        <span>Check for new</span>
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="gap-1.5 text-muted-foreground"
+        disabled={isLoadingOlder}
         onClick={async () => {
           if (!athleteId) return;
           setIsLoadingOlder(true);
@@ -42,8 +54,13 @@ export function SyncActivitiesButtons() {
           }
         }}
       >
-        Load older activities
-      </LoadingButton>
-    </div>
+        {isLoadingOlder ? (
+          <Loader2 className="size-3.5 animate-spin" />
+        ) : (
+          <HistoryIcon className="size-3.5" />
+        )}
+        <span>Load older</span>
+      </Button>
+    </>
   );
 }

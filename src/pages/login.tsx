@@ -13,7 +13,7 @@ const LoginPage: NextPageWithLayout = () => {
   const session = useSession();
 
   if (session.data?.user) {
-    router.replace("/activities/table");
+    router.replace("/activities");
   }
 
   if (session.status === "loading") {
@@ -25,7 +25,7 @@ const LoginPage: NextPageWithLayout = () => {
       <div className="flex flex-col items-center">
         <span>You are not logged in</span>
         <button
-          onClick={() => signIn("strava", { callbackUrl: "/activities/table" })}
+          onClick={() => signIn("strava", { callbackUrl: "/activities" })}
         >
           <Image priority src={stravaButton} alt="Login with Strava" />
         </button>

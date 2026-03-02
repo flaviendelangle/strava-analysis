@@ -1,3 +1,4 @@
+import { getSportConfig } from "~/utils/sportConfig";
 import { LiveMetricCard } from "./LiveMetricCard";
 
 function formatElapsed(seconds: number): string {
@@ -17,6 +18,8 @@ interface LiveDashboardProps {
   distanceKm: number;
   ergTargetPower?: number | null;
 }
+
+const sportConfig = getSportConfig("Ride");
 
 export function LiveDashboard(props: LiveDashboardProps) {
   const { heartRate, power, cadence, speed, elapsedSeconds, distanceKm, ergTargetPower } =
@@ -40,7 +43,7 @@ export function LiveDashboard(props: LiveDashboardProps) {
       <LiveMetricCard
         label="Cadence"
         value={cadence}
-        unit="rpm"
+        unit={sportConfig.cadenceUnit}
         accentColor="#EC4899"
       />
       <LiveMetricCard

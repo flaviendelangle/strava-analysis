@@ -27,6 +27,10 @@ export interface RiderSettings {
   ftp: number;
   cdA: number;
   crr: number;
+  bikeWeightKg: number;
+  restingHr: number;
+  maxHr: number;
+  lthr: number;
 }
 
 export const DEFAULT_RIDER_SETTINGS: RiderSettings = {
@@ -34,6 +38,53 @@ export const DEFAULT_RIDER_SETTINGS: RiderSettings = {
   ftp: 200,
   cdA: 0.35,
   crr: 0.004,
+  bikeWeightKg: 8,
+  restingHr: 50,
+  maxHr: 185,
+  lthr: 163,
+};
+
+/** Fields that can vary over time */
+export type TimeVaryingField = "ftp" | "weightKg" | "restingHr" | "maxHr" | "lthr";
+
+/** A change point recording which fields changed on a given date */
+export interface RiderSettingsChangePoint {
+  id: string;
+  date: string; // "YYYY-MM-DD"
+  ftp?: number;
+  weightKg?: number;
+  restingHr?: number;
+  maxHr?: number;
+  lthr?: number;
+}
+
+/** Full timeline of rider settings persisted to localStorage */
+export interface RiderSettingsTimeline {
+  cdA: number;
+  crr: number;
+  bikeWeightKg: number;
+  initialValues: {
+    ftp: number;
+    weightKg: number;
+    restingHr: number;
+    maxHr: number;
+    lthr: number;
+  };
+  changes: RiderSettingsChangePoint[];
+}
+
+export const DEFAULT_RIDER_SETTINGS_TIMELINE: RiderSettingsTimeline = {
+  cdA: 0.35,
+  crr: 0.004,
+  bikeWeightKg: 8,
+  initialValues: {
+    ftp: 200,
+    weightKg: 75,
+    restingHr: 50,
+    maxHr: 185,
+    lthr: 163,
+  },
+  changes: [],
 };
 
 export interface SessionDataPoint {

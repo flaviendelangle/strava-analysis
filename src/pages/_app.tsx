@@ -1,10 +1,13 @@
 import type { ReactElement, ReactNode } from "react";
 
 import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { LicenseInfo } from "@mui/x-license";
 import { CookiesProvider } from "react-cookie";
 import type { NextPage } from "next";
 import { SessionProvider } from "next-auth/react";
 import type { AppProps, AppType } from "next/app";
+
+LicenseInfo.setLicenseKey(process.env.NEXT_PUBLIC_MUI_X_LICENSE_KEY!);
 
 import { LoggedInLayout } from "~/components/layouts/LoggedInLayout";
 import "~/styles/globals.css";

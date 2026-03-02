@@ -13,12 +13,7 @@ export default {
     return [
       {
         source: "/",
-        destination: "/activities/table",
-        permanent: false,
-      },
-      {
-        source: "/activities",
-        destination: "/activities/table",
+        destination: "/activities",
         permanent: false,
       },
     ];

@@ -1,7 +1,7 @@
 import * as React from "react";
 
-import { format, subYears } from "date-fns";
-import ReactECharts from "echarts-for-react";
+import { BarChartPro } from "@mui/x-charts-pro";
+import { format } from "date-fns";
 
 import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
 import { useGroupActivitiesByTimeSlice } from "~/hooks/useGroupActivitiesByTimeSlice";
@@ -9,30 +9,16 @@ import { SlicePrecision, useTimeSlices } from "~/hooks/useTimeSlices";
 
 import { METRICS, MetricSelect } from "../../MetricSelect";
 import { PrecisionSelect } from "../../PrecisionSelect";
-import { TimeSpan, TimeSpanSelect } from "../../TimeSpanSelect";
+import { ChartThemeProvider } from "../ChartThemeProvider";
 
 export default function ActivitiesTimeline() {
   const [metric, setMetric] = React.useState("distance");
   const [precision, setPrecision] = React.useState<SlicePrecision>("month");
-  const [timeSpan, setTimeSpan] = React.useState<TimeSpan>("all-time");
   const activitiesQuery = useActivitiesQuery();
-
-  const minDate = React.useMemo(() => {
-    const now = new Date();
-    switch (timeSpan) {
-      case "last-year":
-        return subYears(now, 1);
-      case "last-2-years":
-        return subYears(now, 2);
-      case "all-time":
-        return null;
-    }
-  }, [timeSpan]);
 
   const slices = useTimeSlices({
     precision,
     activities: activitiesQuery.data,
-    minDate,
   });
 
   const groupedActivities = useGroupActivitiesByTimeSlice({
@@ -40,6 +26,11 @@ export default function ActivitiesTimeline() {
     slices,
     precision,
   });
+
+  const xAxisData = React.useMemo(
+    () => groupedActivities.map((group) => group.date),
+    [groupedActivities],
+  );
 
   const series = React.useMemo(() => {
     const metricConfig = METRICS.find((el) => el.value === metric);
@@ -49,114 +40,52 @@ export default function ActivitiesTimeline() {
 
     const activityTypes = new Set<string>();
     activitiesQuery.data?.forEach((activity) => {
-      if (!activityTypes.has(activity.type)) {
-        activityTypes.add(activity.type);
-      }
+      activityTypes.add(activity.type);
     });
 
-    return Array.from(activityTypes).map((activityType) => {
-      return {
-        name: `${metricConfig.label} - ${activityType}`,
-        type: "bar",
-        showSymbol: false,
-        stack: "x",
-        data: groupedActivities.map((group) => [
-          group.date,
-          group.activities.reduce((acc, activity) => {
-            if (activity.type === activityType) {
-              return metricConfig.getValue(activity) + acc;
-            }
-
-            return acc;
-          }, 0),
-        ]),
-      };
-    });
+    return Array.from(activityTypes).map((activityType) => ({
+      label: `${metricConfig.label} - ${activityType}`,
+      data: groupedActivities.map((group) =>
+        group.activities.reduce((acc, activity) => {
+          if (activity.type === activityType) {
+            return metricConfig.getValue(activity) + acc;
+          }
+          return acc;
+        }, 0),
+      ),
+      stack: "total",
+    }));
   }, [groupedActivities, metric, activitiesQuery.data]);
 
   return (
-    <div className="flex h-96 w-full flex-col rounded-md bg-secondary">
-      <div className="flex gap-4 border-b border-border p-4">
-        <MetricSelect value={metric} onValueChange={setMetric} />
-        <PrecisionSelect value={precision} onValueChange={setPrecision} />
-        <TimeSpanSelect value={timeSpan} onValueChange={setTimeSpan} />
-      </div>
-      <div className="flex-1">
-        <ReactECharts
-          style={{ height: "100%" }}
-          option={{
-            theme: "dark",
-            // color: [
-            //   "#ffa600",
-            //   "#ff7c43",
-            //   "#f95d6a",
-            //   "#d45087",
-            //   "#a05195",
-            //   "#665191",
-            //   "#2f4b7c",
-            //   "#003f5c",
-            // ],
-            textStyle: {
-              color: "white",
-            },
-            tooltip: {
-              trigger: "axis",
-              axisPointer: {
-                type: "cross",
-                label: {
-                  formatter: (params: {
-                    value: number;
-                    axisDimension: "x" | "y";
-                  }) => {
-                    if (params.axisDimension === "y") {
-                      return Math.round(params.value).toLocaleString();
-                    }
-
-                    return format(new Date(params.value), "MM/yyyy");
-                  },
-                },
-              },
-              valueFormatter: (value: number) =>
-                Math.round(value).toLocaleString(),
-              backgroundColor: "#111827",
-              textStyle: {
-                color: "white",
-              },
-            },
-            legend: {
-              data: ["Distance"],
-              textStyle: {
-                color: "white",
-              },
-            },
-            label: {
-              textStyle: {
-                color: "white",
-              },
-            },
-            series,
-            grid: {
-              left: 72,
-              right: 24,
-            },
-            xAxis: [
+    <ChartThemeProvider>
+      <div className="flex h-96 w-full flex-col rounded-md bg-secondary">
+        <div className="flex gap-4 border-b border-border p-4">
+          <MetricSelect value={metric} onValueChange={setMetric} />
+          <PrecisionSelect value={precision} onValueChange={setPrecision} />
+        </div>
+        <div className="flex-1">
+          <BarChartPro
+            xAxis={[
               {
-                type: "time",
-                boundaryGap: false,
+                id: "time",
+                scaleType: "band",
+                data: xAxisData,
+                valueFormatter: (value: Date) => format(value, "MM/yyyy"),
+                zoom: { filterMode: "discard" },
               },
-            ],
-            yAxis: [
+            ]}
+            yAxis={[
               {
-                type: "value",
-                axisLabel: {
-                  formatter: (value: number) =>
-                    Math.round(value).toLocaleString(),
-                },
+                valueFormatter: (value: number) =>
+                  Math.round(value).toLocaleString(),
               },
-            ],
-          }}
-        />
+            ]}
+            series={series}
+            margin={{ left: 72, right: 24 }}
+          />
+        </div>
       </div>
-    </div>
+    </ChartThemeProvider>
   );
 }

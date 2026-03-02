@@ -1,29 +1,33 @@
 import * as React from "react";
 
-import { DEFAULT_RIDER_SETTINGS, type RiderSettings } from "~/sensors/types";
+import { useMutation, useQuery } from "convex/react";
 
-const STORAGE_KEY = "riderSettings";
-
-function loadSettings(): RiderSettings {
-  if (typeof window === "undefined") return DEFAULT_RIDER_SETTINGS;
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored) as RiderSettings;
-  } catch {
-    // Ignore parse errors
-  }
-  return DEFAULT_RIDER_SETTINGS;
-}
+import { api } from "../../convex/_generated/api";
+import { useAthleteId } from "~/hooks/useAthleteId";
+import {
+  DEFAULT_RIDER_SETTINGS,
+  DEFAULT_RIDER_SETTINGS_TIMELINE,
+  type RiderSettings,
+  type RiderSettingsTimeline,
+} from "~/sensors/types";
+import {
+  resolveCurrentRiderSettings,
+  resolveRiderSettings,
+} from "~/utils/resolveRiderSettings";
 
 interface RiderSettingsContextValue {
-  riderSettings: RiderSettings;
-  setRiderSettings: (settings: RiderSettings) => void;
+  timeline: RiderSettingsTimeline;
+  setTimeline: (timeline: RiderSettingsTimeline) => void;
+  resolveForDate: (date: string) => RiderSettings;
+  currentSettings: RiderSettings;
 }
 
 const RiderSettingsContext = React.createContext<RiderSettingsContextValue>({
-  riderSettings: DEFAULT_RIDER_SETTINGS,
+  timeline: DEFAULT_RIDER_SETTINGS_TIMELINE,
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  setRiderSettings: () => {},
+  setTimeline: () => {},
+  resolveForDate: () => DEFAULT_RIDER_SETTINGS,
+  currentSettings: DEFAULT_RIDER_SETTINGS,
 });
 
 export function RiderSettingsProvider({
@@ -31,16 +35,51 @@ export function RiderSettingsProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [settings, setSettingsState] = React.useState<RiderSettings>(loadSettings);
+  const athleteId = useAthleteId();
+  const stored = useQuery(
+    api.queries.getRiderSettings,
+    athleteId != null ? { athleteId } : "skip",
+  );
+  const saveSettings = useMutation(api.mutations.saveRiderSettings);
 
-  const setSettings = React.useCallback((newSettings: RiderSettings) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
-    setSettingsState(newSettings);
-  }, []);
+  const timeline: RiderSettingsTimeline = stored
+    ? {
+        cdA: stored.cdA,
+        crr: stored.crr,
+        bikeWeightKg: stored.bikeWeightKg ?? DEFAULT_RIDER_SETTINGS_TIMELINE.bikeWeightKg,
+        initialValues: stored.initialValues,
+        changes: stored.changes,
+      }
+    : DEFAULT_RIDER_SETTINGS_TIMELINE;
+
+  const setTimeline = React.useCallback(
+    (newTimeline: RiderSettingsTimeline) => {
+      if (athleteId == null) return;
+      saveSettings({
+        athleteId,
+        cdA: newTimeline.cdA,
+        crr: newTimeline.crr,
+        bikeWeightKg: newTimeline.bikeWeightKg,
+        initialValues: newTimeline.initialValues,
+        changes: newTimeline.changes,
+      });
+    },
+    [athleteId, saveSettings],
+  );
+
+  const resolveForDate = React.useCallback(
+    (date: string) => resolveRiderSettings(timeline, date),
+    [timeline],
+  );
+
+  const currentSettings = React.useMemo(
+    () => resolveCurrentRiderSettings(timeline),
+    [timeline],
+  );
 
   const value = React.useMemo(
-    () => ({ riderSettings: settings, setRiderSettings: setSettings }),
-    [settings, setSettings],
+    () => ({ timeline, setTimeline, resolveForDate, currentSettings }),
+    [timeline, setTimeline, resolveForDate, currentSettings],
   );
 
   return (
@@ -48,10 +87,13 @@ export function RiderSettingsProvider({
   );
 }
 
-export function useRiderSettings(): [
-  RiderSettings,
-  (settings: RiderSettings) => void,
-] {
-  const { riderSettings, setRiderSettings } = React.useContext(RiderSettingsContext);
-  return [riderSettings, setRiderSettings];
+/** Full timeline access — for the settings page and activity stats. */
+export function useRiderSettingsTimeline(): RiderSettingsContextValue {
+  return React.useContext(RiderSettingsContext);
+}
+
+/** Backward-compatible hook — returns today's resolved settings. */
+export function useRiderSettings(): [RiderSettings] {
+  const { currentSettings } = React.useContext(RiderSettingsContext);
+  return [currentSettings];
 }

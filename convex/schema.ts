@@ -20,14 +20,48 @@ export default defineSchema({
     averageSpeed: v.number(),
     averageWatts: v.optional(v.number()),
     averageCadence: v.optional(v.number()),
+    averageHeartrate: v.optional(v.number()),
+    maxHeartrate: v.optional(v.number()),
+    maxSpeed: v.optional(v.number()),
+    maxWatts: v.optional(v.number()),
+    weightedAverageWatts: v.optional(v.number()),
+    kilojoules: v.optional(v.number()),
+    calories: v.optional(v.number()),
     movingTime: v.number(),
     elapsedTime: v.number(),
     mapPolyline: v.optional(v.string()),
     areStreamsLoaded: v.boolean(),
+    hrss: v.optional(v.number()),
+    tss: v.optional(v.number()),
   })
     .index("by_athlete", ["athlete"])
     .index("by_strava_id", ["stravaId"])
     .index("by_athlete_and_start_date", ["athlete", "startDate"]),
+
+  riderSettings: defineTable({
+    athlete: v.number(),
+    cdA: v.number(),
+    crr: v.number(),
+    bikeWeightKg: v.optional(v.number()),
+    initialValues: v.object({
+      ftp: v.number(),
+      weightKg: v.number(),
+      restingHr: v.number(),
+      maxHr: v.number(),
+      lthr: v.number(),
+    }),
+    changes: v.array(
+      v.object({
+        id: v.string(),
+        date: v.string(),
+        ftp: v.optional(v.number()),
+        weightKg: v.optional(v.number()),
+        restingHr: v.optional(v.number()),
+        maxHr: v.optional(v.number()),
+        lthr: v.optional(v.number()),
+      }),
+    ),
+  }).index("by_athlete", ["athlete"]),
 
   activityStreams: defineTable({
     activity: v.id("activities"),
@@ -35,6 +69,7 @@ export default defineSchema({
     seriesType: v.string(),
     originalSize: v.number(),
     resolution: v.string(),
-    data: v.array(v.number()),
+    chunkIndex: v.optional(v.number()),
+    data: v.string(),
   }).index("by_activity", ["activity"]),
 });

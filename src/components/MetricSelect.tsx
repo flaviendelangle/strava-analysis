@@ -23,6 +23,11 @@ export const METRICS: MetricConfig[] = [
     getValue: (activity) => activity.elapsedTime / (60 * 60),
   },
   {
+    value: "hrss",
+    label: "HRSS",
+    getValue: (activity) => activity.hrss ?? 0,
+  },
+  {
     value: "activities",
     label: "Activities",
     getValue: () => 1,
