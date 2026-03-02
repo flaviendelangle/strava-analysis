@@ -74,20 +74,6 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
     }
   }, [streamsData, athleteId, stravaId, isFetching, fetchStreams]);
 
-  console.log("[ActivityStreams] state:", {
-    stravaId,
-    athleteId,
-    activity: activity ? "loaded" : activity,
-    streamsData:
-      streamsData === undefined
-        ? "undefined"
-        : streamsData === null
-          ? "null"
-          : `array(${streamsData.length}) types=[${streamsData.map((s) => s.type).join(",")}]`,
-    isFetching,
-    fetchError,
-  });
-
   const { charts, distanceData } = React.useMemo(() => {
     if (!activity || !streamsData) {
       return { charts: [], distanceData: null };

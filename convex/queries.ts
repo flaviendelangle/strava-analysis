@@ -2,6 +2,8 @@ import { v } from "convex/values";
 
 import { internalQuery, query } from "./_generated/server";
 
+// ── Public queries ──────────────────────────────────────────────────────
+
 export const listActivities = query({
   args: {
     athleteId: v.number(),
@@ -103,7 +105,6 @@ export const getActivityStreams = query({
 
     return Array.from(grouped, ([type, chunks]) => ({
       type,
-      // Most types have a single chunk; merge only if multiple exist
       data:
         chunks.length === 1
           ? chunks[0]
@@ -127,7 +128,27 @@ export const activityTypes = query({
   },
 });
 
-// Internal queries (used by actions)
+export const getRiderSettings = query({
+  args: { athleteId: v.number() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("riderSettings")
+      .withIndex("by_athlete", (q) => q.eq("athlete", args.athleteId))
+      .first();
+  },
+});
+
+export const getSyncJob = query({
+  args: { athleteId: v.number() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("syncJobs")
+      .withIndex("by_athlete", (q) => q.eq("athlete", args.athleteId))
+      .first();
+  },
+});
+
+// ── Internal queries ────────────────────────────────────────────────────
 
 export const getAthleteByStravaId = internalQuery({
   args: { stravaAthleteId: v.number() },
@@ -144,35 +165,12 @@ export const getAthleteByStravaId = internalQuery({
 export const getLatestActivity = internalQuery({
   args: { athleteId: v.number() },
   handler: async (ctx, args) => {
-    const activities = await ctx.db
-      .query("activities")
-      .withIndex("by_athlete", (q) => q.eq("athlete", args.athleteId))
-      .collect();
-
-    if (activities.length === 0) return null;
-    return activities.sort((a, b) => b.startDate.localeCompare(a.startDate))[0];
-  },
-});
-
-export const getOldestActivity = internalQuery({
-  args: { athleteId: v.number() },
-  handler: async (ctx, args) => {
-    const activities = await ctx.db
-      .query("activities")
-      .withIndex("by_athlete", (q) => q.eq("athlete", args.athleteId))
-      .collect();
-
-    if (activities.length === 0) return null;
-    return activities.sort((a, b) => a.startDate.localeCompare(b.startDate))[0];
-  },
-});
-
-export const getActivityByStravaId = internalQuery({
-  args: { stravaId: v.number() },
-  handler: async (ctx, args) => {
     return await ctx.db
       .query("activities")
-      .withIndex("by_strava_id", (q) => q.eq("stravaId", args.stravaId))
+      .withIndex("by_athlete_and_start_date", (q) =>
+        q.eq("athlete", args.athleteId),
+      )
+      .order("desc")
       .first();
   },
 });
@@ -182,22 +180,21 @@ export const getActivitiesWithoutStreams = internalQuery({
   handler: async (ctx, args) => {
     const activities = await ctx.db
       .query("activities")
-      .withIndex("by_athlete", (q) => q.eq("athlete", args.athleteId))
+      .withIndex("by_athlete_and_streams_loaded", (q) =>
+        q.eq("athlete", args.athleteId).eq("areStreamsLoaded", false),
+      )
       .collect();
 
     return activities
-      .filter((a) => !a.areStreamsLoaded && a.averageHeartrate != null)
+      .filter((a) => a.averageHeartrate != null)
       .slice(0, args.limit)
       .map((a) => ({ stravaId: a.stravaId, _id: a._id }));
   },
 });
 
-export const getRiderSettings = query({
-  args: { athleteId: v.number() },
+export const getSyncJobById = internalQuery({
+  args: { syncJobId: v.id("syncJobs") },
   handler: async (ctx, args) => {
-    return await ctx.db
-      .query("riderSettings")
-      .withIndex("by_athlete", (q) => q.eq("athlete", args.athleteId))
-      .first();
+    return await ctx.db.get(args.syncJobId);
   },
 });

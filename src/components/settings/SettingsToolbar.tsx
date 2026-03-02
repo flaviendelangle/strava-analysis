@@ -1,7 +1,7 @@
 import { GridIcon, SettingsIcon } from "lucide-react";
 import Link from "next/link";
 
-import { SyncActivitiesButtons } from "~/components/SyncActivitiesButtons";
+import { SyncPanel } from "~/components/SyncPanel";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { useCurrentPageSettings } from "~/hooks/useCurrentPageSettings";
@@ -30,7 +30,7 @@ function ExplorerTilesToggleButton() {
 }
 
 export function SettingsToolbar() {
-  const { hasExplorerTilesToggle, hasRiderSettings, hasSyncButtons, hideSettings } =
+  const { hasExplorerTilesToggle, hasRiderSettings, hasSyncPanel, hideSettings } =
     useCurrentPageSettings();
 
   if (hideSettings) {
@@ -65,10 +65,10 @@ export function SettingsToolbar() {
             </>
           )}
 
-          {hasSyncButtons && (
+          {hasSyncPanel && (
             <>
               <div className="mx-1 h-4 w-px bg-border" />
-              <SyncActivitiesButtons />
+              <SyncPanel />
             </>
           )}
         </>

@@ -36,7 +36,8 @@ export default defineSchema({
   })
     .index("by_athlete", ["athlete"])
     .index("by_strava_id", ["stravaId"])
-    .index("by_athlete_and_start_date", ["athlete", "startDate"]),
+    .index("by_athlete_and_start_date", ["athlete", "startDate"])
+    .index("by_athlete_and_streams_loaded", ["athlete", "areStreamsLoaded"]),
 
   riderSettings: defineTable({
     athlete: v.number(),
@@ -61,6 +62,23 @@ export default defineSchema({
         lthr: v.optional(v.number()),
       }),
     ),
+  }).index("by_athlete", ["athlete"]),
+
+  syncJobs: defineTable({
+    athlete: v.number(),
+    status: v.union(
+      v.literal("fetching_activities"),
+      v.literal("fetching_streams"),
+      v.literal("computing_scores"),
+      v.literal("completed"),
+      v.literal("failed"),
+    ),
+    activitiesFetched: v.number(),
+    activitiesPagesComplete: v.boolean(),
+    streamsTotal: v.number(),
+    streamsFetched: v.number(),
+    lastError: v.optional(v.string()),
+    startedAt: v.number(),
   }).index("by_athlete", ["athlete"]),
 
   activityStreams: defineTable({

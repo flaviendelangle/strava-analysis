@@ -8,7 +8,7 @@ export function useCurrentPageSettings() {
   return {
     hasExplorerTilesToggle: pathname === "/heatmap",
     hasRiderSettings: pathname.startsWith("/training"),
-    hasSyncButtons: pathname === "/activities",
+    hasSyncPanel: pathname === "/activities",
     hideSettings: isActivityDetail || pathname.startsWith("/settings"),
   };
 }
