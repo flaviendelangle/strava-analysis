@@ -1,12 +1,15 @@
 import { eq } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import strava from "strava-v3";
 
 import type { Database } from "../db";
 import { athletes } from "../db/schema";
+import { env } from "../env";
 import type { StravaActivity, StravaStream } from "./stravaTypes";
 
 const STREAM_KEYS = [
   "distance",
+  "latlng",
   "watts",
   "altitude",
   "heartrate",
@@ -14,6 +17,9 @@ const STREAM_KEYS = [
   "temp",
   "velocity_smooth",
 ];
+
+// Refresh 5 minutes before actual expiry to avoid race conditions
+const EXPIRY_BUFFER_SECONDS = 300;
 
 export async function getAccessToken(
   db: Database,
@@ -27,7 +33,56 @@ export async function getAccessToken(
     throw new Error(`Athlete ${athleteId} not found`);
   }
 
-  return athlete.accessToken;
+  const nowSeconds = Math.floor(Date.now() / 1000);
+
+  // If token is still valid (with buffer), return it as-is
+  if (athlete.tokenExpiresAt > nowSeconds + EXPIRY_BUFFER_SECONDS) {
+    return athlete.accessToken;
+  }
+
+  // Token expired or about to expire -- needs refresh
+  if (!athlete.refreshToken) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Strava session expired. Please sign in again.",
+    });
+  }
+
+  const response = await fetch("https://www.strava.com/api/v3/oauth/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      client_id: env.STRAVA_CLIENT_ID,
+      client_secret: env.STRAVA_CLIENT_SECRET,
+      grant_type: "refresh_token",
+      refresh_token: athlete.refreshToken,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Strava token refresh failed. Please sign in again.",
+    });
+  }
+
+  const data = (await response.json()) as {
+    access_token: string;
+    refresh_token: string;
+    expires_at: number;
+  };
+
+  // Persist the new tokens
+  await db
+    .update(athletes)
+    .set({
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      tokenExpiresAt: data.expires_at,
+    })
+    .where(eq(athletes.stravaAthleteId, athleteId));
+
+  return data.access_token;
 }
 
 export function getModelFromStravaActivity(activity: StravaActivity) {

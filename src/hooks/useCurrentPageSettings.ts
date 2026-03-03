@@ -5,9 +5,12 @@ export function useCurrentPageSettings() {
 
   const isActivityDetail = pathname.startsWith("/activities/");
 
+  const isTraining = pathname.startsWith("/training");
+
   return {
+    hasActivityTypeFilter: !isTraining,
+    hasErgModeControl: isTraining,
     hasExplorerTilesToggle: pathname === "/heatmap",
-    hasRiderSettings: pathname.startsWith("/training"),
     hasSyncPanel: pathname === "/activities",
     hideSettings: isActivityDetail || pathname.startsWith("/settings"),
   };

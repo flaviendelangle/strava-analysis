@@ -54,6 +54,13 @@ export const authOptions: AuthOptions = {
           ? `${(profile as StravaProfile).firstname} ${(profile as StravaProfile).lastname}`
           : undefined;
 
+        const tokenData = {
+          accessToken: account.access_token,
+          refreshToken: account.refresh_token ?? "",
+          tokenExpiresAt: account.expires_at ?? 0,
+          name,
+        };
+
         const existing = await db.query.athletes.findFirst({
           where: eq(athletes.stravaAthleteId, stravaAthleteId),
         });
@@ -61,13 +68,12 @@ export const authOptions: AuthOptions = {
         if (existing) {
           await db
             .update(athletes)
-            .set({ accessToken: account.access_token, name })
+            .set(tokenData)
             .where(eq(athletes.id, existing.id));
         } else {
           await db.insert(athletes).values({
             stravaAthleteId,
-            accessToken: account.access_token,
-            name,
+            ...tokenData,
           });
         }
       }

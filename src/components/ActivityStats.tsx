@@ -2,6 +2,7 @@ import type { Activity } from "@server/db/types";
 import { StatCard } from "~/components/primitives/StatCard";
 import { useRiderSettingsTimeline } from "~/hooks/useRiderSettings";
 import { formatHumanDuration } from "~/utils/format";
+import { POWER_BEST_ACTIVITY_TYPES } from "~/utils/constants";
 import { getSportConfig } from "~/utils/sportConfig";
 
 interface ActivityStatsProps {
@@ -14,10 +15,11 @@ export function ActivityStats({ activity }: ActivityStatsProps) {
   const activityDate = activity.startDateLocal.slice(0, 10);
   const riderSettings = resolveForDate(activityDate);
 
+  const isRide = POWER_BEST_ACTIVITY_TYPES.includes(activity.type);
   const np = activity.weightedAverageWatts ?? null;
   const ftp = riderSettings.ftp;
-  const intensityFactor = np != null ? np / ftp : null;
-  const tss = activity.tss ?? null;
+  const intensityFactor = isRide && np != null ? np / ftp : null;
+  const tss = isRide ? (activity.tss ?? null) : null;
   const hrss = activity.hrss ?? null;
 
   return (

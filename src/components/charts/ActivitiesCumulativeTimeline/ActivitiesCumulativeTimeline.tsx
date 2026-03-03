@@ -87,7 +87,8 @@ export default function ActivitiesCumulativeTimeline() {
   return (
     <ChartThemeProvider>
       <div className="flex h-96 w-full flex-col rounded-md bg-secondary">
-        <div className="flex gap-4 border-b border-border p-4">
+        <div className="flex items-center gap-4 border-b border-border p-4">
+          <h3 className="text-sm font-medium">Cumulative Timeline</h3>
           <MetricSelect value={metric} onValueChange={setMetric} />
         </div>
         <div className="flex-1">

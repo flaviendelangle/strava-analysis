@@ -339,7 +339,7 @@ export async function computeActivityScoresInternal(
     powerBests?: Record<number, number> | null;
   } = {};
 
-  if (activity.weightedAverageWatts != null) {
+  if (activity.weightedAverageWatts != null && POWER_BEST_ACTIVITY_TYPES.includes(activity.type)) {
     patch.tss = Math.round(
       calculateTSS(
         activity.weightedAverageWatts,

@@ -1,5 +1,4 @@
-import { GridIcon, SettingsIcon } from "lucide-react";
-import Link from "next/link";
+import { GridIcon } from "lucide-react";
 
 import { SyncPanel } from "~/components/SyncPanel";
 import { Button } from "~/components/ui/button";
@@ -30,8 +29,13 @@ function ExplorerTilesToggleButton() {
 }
 
 export function SettingsToolbar() {
-  const { hasExplorerTilesToggle, hasRiderSettings, hasSyncPanel, hideSettings } =
-    useCurrentPageSettings();
+  const {
+    hasActivityTypeFilter,
+    hasErgModeControl,
+    hasExplorerTilesToggle,
+    hasSyncPanel,
+    hideSettings,
+  } = useCurrentPageSettings();
 
   if (hideSettings) {
     return null;
@@ -39,38 +43,21 @@ export function SettingsToolbar() {
 
   return (
     <div className="flex shrink-0 items-center gap-1.5 border-b border-border px-4 py-1.5">
-      {hasRiderSettings ? (
+      {hasActivityTypeFilter && <ActivityTypeFilterPopover />}
+
+      {hasExplorerTilesToggle && (
         <>
-          <Link href="/settings">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5 text-muted-foreground"
-            >
-              <SettingsIcon className="size-3.5" />
-              <span>Rider</span>
-            </Button>
-          </Link>
           <div className="mx-1 h-4 w-px bg-border" />
-          <ErgModeControl />
+          <ExplorerTilesToggleButton />
         </>
-      ) : (
+      )}
+
+      {hasErgModeControl && <ErgModeControl />}
+
+      {hasSyncPanel && (
         <>
-          <ActivityTypeFilterPopover />
-
-          {hasExplorerTilesToggle && (
-            <>
-              <div className="mx-1 h-4 w-px bg-border" />
-              <ExplorerTilesToggleButton />
-            </>
-          )}
-
-          {hasSyncPanel && (
-            <>
-              <div className="mx-1 h-4 w-px bg-border" />
-              <SyncPanel />
-            </>
-          )}
+          <div className="mx-1 h-4 w-px bg-border" />
+          <SyncPanel />
         </>
       )}
     </div>

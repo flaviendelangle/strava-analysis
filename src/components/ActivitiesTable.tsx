@@ -94,6 +94,15 @@ const columns = [
     sortingFn: "basic",
     size: 1,
   }),
+  columnHelper.accessor("totalElevationGain", {
+    cell: (info) => {
+      const value = info.getValue();
+      return value === 0 ? "" : `${Math.round(value)} m`;
+    },
+    header: () => <span>Elevation</span>,
+    sortingFn: "basic",
+    size: 1,
+  }),
   columnHelper.accessor("movingTime", {
     cell: (info) => formatDuration(info.getValue()),
     header: () => <span>Moving Time</span>,

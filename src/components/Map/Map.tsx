@@ -1,7 +1,13 @@
 import * as React from "react";
 
 import "leaflet/dist/leaflet.css";
-import { MapContainer, Polyline, TileLayer, useMap } from "react-leaflet";
+import {
+  CircleMarker,
+  MapContainer,
+  Polyline,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
 
 import { useExplorerTilesToggle } from "~/hooks/useExplorerTilesToggle";
 import { decode } from "~/utils/polyline";
@@ -38,17 +44,20 @@ function FitBounds(props: FitBoundsProps) {
 }
 
 export default function Map(props: MapProps) {
-  const { activities } = props;
+  const { activities, enableExplorerTiles = false, highlightPosition, routePositions } = props;
   const { showExplorerTiles } = useExplorerTilesToggle();
 
   const polylines = React.useMemo(() => {
+    if (routePositions) {
+      return [{ id: "latlng", polyline: routePositions }];
+    }
     return (activities ?? [])
       .map((activity) => {
         if (!activity?.mapPolyline) return null;
         return { id: String(activity.id), polyline: decode(activity.mapPolyline) };
       })
       .filter((activity) => !!activity);
-  }, [activities]);
+  }, [activities, routePositions]);
 
   return (
     <div className="relative h-full w-full">
@@ -58,10 +67,12 @@ export default function Map(props: MapProps) {
         className="z-0 h-full w-full"
       >
         <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
-        <ExplorerTilesLayer
-          activities={activities}
-          visible={showExplorerTiles}
-        />
+        {enableExplorerTiles && (
+          <ExplorerTilesLayer
+            activities={activities}
+            visible={showExplorerTiles}
+          />
+        )}
         {polylines?.map((activity) => (
           <Polyline
             key={activity.id}
@@ -69,16 +80,33 @@ export default function Map(props: MapProps) {
             color="red"
           />
         ))}
+        {highlightPosition && (
+          <CircleMarker
+            center={highlightPosition}
+            radius={6}
+            pathOptions={{
+              color: "white",
+              fillColor: "#3b82f6",
+              fillOpacity: 1,
+              weight: 2,
+            }}
+          />
+        )}
         <FitBounds polylines={polylines} />
       </MapContainer>
-      <ExplorerTilesStats
-        activities={activities}
-        visible={showExplorerTiles}
-      />
+      {enableExplorerTiles && (
+        <ExplorerTilesStats
+          activities={activities}
+          visible={showExplorerTiles}
+        />
+      )}
     </div>
   );
 }
 
 interface MapProps {
   activities: Activity[] | null;
+  enableExplorerTiles?: boolean;
+  highlightPosition?: [number, number] | null;
+  routePositions?: [number, number][] | null;
 }

@@ -2,46 +2,65 @@ import * as React from "react";
 
 import { BarChartPro } from "@mui/x-charts-pro";
 
+import { Button } from "~/components/ui/button";
 import { useAthleteId } from "~/hooks/useAthleteId";
 import { useEddingtonData } from "~/hooks/useEddingtonData";
 import { trpc } from "~/utils/trpc";
 
 import { ChartThemeProvider } from "../ChartThemeProvider";
 
-interface EddingtonChartProps {
-  title: string;
-  activityTypes: string[];
-  /** Meters per unit. 1000 for km steps, 100 for 100m steps. */
-  distanceDivisor: number;
-  /** Label for the x-axis unit, e.g. "km" or "x 100m" */
-  unitLabel: string;
-}
+const TABS = [
+  { label: "Riding", activityTypes: ["Ride", "VirtualRide"] },
+  { label: "Running", activityTypes: ["Run"] },
+] as const;
+
+const DISTANCE_DIVISOR = 1000;
+const UNIT_LABEL = "km";
 
 const DEFAULT_COLOR = "#818cf8"; // indigo-400
 const HIGHLIGHT_COLOR = "#f97316"; // orange-500
 
-export default function EddingtonChart({
-  title,
-  activityTypes,
-  distanceDivisor,
-  unitLabel,
-}: EddingtonChartProps) {
+export default function EddingtonChart() {
+  const [activeTab, setActiveTab] = React.useState(0);
   const athleteId = useAthleteId();
 
+  const tab = TABS[activeTab];
+
   const { data } = trpc.activities.list.useQuery(
-    { athleteId: athleteId!, activityTypes },
+    { athleteId: athleteId!, activityTypes: [...tab.activityTypes] },
     { enabled: athleteId != null },
   );
 
-  const eddington = useEddingtonData(data?.activities, distanceDivisor);
+  const eddington = useEddingtonData(data?.activities, DISTANCE_DIVISOR);
+
+  const header = (
+    <div className="flex items-center gap-2 border-b border-border p-4">
+      <h3 className="text-sm font-medium">Eddington Number</h3>
+      {eddington && eddington.eddingtonNumber > 0 && (
+        <span className="rounded bg-orange-500/20 px-2 py-0.5 text-xs font-semibold text-orange-400">
+          E = {eddington.eddingtonNumber}
+        </span>
+      )}
+      <div className="ml-auto flex gap-1">
+        {TABS.map((t, i) => (
+          <Button
+            key={t.label}
+            variant={i === activeTab ? "default" : "ghost"}
+            size="xs"
+            onClick={() => setActiveTab(i)}
+          >
+            {t.label}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
 
   if (!eddington || eddington.data.length === 0) {
     return (
       <ChartThemeProvider>
         <div className="flex h-96 w-full flex-col rounded-md bg-secondary">
-          <div className="flex items-center gap-2 border-b border-border p-4">
-            <h3 className="text-sm font-medium">{title}</h3>
-          </div>
+          {header}
           <div className="flex flex-1 items-center justify-center text-muted-foreground">
             No data available
           </div>
@@ -61,12 +80,7 @@ export default function EddingtonChart({
   return (
     <ChartThemeProvider>
       <div className="flex h-96 w-full flex-col rounded-md bg-secondary">
-        <div className="flex items-center gap-2 border-b border-border p-4">
-          <h3 className="text-sm font-medium">{title}</h3>
-          <span className="rounded bg-orange-500/20 px-2 py-0.5 text-xs font-semibold text-orange-400">
-            E = {eddington.eddingtonNumber}
-          </span>
-        </div>
+        {header}
         <div className="flex-1">
           <BarChartPro
             xAxis={[
@@ -74,7 +88,7 @@ export default function EddingtonChart({
                 id: "distance",
                 scaleType: "band",
                 data: xAxisData,
-                label: unitLabel,
+                label: UNIT_LABEL,
                 valueFormatter: (value: number) => `${value}`,
                 colorMap: {
                   type: "ordinal",

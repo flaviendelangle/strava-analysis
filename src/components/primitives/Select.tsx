@@ -17,7 +17,12 @@ export function Select<TValue extends string = string>(
       onValueChange={onValueChange ? (v) => { if (v !== null) onValueChange(v); } : undefined}
     >
       <SelectTrigger className="min-w-36">
-        <SelectValue placeholder={options[0]?.label} />
+        <SelectValue placeholder={options[0]?.label}>
+          {(value: string | null) => {
+            if (value == null) return options[0]?.label;
+            return options.find((o) => o.value === value)?.label ?? value;
+          }}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {options.map((option) => (

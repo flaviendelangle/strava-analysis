@@ -2,6 +2,7 @@ import * as React from "react";
 
 import {
   AlertCircleIcon,
+  CalculatorIcon,
   CheckCircle2Icon,
   Loader2,
   RefreshCwIcon,
@@ -126,7 +127,9 @@ export function SyncPanel() {
     },
   );
   const startSync = trpc.sync.start.useMutation();
+  const recomputeScores = trpc.riderSettings.recomputeScores.useMutation();
   const utils = trpc.useUtils();
+  const [recomputing, setRecomputing] = React.useState(false);
 
   const wasSyncingRef = React.useRef(false);
 
@@ -207,6 +210,36 @@ export function SyncPanel() {
                 })}
               </span>
             )}
+
+            <div className="border-border border-t" />
+
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full gap-1.5"
+              disabled={recomputing}
+              onClick={async () => {
+                if (!athleteId) return;
+                setRecomputing(true);
+                try {
+                  await recomputeScores.mutateAsync({ athleteId });
+                  utils.activities.list.invalidate();
+                  utils.activities.get.invalidate();
+                } finally {
+                  setRecomputing(false);
+                }
+              }}
+            >
+              {recomputing ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <CalculatorIcon className="size-3.5" />
+              )}
+              Recompute all scores
+            </Button>
+            <span className="text-muted-foreground text-xs">
+              Recalculate scores using current settings
+            </span>
           </div>
         )}
       </PopoverContent>

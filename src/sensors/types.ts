@@ -138,3 +138,19 @@ export function getPowerZoneColor(power: number, ftp: number): string {
   }
   return POWER_ZONES[POWER_ZONES.length - 1].color;
 }
+
+export function getPowerZoneName(power: number, ftp: number): string {
+  const pct = power / ftp;
+  for (const zone of POWER_ZONES) {
+    if (pct < zone.maxPct) return zone.name;
+  }
+  return POWER_ZONES[POWER_ZONES.length - 1].name;
+}
+
+export function getPowerZoneIndex(power: number, ftp: number): number {
+  const pct = power / ftp;
+  for (let i = 0; i < POWER_ZONES.length; i++) {
+    if (pct < POWER_ZONES[i].maxPct) return i;
+  }
+  return POWER_ZONES.length - 1;
+}

@@ -103,6 +103,27 @@ export function NavBar() {
               href="/training"
             />
           </TooltipIfMenuCollapsed>
+          <TooltipIfMenuCollapsed label="Training HUD">
+            <NavBarLink
+              label="Training HUD"
+              svgPath="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2m0 16H3V5h18zM5 15h14v-2H5zm0-4h14V9H5z"
+              href="/training-1"
+            />
+          </TooltipIfMenuCollapsed>
+          <TooltipIfMenuCollapsed label="Training Cockpit">
+            <NavBarLink
+              label="Training Cockpit"
+              svgPath="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3z"
+              href="/training-2"
+            />
+          </TooltipIfMenuCollapsed>
+          <TooltipIfMenuCollapsed label="Training Cards">
+            <NavBarLink
+              label="Training Cards"
+              svgPath="M4 5h16v2H4zm0 4h16v2H4zm0 4h16v2H4zm0 4h16v2H4z"
+              href="/training-3"
+            />
+          </TooltipIfMenuCollapsed>
         </div>
         <div className="flex flex-col justify-start">
           <TooltipIfMenuCollapsed label="Settings">

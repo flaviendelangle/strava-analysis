@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import strava from "strava-v3";
 import { z } from "zod";
 
@@ -22,6 +22,7 @@ const USABLE_TYPES = new Set([
   "velocity_smooth",
   "altitude",
   "distance",
+  "latlng",
 ]);
 
 export const activityStreamsRouter = router({
@@ -29,7 +30,10 @@ export const activityStreamsRouter = router({
     .input(z.object({ stravaId: z.number() }))
     .query(async ({ ctx, input }) => {
       const activity = await ctx.db.query.activities.findFirst({
-        where: eq(activities.stravaId, input.stravaId),
+        where: and(
+          eq(activities.stravaId, input.stravaId),
+          eq(activities.athlete, ctx.session.athleteId),
+        ),
       });
 
       if (!activity) {

@@ -14,6 +14,9 @@ const routerSchema = { activityId: "string" as const };
 
 const ActivityPage: NextPageWithLayout = () => {
   const params = useTypedParams(routerSchema);
+  const [hoverPosition, setHoverPosition] = React.useState<
+    [number, number] | null
+  >(null);
 
   const stravaId = params?.activityId ? Number(params.activityId) : undefined;
 
@@ -22,9 +25,21 @@ const ActivityPage: NextPageWithLayout = () => {
     { enabled: stravaId != null },
   );
 
+  const { data: streamsData } = trpc.activityStreams.getStreams.useQuery(
+    { stravaId: stravaId! },
+    { enabled: stravaId != null },
+  );
+
+  const latlngRoute = React.useMemo(() => {
+    if (!streamsData) return null;
+    const stream = streamsData.find((s) => s.type === "latlng");
+    if (!stream) return null;
+    return JSON.parse(stream.data) as [number, number][];
+  }, [streamsData]);
+
   return (
     <div className="flex h-full w-full flex-col">
-      <nav className="flex items-center justify-between border-b border-border bg-background p-4 text-foreground">
+      <nav className="border-border bg-background text-foreground flex items-center justify-between border-b p-4">
         <div className="flex items-center gap-3">
           <span className="text-lg font-semibold">
             {activity?.name ?? "Loading..."}
@@ -63,15 +78,23 @@ const ActivityPage: NextPageWithLayout = () => {
 
               {activity.mapPolyline && (
                 <div className="h-96 w-full overflow-hidden rounded-lg lg:h-auto lg:min-h-96 lg:flex-1">
-                  <ActivityMap activity={activity} />
+                  <ActivityMap
+                    activity={activity}
+                    highlightPosition={hoverPosition}
+                    routePositions={latlngRoute}
+                  />
                 </div>
               )}
             </div>
 
-            <ActivityStreams stravaId={activity.stravaId} />
-            {activity.averageWatts != null && (activity.type === "Ride" || activity.type === "VirtualRide") && (
-              <PowerCurve stravaId={activity.stravaId} />
-            )}
+            <ActivityStreams
+              stravaId={activity.stravaId}
+              onHoverPositionChange={setHoverPosition}
+            />
+            {activity.averageWatts != null &&
+              (activity.type === "Ride" || activity.type === "VirtualRide") && (
+                <PowerCurve stravaId={activity.stravaId} />
+              )}
           </React.Fragment>
         )}
       </div>

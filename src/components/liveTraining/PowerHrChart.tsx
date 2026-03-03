@@ -27,6 +27,11 @@ export function PowerHrChart(props: PowerHrChartProps) {
 
   const points = showAll ? dataPoints : dataPoints.slice(-WINDOW_SECONDS);
 
+  // MUI X Charts crashes when band-axis data is empty — bail out early.
+  if (points.length === 0) {
+    return null;
+  }
+
   const xLabels = React.useMemo(() => {
     const totalPoints = points.length;
     return points.map((_, i) => {

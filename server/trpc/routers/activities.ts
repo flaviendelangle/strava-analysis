@@ -63,7 +63,10 @@ export const activitiesRouter = router({
     .query(async ({ ctx, input }) => {
       return (
         (await ctx.db.query.activities.findFirst({
-          where: eq(activities.stravaId, input.stravaId),
+          where: and(
+            eq(activities.stravaId, input.stravaId),
+            eq(activities.athlete, ctx.session.athleteId),
+          ),
         })) ?? null
       );
     }),

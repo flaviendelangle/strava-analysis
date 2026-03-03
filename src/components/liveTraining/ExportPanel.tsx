@@ -13,10 +13,11 @@ const UPLOAD_POLL_INTERVAL_MS = 2_000;
 interface ExportPanelProps {
   dataPoints: SessionDataPoint[];
   summary: SessionSummary;
+  activityName?: string;
 }
 
 export function ExportPanel(props: ExportPanelProps) {
-  const { dataPoints, summary } = props;
+  const { dataPoints, summary, activityName } = props;
   const athleteId = useAthleteId();
   const uploadAction = trpc.upload.uploadToStrava.useMutation();
   const checkStatusAction = trpc.upload.checkUploadStatus.useMutation();
@@ -47,7 +48,7 @@ export function ExportPanel(props: ExportPanelProps) {
       }
       const base64 = btoa(binary);
 
-      const name = `Indoor Training ${summary.startTime.toLocaleDateString()}`;
+      const name = activityName || `Indoor Training ${summary.startTime.toLocaleDateString()}`;
 
       const result = await uploadAction.mutateAsync({
         athleteId,

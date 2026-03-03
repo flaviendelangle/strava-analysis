@@ -44,7 +44,7 @@ export default function ActivitiesTimeline() {
     });
 
     return Array.from(activityTypes).map((activityType) => ({
-      label: `${metricConfig.label} - ${activityType}`,
+      label: activityType,
       data: groupedActivities.map((group) =>
         group.activities.reduce((acc, activity) => {
           if (activity.type === activityType) {
@@ -60,7 +60,8 @@ export default function ActivitiesTimeline() {
   return (
     <ChartThemeProvider>
       <div className="flex h-96 w-full flex-col rounded-md bg-secondary">
-        <div className="flex gap-4 border-b border-border p-4">
+        <div className="flex items-center gap-4 border-b border-border p-4">
+          <h3 className="text-sm font-medium">Activities Timeline</h3>
           <MetricSelect value={metric} onValueChange={setMetric} />
           <PrecisionSelect value={precision} onValueChange={setPrecision} />
         </div>

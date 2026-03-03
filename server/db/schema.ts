@@ -30,6 +30,8 @@ export const athletes = pgTable(
     id: serial("id").primaryKey(),
     stravaAthleteId: bigint("strava_athlete_id", { mode: "number" }).notNull(),
     accessToken: text("access_token").notNull(),
+    refreshToken: text("refresh_token").notNull().default(""),
+    tokenExpiresAt: integer("token_expires_at").notNull().default(0),
     name: text("name"),
   },
   (t) => [uniqueIndex("athletes_strava_id_idx").on(t.stravaAthleteId)],

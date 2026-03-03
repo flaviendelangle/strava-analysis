@@ -2,8 +2,15 @@ import * as React from "react";
 
 import { format, subDays } from "date-fns";
 import { X } from "lucide-react";
+import Link from "next/link";
 
-import { LineChart } from "@mui/x-charts-pro";
+import {
+  useAxesTooltip,
+  useMouseTracker,
+  useDrawingArea,
+  useSvgRef,
+  LineChart,
+} from "@mui/x-charts-pro";
 
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
@@ -100,6 +107,85 @@ function formatDuration(seconds: number): string {
   return secs === 0
     ? `${mins}min`
     : `${mins}m${secs.toString().padStart(2, "0")}s`;
+}
+
+interface ActivityInfo {
+  activityStravaId: number;
+  activityName: string;
+}
+
+// seriesId → (ActivityInfo | null)[] indexed by dataIndex
+type ActivityMetadataMap = Record<string, (ActivityInfo | null)[]>;
+
+const ActivityMetadataContext = React.createContext<ActivityMetadataMap>({});
+
+function PowerCurveTooltip() {
+  const tooltipData = useAxesTooltip();
+  const activityMetadata = React.useContext(ActivityMetadataContext);
+  const mousePosition = useMouseTracker();
+  const drawingArea = useDrawingArea();
+  const svgRef = useSvgRef();
+
+  const [svgTop, setSvgTop] = React.useState(0);
+  React.useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    setSvgTop(svg.getBoundingClientRect().top);
+  }, [svgRef, mousePosition]);
+
+  if (!tooltipData || !mousePosition) return null;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        left: mousePosition.x,
+        top: svgTop + drawingArea.top,
+        transform: "translateX(-50%)",
+        pointerEvents: "none",
+        zIndex: 1,
+      }}
+    >
+      <div
+        className="bg-popover text-popover-foreground border-border rounded-md border px-3 py-2 shadow-md"
+        style={{ pointerEvents: "auto" }}
+      >
+        {tooltipData.map(({ axisId, axisFormattedValue, dataIndex, seriesItems, mainAxis }) => (
+          <div key={axisId}>
+            {!mainAxis.hideTooltip && (
+              <p className="text-muted-foreground mb-1 text-xs">
+                {axisFormattedValue}
+              </p>
+            )}
+            <div className="flex flex-col gap-1">
+              {seriesItems.map(({ seriesId, color, formattedValue, formattedLabel }) => {
+                if (formattedValue == null) return null;
+                const activity = activityMetadata[seriesId]?.[dataIndex] ?? null;
+                return (
+                  <div key={seriesId} className="flex items-center gap-2 text-sm whitespace-nowrap">
+                    <span
+                      className="inline-block size-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span>{formattedLabel}</span>
+                    <span className="font-medium">{formattedValue}</span>
+                    {activity && (
+                      <Link
+                        href={`/activities/${activity.activityStravaId}`}
+                        className="text-muted-foreground hover:text-foreground text-xs underline"
+                      >
+                        {activity.activityName}
+                      </Link>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 let customCounter = 0;
@@ -209,7 +295,7 @@ function AggregatedPowerCurve({ activityTypes }: { activityTypes?: string[] }) {
   );
 
   // Build multi-series chart data
-  const { xData, series } = React.useMemo(() => {
+  const { xData, series, activityMetadata } = React.useMemo(() => {
     const allResults = queries.map((q) => q.data ?? []);
 
     // Union of all durations
@@ -222,13 +308,40 @@ function AggregatedPowerCurve({ activityTypes }: { activityTypes?: string[] }) {
     const durations = [...durationSet].sort((a, b) => a - b);
 
     if (durations.length === 0) {
-      return { xData: [] as number[], series: [] as any[] };
+      return {
+        xData: [] as number[],
+        series: [] as any[],
+        activityMetadata: {} as ActivityMetadataMap,
+      };
     }
 
+    const metadata: ActivityMetadataMap = {};
+
     const chartSeries = allResults.map((data, i) => {
-      const byDuration = new Map(data.map((d) => [d.duration, d.watts]));
+      const seriesId = `range-${i}`;
+      const byDuration = new Map(
+        data.map((d) => [
+          d.duration,
+          {
+            watts: d.watts,
+            activityStravaId: d.activityStravaId,
+            activityName: d.activityName,
+          },
+        ]),
+      );
+
+      metadata[seriesId] = durations.map((d) => {
+        const entry = byDuration.get(d);
+        if (!entry) return null;
+        return {
+          activityStravaId: entry.activityStravaId,
+          activityName: entry.activityName,
+        };
+      });
+
       return {
-        data: durations.map((d) => byDuration.get(d) ?? null),
+        id: seriesId,
+        data: durations.map((d) => byDuration.get(d)?.watts ?? null),
         label: ranges[i]?.label ?? `Range ${i + 1}`,
         color: RANGE_COLORS[i % RANGE_COLORS.length],
         showMark: false,
@@ -236,7 +349,7 @@ function AggregatedPowerCurve({ activityTypes }: { activityTypes?: string[] }) {
       };
     });
 
-    return { xData: durations, series: chartSeries };
+    return { xData: durations, series: chartSeries, activityMetadata: metadata };
   }, [queries, ranges]);
 
   if (xData.length === 0) {
@@ -271,24 +384,27 @@ function AggregatedPowerCurve({ activityTypes }: { activityTypes?: string[] }) {
           activityTypes={activityTypes}
         />
         <div className="flex-1">
-          <LineChart
-            xAxis={[
-              {
-                scaleType: "log",
-                data: xData,
-                valueFormatter: (value: number) => formatDuration(value),
-                label: "Duration",
-              },
-            ]}
-            yAxis={[
-              {
-                label: "Watts",
-                valueFormatter: (value: number) => `${Math.round(value)} W`,
-              },
-            ]}
-            series={series}
-            margin={{ left: 72, right: 24 }}
-          />
+          <ActivityMetadataContext.Provider value={activityMetadata}>
+            <LineChart
+              xAxis={[
+                {
+                  scaleType: "log",
+                  data: xData,
+                  valueFormatter: (value: number) => formatDuration(value),
+                  label: "Duration",
+                },
+              ]}
+              yAxis={[
+                {
+                  label: "Watts",
+                  valueFormatter: (value: number) => `${Math.round(value)} W`,
+                },
+              ]}
+              series={series}
+              margin={{ left: 72, right: 24 }}
+              slots={{ tooltip: PowerCurveTooltip }}
+            />
+          </ActivityMetadataContext.Provider>
         </div>
       </div>
     </ChartThemeProvider>
@@ -344,7 +460,7 @@ function RangeChip({
   onRemove: () => void;
 }) {
   return (
-    <span className="border-border bg-background inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs">
+    <span className="bg-muted text-muted-foreground inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs">
       <span
         className="inline-block size-2 rounded-full"
         style={{ backgroundColor: color }}
@@ -353,7 +469,7 @@ function RangeChip({
       <button
         type="button"
         onClick={onRemove}
-        className="ml-0.5 rounded-sm opacity-60 hover:opacity-100"
+        className="hover:bg-foreground/10 rounded-full p-0.5"
       >
         <X className="size-3" />
       </button>
@@ -387,7 +503,7 @@ function PresetSelect({
         }
       }}
     >
-      <SelectTrigger className="h-7 min-w-28 text-xs">
+      <SelectTrigger className="h-7 min-w-28 border-dashed text-xs text-muted-foreground">
         <SelectValue placeholder="Add range…" />
       </SelectTrigger>
       <SelectContent>
@@ -434,7 +550,7 @@ function CustomRangePopover({ onAdd }: { onAdd: (range: DateRange) => void }) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         render={
-          <Button variant="ghost" size="xs">
+          <Button variant="outline" size="xs" className="border-dashed text-muted-foreground">
             Custom range…
           </Button>
         }
@@ -447,7 +563,7 @@ function CustomRangePopover({ onAdd }: { onAdd: (range: DateRange) => void }) {
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="border-border bg-background h-8 rounded-md border px-2 text-sm"
+              className="border-input bg-input/30 h-8 rounded-md border px-2 text-sm"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -456,7 +572,7 @@ function CustomRangePopover({ onAdd }: { onAdd: (range: DateRange) => void }) {
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="border-border bg-background h-8 rounded-md border px-2 text-sm"
+              className="border-input bg-input/30 h-8 rounded-md border px-2 text-sm"
             />
           </div>
           <Button size="sm" onClick={handleAdd} disabled={!from || !to}>
