@@ -1,11 +1,11 @@
-import { Doc } from "../../convex/_generated/dataModel";
+import type { Activity } from "@server/db/types";
 import { StatCard } from "~/components/primitives/StatCard";
 import { useRiderSettingsTimeline } from "~/hooks/useRiderSettings";
 import { formatHumanDuration } from "~/utils/format";
 import { getSportConfig } from "~/utils/sportConfig";
 
 interface ActivityStatsProps {
-  activity: Doc<"activities">;
+  activity: Activity;
 }
 
 export function ActivityStats({ activity }: ActivityStatsProps) {

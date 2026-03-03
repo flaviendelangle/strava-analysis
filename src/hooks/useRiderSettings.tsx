@@ -1,8 +1,5 @@
 import * as React from "react";
 
-import { useMutation, useQuery } from "convex/react";
-
-import { api } from "../../convex/_generated/api";
 import { useAthleteId } from "~/hooks/useAthleteId";
 import {
   DEFAULT_RIDER_SETTINGS,
@@ -14,6 +11,7 @@ import {
   resolveCurrentRiderSettings,
   resolveRiderSettings,
 } from "~/utils/resolveRiderSettings";
+import { trpc } from "~/utils/trpc";
 
 interface RiderSettingsContextValue {
   timeline: RiderSettingsTimeline;
@@ -36,26 +34,30 @@ export function RiderSettingsProvider({
   children: React.ReactNode;
 }) {
   const athleteId = useAthleteId();
-  const stored = useQuery(
-    api.queries.getRiderSettings,
-    athleteId != null ? { athleteId } : "skip",
+  const { data: stored } = trpc.riderSettings.get.useQuery(
+    { athleteId: athleteId! },
+    { enabled: athleteId != null },
   );
-  const saveSettings = useMutation(api.mutations.saveRiderSettings);
+  const saveSettings = trpc.riderSettings.save.useMutation();
 
-  const timeline: RiderSettingsTimeline = stored
-    ? {
-        cdA: stored.cdA,
-        crr: stored.crr,
-        bikeWeightKg: stored.bikeWeightKg ?? DEFAULT_RIDER_SETTINGS_TIMELINE.bikeWeightKg,
-        initialValues: stored.initialValues,
-        changes: stored.changes,
-      }
-    : DEFAULT_RIDER_SETTINGS_TIMELINE;
+  const timeline: RiderSettingsTimeline = React.useMemo(
+    () =>
+      stored
+        ? {
+            cdA: stored.cdA,
+            crr: stored.crr,
+            bikeWeightKg: stored.bikeWeightKg ?? DEFAULT_RIDER_SETTINGS_TIMELINE.bikeWeightKg,
+            initialValues: stored.initialValues,
+            changes: stored.changes,
+          }
+        : DEFAULT_RIDER_SETTINGS_TIMELINE,
+    [stored],
+  );
 
   const setTimeline = React.useCallback(
     (newTimeline: RiderSettingsTimeline) => {
       if (athleteId == null) return;
-      saveSettings({
+      saveSettings.mutate({
         athleteId,
         cdA: newTimeline.cdA,
         crr: newTimeline.crr,

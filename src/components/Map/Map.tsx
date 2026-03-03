@@ -6,7 +6,7 @@ import { MapContainer, Polyline, TileLayer, useMap } from "react-leaflet";
 import { useExplorerTilesToggle } from "~/hooks/useExplorerTilesToggle";
 import { decode } from "~/utils/polyline";
 
-import { Doc } from "../../../convex/_generated/dataModel";
+import type { Activity } from "@server/db/types";
 import { ExplorerTilesLayer } from "./ExplorerTilesLayer";
 import { ExplorerTilesStats } from "./ExplorerTilesStats";
 
@@ -45,7 +45,7 @@ export default function Map(props: MapProps) {
     return (activities ?? [])
       .map((activity) => {
         if (!activity?.mapPolyline) return null;
-        return { id: activity._id, polyline: decode(activity.mapPolyline) };
+        return { id: String(activity.id), polyline: decode(activity.mapPolyline) };
       })
       .filter((activity) => !!activity);
   }, [activities]);
@@ -80,5 +80,5 @@ export default function Map(props: MapProps) {
 }
 
 interface MapProps {
-  activities: Doc<"activities">[] | null;
+  activities: Activity[] | null;
 }

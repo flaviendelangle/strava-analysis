@@ -1,19 +1,21 @@
-import { useQuery } from "convex/react";
 import { useCookies } from "react-cookie";
 
-import { api } from "../../convex/_generated/api";
+import { trpc } from "~/utils/trpc";
+
 import { useAthleteId } from "./useAthleteId";
 
 export function useActivitiesWithMapQuery() {
   const [state] = useCookies(["activity-type"]);
   const athleteId = useAthleteId();
 
-  const result = useQuery(
-    api.queries.listActivities,
-    athleteId != null
-      ? { athleteId, activityTypes: state["activity-type"], includeMap: true }
-      : "skip",
+  const result = trpc.activities.list.useQuery(
+    {
+      athleteId: athleteId!,
+      activityTypes: state["activity-type"],
+      includeMap: true,
+    },
+    { enabled: athleteId != null },
   );
 
-  return { data: result?.activities, isLoading: result === undefined };
+  return { data: result.data?.activities, isLoading: result.isLoading };
 }

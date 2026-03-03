@@ -4,10 +4,10 @@ import { isAfter } from "date-fns";
 
 import { isSameUnit } from "~/utils/dateUtils";
 
-import { Doc } from "../../convex/_generated/dataModel";
+import type { Activity } from "@server/db/types";
 import { SlicePrecision } from "./useTimeSlices";
 
-type ActivityWithoutMap = Omit<Doc<"activities">, "mapPolyline">;
+type ActivityWithoutMap = Omit<Activity, "mapPolyline">;
 
 export const useGroupActivitiesByTimeSlice = ({
   slices,

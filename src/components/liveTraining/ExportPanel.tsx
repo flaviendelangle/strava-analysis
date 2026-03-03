@@ -1,12 +1,14 @@
 import { useState } from "react";
 
-import { useAction } from "convex/react";
-
 import { useAthleteId } from "~/hooks/useAthleteId";
 import type { SessionDataPoint, SessionSummary } from "~/sensors/types";
 import { downloadFitFile, generateFitFile } from "~/utils/fitFileGenerator";
+import { trpc } from "~/utils/trpc";
 
-import { api } from "../../../convex/_generated/api";
+/** Maximum number of polling attempts when waiting for Strava to process the upload. */
+const MAX_UPLOAD_POLL_ATTEMPTS = 30;
+/** Interval between upload status checks (ms). */
+const UPLOAD_POLL_INTERVAL_MS = 2_000;
 
 interface ExportPanelProps {
   dataPoints: SessionDataPoint[];
@@ -16,8 +18,8 @@ interface ExportPanelProps {
 export function ExportPanel(props: ExportPanelProps) {
   const { dataPoints, summary } = props;
   const athleteId = useAthleteId();
-  const uploadAction = useAction(api.stravaUpload.uploadToStrava);
-  const checkStatusAction = useAction(api.stravaUpload.checkUploadStatus);
+  const uploadAction = trpc.upload.uploadToStrava.useMutation();
+  const checkStatusAction = trpc.upload.checkUploadStatus.useMutation();
 
   const [uploadState, setUploadState] = useState<
     "idle" | "uploading" | "processing" | "success" | "error"
@@ -40,14 +42,14 @@ export function ExportPanel(props: ExportPanelProps) {
       const buffer = generateFitFile(dataPoints, summary);
       const bytes = new Uint8Array(buffer);
       let binary = "";
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
+      for (const byte of bytes) {
+        binary += String.fromCharCode(byte);
       }
       const base64 = btoa(binary);
 
       const name = `Indoor Training ${summary.startTime.toLocaleDateString()}`;
 
-      const result = await uploadAction({
+      const result = await uploadAction.mutateAsync({
         athleteId,
         fitFileBase64: base64,
         name,
@@ -58,9 +60,9 @@ export function ExportPanel(props: ExportPanelProps) {
       // Poll for completion
       const uploadId = result.uploadId;
       let attempts = 0;
-      while (attempts < 30) {
-        await new Promise((r) => setTimeout(r, 2000));
-        const status = await checkStatusAction({ athleteId, uploadId });
+      while (attempts < MAX_UPLOAD_POLL_ATTEMPTS) {
+        await new Promise((r) => setTimeout(r, UPLOAD_POLL_INTERVAL_MS));
+        const status = await checkStatusAction.mutateAsync({ athleteId, uploadId });
 
         if (status.activityId) {
           setActivityId(status.activityId);

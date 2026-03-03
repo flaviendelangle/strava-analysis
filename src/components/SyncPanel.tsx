@@ -1,6 +1,5 @@
 import * as React from "react";
 
-import { useMutation, useQuery } from "convex/react";
 import {
   AlertCircleIcon,
   CheckCircle2Icon,
@@ -9,9 +8,13 @@ import {
 } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 import { useAthleteId } from "~/hooks/useAthleteId";
-
-import { api } from "../../convex/_generated/api";
+import { trpc } from "~/utils/trpc";
 
 function ProgressBar(props: { value: number; max: number }) {
   const pct = props.max > 0 ? Math.round((props.value / props.max) * 100) : 0;
@@ -43,7 +46,7 @@ function SyncProgress(props: {
   const { syncJob } = props;
 
   return (
-    <div className="border-border bg-card flex flex-col gap-2 rounded-md border p-3 text-sm">
+    <div className="flex flex-col gap-2">
       <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
         <Loader2 className="size-3 animate-spin" />
         Syncing Strava data...
@@ -105,54 +108,108 @@ function SyncProgress(props: {
 
 export function SyncPanel() {
   const athleteId = useAthleteId();
-  const syncJob = useQuery(
-    api.queries.getSyncJob,
-    athleteId != null ? { athleteId } : "skip",
+  const { data: syncJob } = trpc.sync.getJob.useQuery(
+    { athleteId: athleteId! },
+    {
+      enabled: athleteId != null,
+      refetchInterval: (query) => {
+        const data = query.state.data;
+        if (
+          data &&
+          data.status !== "completed" &&
+          data.status !== "failed"
+        ) {
+          return 3000;
+        }
+        return false;
+      },
+    },
   );
-  const startSync = useMutation(api.mutations.startSync);
+  const startSync = trpc.sync.start.useMutation();
+  const utils = trpc.useUtils();
+
+  const wasSyncingRef = React.useRef(false);
 
   const isInProgress =
     syncJob != null &&
     syncJob.status !== "completed" &&
     syncJob.status !== "failed";
 
-  if (isInProgress) {
-    return <SyncProgress syncJob={syncJob} />;
-  }
+  React.useEffect(() => {
+    if (isInProgress) {
+      wasSyncingRef.current = true;
+      utils.activities.list.invalidate();
+    } else if (wasSyncingRef.current) {
+      wasSyncingRef.current = false;
+      utils.activities.list.invalidate();
+      utils.activities.get.invalidate();
+    }
+  }, [syncJob, isInProgress, utils]);
 
   return (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="text-muted-foreground gap-1.5"
-        onClick={async () => {
-          if (!athleteId) return;
-          await startSync({ athleteId });
-        }}
-      >
-        <RefreshCwIcon className="size-3.5" />
-        <span>Sync all data</span>
-      </Button>
+    <Popover>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground gap-1.5"
+          >
+            {isInProgress ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <RefreshCwIcon className="size-3.5" />
+            )}
+            <span>Sync</span>
+            {isInProgress && (
+              <span className="bg-primary/20 text-primary-foreground size-1.5 rounded-full" />
+            )}
+            {syncJob?.status === "failed" && (
+              <span className="size-1.5 rounded-full bg-red-500" />
+            )}
+          </Button>
+        }
+      />
+      <PopoverContent align="end" className="w-64 p-3">
+        {isInProgress ? (
+          <SyncProgress syncJob={syncJob} />
+        ) : (
+          <div className="flex flex-col gap-3">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full gap-1.5"
+              onClick={async () => {
+                if (!athleteId) return;
+                await startSync.mutateAsync({ athleteId });
+                utils.sync.getJob.invalidate();
+              }}
+            >
+              <RefreshCwIcon className="size-3.5" />
+              Sync all data
+            </Button>
 
-      {syncJob?.status === "failed" && syncJob.lastError && (
-        <div className="flex items-center gap-1.5 text-xs text-red-400">
-          <AlertCircleIcon className="size-3.5" />
-          <span>Last sync failed</span>
-        </div>
-      )}
+            {syncJob?.status === "failed" && syncJob.lastError && (
+              <div className="flex items-center gap-1.5 text-xs text-red-400">
+                <AlertCircleIcon className="size-3.5 shrink-0" />
+                <span>Last sync failed</span>
+              </div>
+            )}
 
-      {syncJob?.status === "completed" && (
-        <span className="text-muted-foreground text-xs">
-          Last synced:{" "}
-          {new Date(syncJob.startedAt).toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </span>
-      )}
-    </div>
+            {syncJob?.status === "completed" && (
+              <span className="text-muted-foreground text-xs">
+                Last synced:{" "}
+                {new Date(syncJob.startedAt).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            )}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }

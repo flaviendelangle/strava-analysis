@@ -1,4 +1,4 @@
-import { Doc } from "../../convex/_generated/dataModel";
+import type { Activity } from "@server/db/types";
 import { Map } from "./Map";
 
 export function ActivityMap(props: ActivityMapProps) {
@@ -8,5 +8,5 @@ export function ActivityMap(props: ActivityMapProps) {
 }
 
 interface ActivityMapProps {
-  activity: Doc<"activities"> | null | undefined;
+  activity: Activity | null | undefined;
 }

@@ -4,7 +4,7 @@ import { isAfter, isBefore } from "date-fns";
 
 import { addUnit, endOf, startOf } from "~/utils/dateUtils";
 
-import { Doc } from "../../convex/_generated/dataModel";
+import type { Activity } from "@server/db/types";
 import { useActivitiesTimeBoundaries } from "./useActivitiesTimeBoundaries";
 
 export type SlicePrecision = "year" | "quarter" | "month" | "week";
@@ -15,7 +15,7 @@ export const useTimeSlices = ({
   minDate,
 }: {
   precision: SlicePrecision;
-  activities: Omit<Doc<"activities">, "mapPolyline">[] | undefined;
+  activities: Omit<Activity, "mapPolyline">[] | undefined;
   minDate?: Date | null;
 }) => {
   const boundaries = useActivitiesTimeBoundaries(activities);

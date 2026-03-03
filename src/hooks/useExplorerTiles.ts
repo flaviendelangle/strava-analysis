@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import type { Doc } from "../../convex/_generated/dataModel";
+import type { Activity } from "@server/db/types";
 import {
   computeExplorerTiles,
   type ExplorerTilesResult,
@@ -8,7 +8,7 @@ import {
 import { decode, type LatLngTuple } from "~/utils/polyline";
 
 export function useExplorerTiles(
-  activities: Doc<"activities">[] | null,
+  activities: Activity[] | null,
 ): ExplorerTilesResult | null {
   const polylines = React.useMemo<LatLngTuple[][]>(() => {
     if (!activities) return [];

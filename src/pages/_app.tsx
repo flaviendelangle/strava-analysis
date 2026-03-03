@@ -1,6 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
 
-import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { LicenseInfo } from "@mui/x-license";
 import { CookiesProvider } from "react-cookie";
 import type { NextPage } from "next";
@@ -10,9 +9,8 @@ import type { AppProps, AppType } from "next/app";
 LicenseInfo.setLicenseKey(process.env.NEXT_PUBLIC_MUI_X_LICENSE_KEY!);
 
 import { LoggedInLayout } from "~/components/layouts/LoggedInLayout";
+import { trpc } from "~/utils/trpc";
 import "~/styles/globals.css";
-
-const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export type NextPageWithLayout<
   TProps = Record<string, unknown>,
@@ -35,12 +33,10 @@ const App = (({
   return (
     <CookiesProvider>
       <SessionProvider session={session}>
-        <ConvexProvider client={convex}>
-          {getLayout(<Component {...pageProps} />)}
-        </ConvexProvider>
+        {getLayout(<Component {...pageProps} />)}
       </SessionProvider>
     </CookiesProvider>
   );
 }) as AppType;
 
-export default App;
+export default trpc.withTRPC(App);

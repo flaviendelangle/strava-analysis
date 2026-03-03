@@ -18,20 +18,7 @@ import type {
   TimeVaryingField,
 } from "~/sensors/types";
 
-const FIELD_CONFIG: {
-  field: TimeVaryingField;
-  label: string;
-  unit: string;
-  min: number;
-  step: number;
-  smallStep?: number;
-}[] = [
-  { field: "ftp", label: "FTP", unit: "W", min: 0, step: 1 },
-  { field: "weightKg", label: "Weight", unit: "kg", min: 0, step: 1 },
-  { field: "restingHr", label: "Resting HR", unit: "bpm", min: 30, step: 1 },
-  { field: "maxHr", label: "Max HR", unit: "bpm", min: 100, step: 1 },
-  { field: "lthr", label: "LTHR", unit: "bpm", min: 60, step: 1 },
-];
+import { RIDER_FIELD_CONFIG } from "./fieldConfig";
 
 interface ChangePointDialogProps {
   open: boolean;
@@ -63,7 +50,7 @@ export function ChangePointDialog({
     () => {
       if (!existingPoint) return new Set();
       const fields = new Set<TimeVaryingField>();
-      for (const { field } of FIELD_CONFIG) {
+      for (const { field } of RIDER_FIELD_CONFIG) {
         if (existingPoint[field] !== undefined) fields.add(field);
       }
       return fields;
@@ -93,7 +80,7 @@ export function ChangePointDialog({
       id: existingPoint?.id ?? crypto.randomUUID(),
       date,
     };
-    for (const { field } of FIELD_CONFIG) {
+    for (const { field } of RIDER_FIELD_CONFIG) {
       if (enabledFields.has(field)) {
         point[field] = values[field];
       }
@@ -138,7 +125,7 @@ export function ChangePointDialog({
               />
             </div>
           )}
-          {FIELD_CONFIG.map(({ field, label, unit, min, step, smallStep }) => (
+          {RIDER_FIELD_CONFIG.map(({ field, label, unit, min, step, smallStep }) => (
             <div key={field} className="flex flex-col gap-1.5">
               {isBaseline ? (
                 <Label>

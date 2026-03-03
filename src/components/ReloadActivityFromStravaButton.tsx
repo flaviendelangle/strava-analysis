@@ -1,10 +1,8 @@
 import * as React from "react";
 
-import { useAction } from "convex/react";
-
 import { useAthleteId } from "~/hooks/useAthleteId";
+import { trpc } from "~/utils/trpc";
 
-import { api } from "../../convex/_generated/api";
 import { LoadingButton } from "./primitives/LoadingButton";
 
 export function ReloadActivityFromStravaButton(
@@ -12,7 +10,8 @@ export function ReloadActivityFromStravaButton(
 ) {
   const { stravaId } = props;
   const athleteId = useAthleteId();
-  const reloadActivity = useAction(api.actions.reloadActivity);
+  const reloadActivity = trpc.activityStreams.reload.useMutation();
+  const utils = trpc.useUtils();
   const [loading, setLoading] = React.useState(false);
 
   return (
@@ -22,7 +21,12 @@ export function ReloadActivityFromStravaButton(
         if (!athleteId) return;
         setLoading(true);
         try {
-          await reloadActivity({ stravaId, athleteId });
+          await reloadActivity.mutateAsync({ stravaId, athleteId });
+          await Promise.all([
+            utils.activities.get.invalidate({ stravaId }),
+            utils.activityStreams.getStreams.invalidate({ stravaId }),
+            utils.activities.list.invalidate(),
+          ]);
         } finally {
           setLoading(false);
         }

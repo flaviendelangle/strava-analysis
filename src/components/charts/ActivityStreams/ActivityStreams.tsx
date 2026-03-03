@@ -1,14 +1,13 @@
 import * as React from "react";
 
 import { LineChart } from "@mui/x-charts-pro";
-import { useAction, useQuery } from "convex/react";
 import { addSeconds } from "date-fns";
 
 import { Select } from "~/components/primitives/Select";
 import { useAthleteId } from "~/hooks/useAthleteId";
+import { trpc } from "~/utils/trpc";
 import { getSportConfig } from "~/utils/sportConfig";
 
-import { api } from "../../../../convex/_generated/api";
 import { ChartThemeProvider } from "../ChartThemeProvider";
 
 type XAxisMode = "time" | "distance";
@@ -55,9 +54,9 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
   const { stravaId } = props;
   const athleteId = useAthleteId();
 
-  const activity = useQuery(api.queries.getActivity, { stravaId });
-  const streamsData = useQuery(api.queries.getActivityStreams, { stravaId });
-  const fetchStreams = useAction(api.actions.fetchActivityStreams);
+  const { data: activity } = trpc.activities.get.useQuery({ stravaId });
+  const { data: streamsData } = trpc.activityStreams.getStreams.useQuery({ stravaId });
+  const fetchStreams = trpc.activityStreams.fetchStreams.useMutation();
   const [isFetching, setIsFetching] = React.useState(false);
   const [fetchError, setFetchError] = React.useState<string | null>(null);
   const hasFetched = React.useRef(false);
@@ -68,7 +67,8 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
       hasFetched.current = true;
       setIsFetching(true);
       setFetchError(null);
-      fetchStreams({ stravaId, athleteId })
+      fetchStreams
+        .mutateAsync({ stravaId, athleteId })
         .catch((err) => setFetchError(String(err)))
         .finally(() => setIsFetching(false));
     }
@@ -97,8 +97,7 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
       const yData = JSON.parse(stream.data) as number[];
       let yMin = Infinity;
       let yMax = -Infinity;
-      for (let i = 0; i < yData.length; i++) {
-        const v = yData[i];
+      for (const v of yData) {
         if (v < yMin) yMin = v;
         if (v > yMax) yMax = v;
       }

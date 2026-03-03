@@ -1,0 +1,1 @@
+CREATE INDEX "activities_athlete_streams_loaded_idx" ON "activities" USING btree ("athlete","are_streams_loaded");

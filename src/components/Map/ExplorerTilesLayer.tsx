@@ -2,7 +2,7 @@ import * as L from "leaflet";
 import * as React from "react";
 import { useMap } from "react-leaflet";
 
-import type { Doc } from "../../../convex/_generated/dataModel";
+import type { Activity } from "@server/db/types";
 import { useExplorerTiles } from "~/hooks/useExplorerTiles";
 import { tileToBounds, type TileCategory } from "~/utils/explorerTiles";
 
@@ -15,7 +15,7 @@ const TILE_COLORS: Record<TileCategory, { fill: string; stroke: string }> = {
 };
 
 interface ExplorerTilesLayerProps {
-  activities: Doc<"activities">[] | null;
+  activities: Activity[] | null;
   visible: boolean;
 }
 

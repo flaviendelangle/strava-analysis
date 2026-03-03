@@ -2,10 +2,10 @@ import * as React from "react";
 
 import { isBefore, isAfter } from "date-fns";
 
-import { Doc } from "../../convex/_generated/dataModel";
+import type { Activity } from "@server/db/types";
 
 export const useActivitiesTimeBoundaries = (
-  activities?: Omit<Doc<"activities">, "mapPolyline">[],
+  activities?: Omit<Activity, "mapPolyline">[],
 ) =>
   React.useMemo(() => {
     let oldestActivityDate: Date | null = null;

@@ -132,8 +132,8 @@ export function PowerHrChart(props: PowerHrChartProps) {
         <BarPlot />
         <LinePlot />
         <ChartsXAxis axisId="x" />
-        <ChartsYAxis axisId="power" position="left" />
-        <ChartsYAxis axisId="hr" position="right" />
+        <ChartsYAxis axisId="power" />
+        <ChartsYAxis axisId="hr" />
       </ChartContainerPro>
     </ChartThemeProvider>
   );

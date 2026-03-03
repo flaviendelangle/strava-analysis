@@ -1,9 +1,10 @@
-import { ConvexHttpClient } from "convex/browser";
+import { eq } from "drizzle-orm";
 import NextAuth, { AuthOptions } from "next-auth";
 
-import { api } from "../../../../convex/_generated/api";
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+import { db } from "@server/db";
+import { athletes } from "@server/db/schema";
+import { env } from "@server/env";
+import type { StravaProfile } from "@server/lib/stravaTypes";
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -35,8 +36,8 @@ export const authOptions: AuthOptions = {
         };
       },
       options: {
-        clientId: process.env.STRAVA_CLIENT_ID!,
-        clientSecret: process.env.STRAVA_CLIENT_SECRET!,
+        clientId: env.STRAVA_CLIENT_ID,
+        clientSecret: env.STRAVA_CLIENT_SECRET,
       },
     },
   ],
@@ -48,13 +49,27 @@ export const authOptions: AuthOptions = {
       if (account?.access_token) {
         token.accessToken = account.access_token;
 
-        await convex.mutation(api.mutations.upsertAthlete, {
-          stravaAthleteId: Number(token.sub),
-          accessToken: account.access_token,
-          name: profile
-            ? `${(profile as any).firstname} ${(profile as any).lastname}`
-            : undefined,
+        const stravaAthleteId = Number(token.sub);
+        const name = profile
+          ? `${(profile as StravaProfile).firstname} ${(profile as StravaProfile).lastname}`
+          : undefined;
+
+        const existing = await db.query.athletes.findFirst({
+          where: eq(athletes.stravaAthleteId, stravaAthleteId),
         });
+
+        if (existing) {
+          await db
+            .update(athletes)
+            .set({ accessToken: account.access_token, name })
+            .where(eq(athletes.id, existing.id));
+        } else {
+          await db.insert(athletes).values({
+            stravaAthleteId,
+            accessToken: account.access_token,
+            name,
+          });
+        }
       }
 
       return token;

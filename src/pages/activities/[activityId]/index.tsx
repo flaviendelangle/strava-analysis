@@ -1,16 +1,14 @@
 import * as React from "react";
 
-import { useQuery } from "convex/react";
-
 import { ActivityMap } from "~/components/ActivityMap";
 import { ActivityStats } from "~/components/ActivityStats";
 import { ReloadActivityFromStravaButton } from "~/components/ReloadActivityFromStravaButton";
 import { ActivityStreams } from "~/components/charts/ActivityStreams";
+import { PowerCurve } from "~/components/charts/PowerCurve";
 import { useTypedParams } from "~/hooks/useTypedParams";
 import { NextPageWithLayout } from "~/pages/_app";
 import { formatActivityType } from "~/utils/format";
-
-import { api } from "../../../../convex/_generated/api";
+import { trpc } from "~/utils/trpc";
 
 const routerSchema = { activityId: "string" as const };
 
@@ -19,9 +17,9 @@ const ActivityPage: NextPageWithLayout = () => {
 
   const stravaId = params?.activityId ? Number(params.activityId) : undefined;
 
-  const activity = useQuery(
-    api.queries.getActivity,
-    stravaId != null ? { stravaId } : "skip",
+  const { data: activity } = trpc.activities.get.useQuery(
+    { stravaId: stravaId! },
+    { enabled: stravaId != null },
   );
 
   return (
@@ -71,6 +69,9 @@ const ActivityPage: NextPageWithLayout = () => {
             </div>
 
             <ActivityStreams stravaId={activity.stravaId} />
+            {activity.averageWatts != null && (activity.type === "Ride" || activity.type === "VirtualRide") && (
+              <PowerCurve stravaId={activity.stravaId} />
+            )}
           </React.Fragment>
         )}
       </div>

@@ -1,0 +1,486 @@
+import * as React from "react";
+
+import { format, subDays } from "date-fns";
+import { X } from "lucide-react";
+
+import { LineChart } from "@mui/x-charts-pro";
+
+import { Button } from "~/components/ui/button";
+import { Label } from "~/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { useAthleteId } from "~/hooks/useAthleteId";
+import { trpc } from "~/utils/trpc";
+
+import { ChartThemeProvider } from "../ChartThemeProvider";
+
+// --- Types & constants ---
+
+interface DateRange {
+  id: string;
+  label: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+const RANGE_COLORS = ["#a78bfa", "#f472b6", "#34d399", "#fbbf24", "#60a5fa"];
+
+function makeRollingRange(days: number, label: string): DateRange {
+  const now = new Date();
+  return {
+    id: `preset-${days}d`,
+    label,
+    dateFrom: subDays(now, days).toISOString(),
+    dateTo: now.toISOString(),
+  };
+}
+
+const PRESET_OPTIONS = [
+  { value: "90d", label: "Last 90 days" },
+  { value: "1y", label: "Last year" },
+  { value: "2y", label: "Last 2 years" },
+  { value: "all", label: "All time" },
+];
+
+function makeYearRange(year: number): DateRange {
+  return {
+    id: `year-${year}`,
+    label: String(year),
+    dateFrom: new Date(year, 0, 1).toISOString(),
+    dateTo: new Date(year + 1, 0, 1).toISOString(),
+  };
+}
+
+function presetToRange(preset: string): DateRange {
+  switch (preset) {
+    case "90d":
+      return makeRollingRange(90, "Last 90 days");
+    case "1y":
+      return makeRollingRange(365, "Last year");
+    case "2y":
+      return makeRollingRange(730, "Last 2 years");
+    case "all":
+      return { id: "preset-all", label: "All time" };
+    default:
+      return makeRollingRange(365, "Last year");
+  }
+}
+
+const DEFAULT_RANGES: DateRange[] = [presetToRange("1y")];
+
+// --- Props ---
+
+interface PowerCurveProps {
+  activityTypes?: string[];
+  stravaId?: number;
+}
+
+// --- Helpers ---
+
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  if (hours > 0) {
+    return mins === 0
+      ? `${hours}h`
+      : `${hours}h${mins.toString().padStart(2, "0")}`;
+  }
+  return secs === 0
+    ? `${mins}min`
+    : `${mins}m${secs.toString().padStart(2, "0")}s`;
+}
+
+let customCounter = 0;
+
+// --- Component ---
+
+export default function PowerCurve({
+  activityTypes,
+  stravaId,
+}: PowerCurveProps) {
+  if (stravaId != null) {
+    return <SingleActivityPowerCurve stravaId={stravaId} />;
+  }
+
+  return <AggregatedPowerCurve activityTypes={activityTypes} />;
+}
+
+// --- Single activity mode (unchanged logic) ---
+
+function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
+  const { data: activity } = trpc.activities.get.useQuery({ stravaId });
+
+  const data = React.useMemo(() => {
+    const powerBests = activity?.powerBests;
+    if (!powerBests) return null;
+    return Object.entries(powerBests)
+      .map(([durationStr, watts]) => ({
+        duration: Number(durationStr),
+        watts: Number(watts),
+      }))
+      .sort((a, b) => a.duration - b.duration);
+  }, [activity?.powerBests]);
+
+  if (!data || data.length === 0) {
+    return <EmptyChart />;
+  }
+
+  return (
+    <ChartThemeProvider>
+      <div className="bg-secondary flex h-96 w-full flex-col rounded-md">
+        <div className="border-border flex items-center gap-2 border-b p-4">
+          <h3 className="text-sm font-medium">Power Curve</h3>
+        </div>
+        <div className="flex-1">
+          <LineChart
+            xAxis={[
+              {
+                scaleType: "log",
+                data: data.map((d) => d.duration),
+                valueFormatter: (value: number) => formatDuration(value),
+                label: "Duration",
+              },
+            ]}
+            yAxis={[
+              {
+                label: "Watts",
+                valueFormatter: (value: number) => `${Math.round(value)} W`,
+              },
+            ]}
+            series={[
+              {
+                data: data.map((d) => d.watts),
+                showMark: false,
+                color: "#a78bfa",
+                curve: "monotoneX",
+                label: "Max Average Power",
+              },
+            ]}
+            margin={{ left: 72, right: 24 }}
+          />
+        </div>
+      </div>
+    </ChartThemeProvider>
+  );
+}
+
+// --- Aggregated mode with multi-range support ---
+
+function AggregatedPowerCurve({ activityTypes }: { activityTypes?: string[] }) {
+  const athleteId = useAthleteId();
+  const [ranges, setRanges] = React.useState<DateRange[]>(DEFAULT_RANGES);
+
+  const addRange = (range: DateRange) => {
+    setRanges((prev) => {
+      if (prev.some((r) => r.id === range.id)) return prev;
+      return [...prev, range];
+    });
+  };
+
+  const removeRange = (id: string) => {
+    setRanges((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  // One query per range
+  const queries = trpc.useQueries((t) =>
+    ranges.map((range) =>
+      t.analytics.getPowerCurve(
+        {
+          athleteId: athleteId!,
+          activityTypes,
+          dateFrom: range.dateFrom,
+          dateTo: range.dateTo,
+        },
+        { enabled: athleteId != null },
+      ),
+    ),
+  );
+
+  // Build multi-series chart data
+  const { xData, series } = React.useMemo(() => {
+    const allResults = queries.map((q) => q.data ?? []);
+
+    // Union of all durations
+    const durationSet = new Set<number>();
+    for (const result of allResults) {
+      for (const d of result) {
+        durationSet.add(d.duration);
+      }
+    }
+    const durations = [...durationSet].sort((a, b) => a - b);
+
+    if (durations.length === 0) {
+      return { xData: [] as number[], series: [] as any[] };
+    }
+
+    const chartSeries = allResults.map((data, i) => {
+      const byDuration = new Map(data.map((d) => [d.duration, d.watts]));
+      return {
+        data: durations.map((d) => byDuration.get(d) ?? null),
+        label: ranges[i]?.label ?? `Range ${i + 1}`,
+        color: RANGE_COLORS[i % RANGE_COLORS.length],
+        showMark: false,
+        curve: "monotoneX" as const,
+      };
+    });
+
+    return { xData: durations, series: chartSeries };
+  }, [queries, ranges]);
+
+  if (xData.length === 0) {
+    return (
+      <ChartThemeProvider>
+        <div className="bg-secondary flex h-96 w-full flex-col rounded-md">
+          <Toolbar
+            ranges={ranges}
+            onAddPreset={addRange}
+            onAddCustom={addRange}
+            onRemove={removeRange}
+            athleteId={athleteId}
+            activityTypes={activityTypes}
+          />
+          <div className="text-muted-foreground flex flex-1 items-center justify-center">
+            No power data available
+          </div>
+        </div>
+      </ChartThemeProvider>
+    );
+  }
+
+  return (
+    <ChartThemeProvider>
+      <div className="bg-secondary flex h-96 w-full flex-col rounded-md">
+        <Toolbar
+          ranges={ranges}
+          onAddPreset={addRange}
+          onAddCustom={addRange}
+          onRemove={removeRange}
+          athleteId={athleteId}
+          activityTypes={activityTypes}
+        />
+        <div className="flex-1">
+          <LineChart
+            xAxis={[
+              {
+                scaleType: "log",
+                data: xData,
+                valueFormatter: (value: number) => formatDuration(value),
+                label: "Duration",
+              },
+            ]}
+            yAxis={[
+              {
+                label: "Watts",
+                valueFormatter: (value: number) => `${Math.round(value)} W`,
+              },
+            ]}
+            series={series}
+            margin={{ left: 72, right: 24 }}
+          />
+        </div>
+      </div>
+    </ChartThemeProvider>
+  );
+}
+
+// --- Toolbar ---
+
+function Toolbar({
+  ranges,
+  onAddPreset,
+  onAddCustom,
+  onRemove,
+  athleteId,
+  activityTypes,
+}: {
+  ranges: DateRange[];
+  onAddPreset: (range: DateRange) => void;
+  onAddCustom: (range: DateRange) => void;
+  onRemove: (id: string) => void;
+  athleteId: number | null | undefined;
+  activityTypes?: string[];
+}) {
+  return (
+    <div className="border-border flex flex-wrap items-center gap-2 border-b p-4">
+      <h3 className="text-sm font-medium">Power Curve</h3>
+      <div className="bg-border mx-1 h-4 w-px" />
+      {ranges.map((range, i) => (
+        <RangeChip
+          key={range.id}
+          range={range}
+          color={RANGE_COLORS[i % RANGE_COLORS.length]}
+          onRemove={() => onRemove(range.id)}
+        />
+      ))}
+      <PresetSelect
+        onSelect={onAddPreset}
+        athleteId={athleteId}
+        activityTypes={activityTypes}
+      />
+      <CustomRangePopover onAdd={onAddCustom} />
+    </div>
+  );
+}
+
+function RangeChip({
+  range,
+  color,
+  onRemove,
+}: {
+  range: DateRange;
+  color: string;
+  onRemove: () => void;
+}) {
+  return (
+    <span className="border-border bg-background inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs">
+      <span
+        className="inline-block size-2 rounded-full"
+        style={{ backgroundColor: color }}
+      />
+      {range.label}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="ml-0.5 rounded-sm opacity-60 hover:opacity-100"
+      >
+        <X className="size-3" />
+      </button>
+    </span>
+  );
+}
+
+function PresetSelect({
+  onSelect,
+  athleteId,
+  activityTypes,
+}: {
+  onSelect: (range: DateRange) => void;
+  athleteId: number | null | undefined;
+  activityTypes?: string[];
+}) {
+  const { data: years } = trpc.analytics.getPowerCurveYears.useQuery(
+    { athleteId: athleteId!, activityTypes },
+    { enabled: athleteId != null },
+  );
+
+  return (
+    <Select
+      value=""
+      onValueChange={(v) => {
+        if (!v) return;
+        if (v.startsWith("year-")) {
+          onSelect(makeYearRange(Number(v.slice(5))));
+        } else {
+          onSelect(presetToRange(v));
+        }
+      }}
+    >
+      <SelectTrigger className="h-7 min-w-28 text-xs">
+        <SelectValue placeholder="Add range…" />
+      </SelectTrigger>
+      <SelectContent>
+        {PRESET_OPTIONS.map((opt) => (
+          <SelectItem key={opt.value} value={opt.value}>
+            {opt.label}
+          </SelectItem>
+        ))}
+        {years && years.length > 0 && (
+          <>
+            <div className="bg-border mx-2 my-1 h-px" />
+            {years.map((year) => (
+              <SelectItem key={`year-${year}`} value={`year-${year}`}>
+                {year}
+              </SelectItem>
+            ))}
+          </>
+        )}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function CustomRangePopover({ onAdd }: { onAdd: (range: DateRange) => void }) {
+  const [open, setOpen] = React.useState(false);
+  const [from, setFrom] = React.useState("");
+  const [to, setTo] = React.useState("");
+
+  const handleAdd = () => {
+    if (!from || !to) return;
+    const label = `${format(new Date(from), "MMM yyyy")} – ${format(new Date(to), "MMM yyyy")}`;
+    onAdd({
+      id: `custom-${customCounter++}`,
+      label,
+      dateFrom: new Date(from).toISOString(),
+      dateTo: new Date(to).toISOString(),
+    });
+    setFrom("");
+    setTo("");
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        render={
+          <Button variant="ghost" size="xs">
+            Custom range…
+          </Button>
+        }
+      />
+      <PopoverContent align="start" className="w-64">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label>From</Label>
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="border-border bg-background h-8 rounded-md border px-2 text-sm"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>To</Label>
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="border-border bg-background h-8 rounded-md border px-2 text-sm"
+            />
+          </div>
+          <Button size="sm" onClick={handleAdd} disabled={!from || !to}>
+            Add range
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// --- Shared empty state ---
+
+function EmptyChart() {
+  return (
+    <ChartThemeProvider>
+      <div className="bg-secondary flex h-96 w-full flex-col rounded-md">
+        <div className="border-border flex items-center gap-2 border-b p-4">
+          <h3 className="text-sm font-medium">Power Curve</h3>
+        </div>
+        <div className="text-muted-foreground flex flex-1 items-center justify-center">
+          No power data available
+        </div>
+      </div>
+    </ChartThemeProvider>
+  );
+}

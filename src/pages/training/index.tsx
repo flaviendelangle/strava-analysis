@@ -45,22 +45,30 @@ export default function TrainingPage() {
 
   // Chart data (copy of data points array for rendering)
   const [chartData, setChartData] = useState<SessionDataPoint[]>([]);
+  // Live speed derived from the simulator (updated in the recording interval)
+  const [currentSpeedMs, setCurrentSpeedMs] = useState(0);
 
   // Refs for volatile data so the recording interval callback stays stable
   // (without these, the interval would be torn down and recreated on every
   // sensor update, preventing it from ever firing its 1 000 ms tick)
   const hrDataRef = useRef(hr.data);
-  hrDataRef.current = hr.data;
   const trainerDataRef = useRef(trainer.data);
-  trainerDataRef.current = trainer.data;
   const riderSettingsRef = useRef(riderSettings);
-  riderSettingsRef.current = riderSettings;
   const elapsedRef = useRef(session.elapsedSeconds);
-  elapsedRef.current = session.elapsedSeconds;
   const ergEnabledRef = useRef(ergMode.ergEnabled);
-  ergEnabledRef.current = ergMode.ergEnabled;
   const targetPowerRef = useRef(ergMode.targetPower);
-  targetPowerRef.current = ergMode.targetPower;
+  const sessionRef = useRef(session);
+
+  // Keep refs in sync after each render
+  useEffect(() => {
+    hrDataRef.current = hr.data;
+    trainerDataRef.current = trainer.data;
+    riderSettingsRef.current = riderSettings;
+    elapsedRef.current = session.elapsedSeconds;
+    ergEnabledRef.current = ergMode.ergEnabled;
+    targetPowerRef.current = ergMode.targetPower;
+    sessionRef.current = session;
+  });
 
   // Speed simulator with inertia
   const speedSimRef = useRef(new SpeedSimulator());
@@ -96,6 +104,8 @@ export default function TrainingPage() {
         crr: settings.crr,
       });
 
+      setCurrentSpeedMs(speedMs);
+
       addDataPoint({
         power,
         targetPower: ergEnabledRef.current ? targetPowerRef.current : null,
@@ -122,14 +132,14 @@ export default function TrainingPage() {
   // Sync trainer control capability into ERG mode context
   useEffect(() => {
     ergMode.setSupportsControl(trainer.supportsControl ?? false);
-  }, [trainer.supportsControl]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [trainer.supportsControl]); // eslint-disable-line react-hooks/exhaustive-deps -- ergMode methods are stable refs, including them would cause infinite loops
 
   // Auto-disable ERG when trainer disconnects
   useEffect(() => {
     if (trainer.state !== "connected") {
       ergMode.setErgEnabled(false);
     }
-  }, [trainer.state]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [trainer.state]); // eslint-disable-line react-hooks/exhaustive-deps -- ergMode.setErgEnabled is a stable context setter
 
   // Send target power to trainer when ERG is enabled and target changes
   useEffect(() => {
@@ -140,11 +150,9 @@ export default function TrainingPage() {
       });
     }, 200);
     return () => clearTimeout(timer);
-  }, [ergMode.ergEnabled, ergMode.targetPower, trainer.supportsControl]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ergMode.ergEnabled, ergMode.targetPower, trainer.supportsControl]); // eslint-disable-line react-hooks/exhaustive-deps -- trainer.setTargetPower is a stable ref
 
   // Auto-start when power is detected while idle
-  const sessionRef = useRef(session);
-  sessionRef.current = session;
   useEffect(() => {
     const power = trainer.data?.power ?? null;
     if (session.state !== "idle" || power == null || power <= 0) {
@@ -173,7 +181,6 @@ export default function TrainingPage() {
   const currentPower = trainer.data?.power ?? null;
   const currentHr = hr.data?.heartRate ?? trainer.data?.heartRate ?? null;
   const currentCadence = trainer.data?.cadence ?? null;
-  const currentSpeedMs = speedSimRef.current.getSpeed();
   const currentSpeedKmh = currentSpeedMs > 0.1 ? msToKmh(currentSpeedMs) : null;
 
   const lastPoint = chartData[chartData.length - 1];

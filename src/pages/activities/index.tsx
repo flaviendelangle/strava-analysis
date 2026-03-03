@@ -3,7 +3,7 @@ import { NextPageWithLayout } from "~/pages/_app";
 
 const ActivitiesPage: NextPageWithLayout = () => {
   return (
-    <div className="flex flex-col items-start gap-4 p-4">
+    <div className="flex h-full flex-col gap-4 p-4">
       <ActivitiesTable />
     </div>
   );

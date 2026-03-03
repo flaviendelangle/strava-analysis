@@ -1,9 +1,9 @@
 import { useExplorerTiles } from "~/hooks/useExplorerTiles";
 
-import type { Doc } from "../../../convex/_generated/dataModel";
+import type { Activity } from "@server/db/types";
 
 interface ExplorerTilesStatsProps {
-  activities: Doc<"activities">[] | null;
+  activities: Activity[] | null;
   visible: boolean;
 }
 

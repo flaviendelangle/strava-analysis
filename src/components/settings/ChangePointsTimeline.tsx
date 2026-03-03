@@ -19,22 +19,7 @@ import type {
 } from "~/sensors/types";
 
 import { ChangePointDialog } from "./ChangePointDialog";
-
-const FIELD_COLUMNS: {
-  field: TimeVaryingField;
-  label: string;
-  unit: string;
-}[] = [
-  { field: "ftp", label: "FTP", unit: "W" },
-  { field: "weightKg", label: "Weight", unit: "kg" },
-  { field: "restingHr", label: "Resting HR", unit: "bpm" },
-  { field: "maxHr", label: "Max HR", unit: "bpm" },
-  { field: "lthr", label: "LTHR", unit: "bpm" },
-];
-
-const TIME_VARYING_FIELDS: TimeVaryingField[] = FIELD_COLUMNS.map(
-  (c) => c.field,
-);
+import { RIDER_FIELD_CONFIG, TIME_VARYING_FIELDS } from "./fieldConfig";
 
 interface ResolvedRow {
   id: string;
@@ -164,7 +149,7 @@ export function ChangePointsTimeline({
         <TableHeader>
           <TableRow>
             <TableHead className="w-32" />
-            {FIELD_COLUMNS.map(({ field, label, unit }) => (
+            {RIDER_FIELD_CONFIG.map(({ field, label, unit }) => (
               <TableHead key={field}>
                 {label} ({unit})
               </TableHead>
@@ -178,7 +163,7 @@ export function ChangePointsTimeline({
               <TableCell className="font-mono text-muted-foreground">
                 {row.label}
               </TableCell>
-              {FIELD_COLUMNS.map(({ field }) => (
+              {RIDER_FIELD_CONFIG.map(({ field }) => (
                 <TableCell
                   key={field}
                   className={cn(

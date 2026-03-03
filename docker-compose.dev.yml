@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: docker.io/library/postgres:17-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: strava
+      POSTGRES_PASSWORD: strava
+      POSTGRES_DB: strava_analysis
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

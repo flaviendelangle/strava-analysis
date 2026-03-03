@@ -6,6 +6,7 @@ import type { ConnectionState, TrainerData } from "~/sensors/types";
 export function useAntTrainer() {
   const [state, setState] = useState<ConnectionState>("disconnected");
   const [data, setData] = useState<TrainerData | null>(null);
+  const [supportsControl, setSupportsControl] = useState(false);
   const connectionRef = useRef(new AntTrainerConnection());
 
   const connect = useCallback(async () => {
@@ -16,6 +17,7 @@ export function useAntTrainer() {
         onDisconnect: () => setState("disconnected"),
       });
       setState("connected");
+      setSupportsControl(connectionRef.current.supportsControl);
     } catch (err) {
       console.error("[ANT+ Trainer] Connection failed:", err);
       setState("error");
@@ -25,6 +27,7 @@ export function useAntTrainer() {
   const disconnect = useCallback(async () => {
     await connectionRef.current.disconnect();
     setState("disconnected");
+    setSupportsControl(false);
     setData(null);
   }, []);
 
@@ -46,7 +49,7 @@ export function useAntTrainer() {
     protocol: "ant+" as const,
     connect,
     disconnect,
-    supportsControl: state === "connected" && connectionRef.current.supportsControl,
+    supportsControl: state === "connected" && supportsControl,
     setTargetPower,
   };
 }

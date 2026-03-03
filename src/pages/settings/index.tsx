@@ -1,12 +1,35 @@
-import { Label } from "~/components/ui/label";
-import { NumberField } from "~/components/ui/number-field";
+import * as React from "react";
+
+import { LoadingButton } from "~/components/primitives/LoadingButton";
 import { ChangePointsTimeline } from "~/components/settings/ChangePointsTimeline";
 import { SettingsStepChart } from "~/components/settings/SettingsStepChart";
+import { Label } from "~/components/ui/label";
+import { NumberField } from "~/components/ui/number-field";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
+import { useAthleteId } from "~/hooks/useAthleteId";
 import { useRiderSettingsTimeline } from "~/hooks/useRiderSettings";
 import type { NextPageWithLayout } from "~/pages/_app";
+import { trpc } from "~/utils/trpc";
 
 const SettingsPage: NextPageWithLayout = () => {
   const { timeline, setTimeline } = useRiderSettingsTimeline();
+  const athleteId = useAthleteId();
+  const recomputeScores = trpc.riderSettings.recomputeScores.useMutation();
+  const [recomputing, setRecomputing] = React.useState(false);
+
+  const handleRecomputeScores = React.useCallback(async () => {
+    if (!athleteId) return;
+    setRecomputing(true);
+    try {
+      await recomputeScores.mutateAsync({ athleteId });
+    } finally {
+      setRecomputing(false);
+    }
+  }, [athleteId, recomputeScores]);
 
   const updateStatic = (field: "cdA" | "crr" | "bikeWeightKg", value: number | null) => {
     setTimeline({ ...timeline, [field]: value ?? 0 });
@@ -14,7 +37,24 @@ const SettingsPage: NextPageWithLayout = () => {
 
   return (
     <div className="flex flex-col gap-8 p-6">
-      <h1 className="text-2xl font-bold">Settings</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Settings</h1>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <LoadingButton
+                loading={recomputing}
+                onClick={handleRecomputeScores}
+              />
+            }
+          >
+            Recompute all scores
+          </TooltipTrigger>
+          <TooltipContent>
+            Recalculate all activity scores using the current settings
+          </TooltipContent>
+        </Tooltip>
+      </div>
 
       {/* Unified rider settings table */}
       <section className="rounded-lg bg-card p-4">

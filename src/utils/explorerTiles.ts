@@ -67,7 +67,8 @@ const MAX_SEGMENT_DISTANCE_DEG = 0.5; // ~55 km — skip GPS teleportation glitc
 
 /**
  * Walk a line segment in tile coordinate space and collect every grid cell
- * the segment passes through (Amanatides & Woo grid traversal).
+ * the segment passes through using the Amanatides & Woo grid traversal
+ * (DDA / Bresenham-like line rasterization) algorithm.
  */
 function walkTiles(
   lat1: number,
@@ -76,72 +77,74 @@ function walkTiles(
   lng2: number,
   visited: Set<TileKey>,
 ): void {
-  const fx1 = lngToTileX(lng1);
-  const fy1 = latToTileY(lat1);
-  const fx2 = lngToTileX(lng2);
-  const fy2 = latToTileY(lat2);
+  const fracTileStartX = lngToTileX(lng1);
+  const fracTileStartY = latToTileY(lat1);
+  const fracTileEndX = lngToTileX(lng2);
+  const fracTileEndY = latToTileY(lat2);
 
-  const startTx = Math.floor(fx1);
-  const startTy = Math.floor(fy1);
-  const endTx = Math.floor(fx2);
-  const endTy = Math.floor(fy2);
+  const startTx = Math.floor(fracTileStartX);
+  const startTy = Math.floor(fracTileStartY);
+  const endTx = Math.floor(fracTileEndX);
+  const endTy = Math.floor(fracTileEndY);
 
   visited.add(tileKey(startTx, startTy));
 
   if (startTx === endTx && startTy === endTy) return;
 
-  const dfx = fx2 - fx1;
-  const dfy = fy2 - fy1;
+  const dfx = fracTileEndX - fracTileStartX;
+  const dfy = fracTileEndY - fracTileStartY;
 
   const stepX = dfx > 0 ? 1 : dfx < 0 ? -1 : 0;
   const stepY = dfy > 0 ? 1 : dfy < 0 ? -1 : 0;
 
-  let tMaxX: number;
-  let tDeltaX: number;
+  // Parameter at which the ray crosses the next vertical/horizontal tile boundary
+  let nextCrossingX: number;
+  // Parameter increment per tile in X/Y direction
+  let crossingStepX: number;
   if (stepX !== 0) {
     const nextBoundary = stepX > 0 ? startTx + 1 : startTx;
-    tMaxX = (nextBoundary - fx1) / dfx;
-    tDeltaX = Math.abs(1 / dfx);
+    nextCrossingX = (nextBoundary - fracTileStartX) / dfx;
+    crossingStepX = Math.abs(1 / dfx);
   } else {
-    tMaxX = Infinity;
-    tDeltaX = Infinity;
+    nextCrossingX = Infinity;
+    crossingStepX = Infinity;
   }
 
-  let tMaxY: number;
-  let tDeltaY: number;
+  let nextCrossingY: number;
+  let crossingStepY: number;
   if (stepY !== 0) {
     const nextBoundary = stepY > 0 ? startTy + 1 : startTy;
-    tMaxY = (nextBoundary - fy1) / dfy;
-    tDeltaY = Math.abs(1 / dfy);
+    nextCrossingY = (nextBoundary - fracTileStartY) / dfy;
+    crossingStepY = Math.abs(1 / dfy);
   } else {
-    tMaxY = Infinity;
-    tDeltaY = Infinity;
+    nextCrossingY = Infinity;
+    crossingStepY = Infinity;
   }
 
-  let cx = startTx;
-  let cy = startTy;
+  let currentTileX = startTx;
+  let currentTileY = startTy;
   const maxSteps =
     Math.abs(endTx - startTx) + Math.abs(endTy - startTy) + 2;
 
   for (let i = 0; i < maxSteps; i++) {
-    if (tMaxX < tMaxY) {
-      cx += stepX;
-      tMaxX += tDeltaX;
-    } else if (tMaxY < tMaxX) {
-      cy += stepY;
-      tMaxY += tDeltaY;
+    if (nextCrossingX < nextCrossingY) {
+      currentTileX += stepX;
+      nextCrossingX += crossingStepX;
+    } else if (nextCrossingY < nextCrossingX) {
+      currentTileY += stepY;
+      nextCrossingY += crossingStepY;
     } else {
       // Line passes exactly through a tile corner — visit both adjacent tiles
       // before making a diagonal step
-      visited.add(tileKey(cx + stepX, cy));
-      visited.add(tileKey(cx, cy + stepY));
-      cx += stepX;
-      cy += stepY;
-      tMaxX += tDeltaX;
-      tMaxY += tDeltaY;
+      visited.add(tileKey(currentTileX + stepX, currentTileY));
+      visited.add(tileKey(currentTileX, currentTileY + stepY));
+      currentTileX += stepX;
+      currentTileY += stepY;
+      nextCrossingX += crossingStepX;
+      nextCrossingY += crossingStepY;
     }
-    visited.add(tileKey(cx, cy));
-    if (cx === endTx && cy === endTy) break;
+    visited.add(tileKey(currentTileX, currentTileY));
+    if (currentTileX === endTx && currentTileY === endTy) break;
   }
 }
 
