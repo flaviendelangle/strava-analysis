@@ -1,7 +1,6 @@
 import { PowerHrChart } from "~/components/liveTraining/PowerHrChart";
 import type { SessionDataPoint } from "~/sensors/types";
 
-import { HudErgPanel } from "./HudErgPanel";
 import { HudMetricTile } from "./HudMetricTile";
 import { HudPowerGauge } from "./HudPowerGauge";
 import { HudTopBar } from "./HudTopBar";
@@ -17,12 +16,6 @@ interface HudMainViewProps {
   chartData: SessionDataPoint[];
   ftp: number;
   weightKg: number;
-  // ERG
-  supportsControl: boolean;
-  ergEnabled: boolean;
-  setErgEnabled: (v: boolean) => void;
-  targetPower: number;
-  setTargetPower: (v: number) => void;
   // Actions
   onPause: () => void;
   onStop: () => void;
@@ -38,11 +31,6 @@ export function HudMainView({
   chartData,
   ftp,
   weightKg,
-  supportsControl,
-  ergEnabled,
-  setErgEnabled,
-  targetPower,
-  setTargetPower,
   onPause,
   onStop,
 }: HudMainViewProps) {
@@ -82,27 +70,7 @@ export function HudMainView({
             unit="rpm"
             color="#f472b6"
           />
-          {supportsControl && ergEnabled && (
-            <HudMetricTile
-              label="ERG Target"
-              value={targetPower}
-              unit="W"
-              color="#facc15"
-            />
-          )}
         </div>
-
-        {/* ERG panel — bottom left */}
-        {supportsControl && (
-          <div className="absolute bottom-4 left-6">
-            <HudErgPanel
-              ergEnabled={ergEnabled}
-              setErgEnabled={setErgEnabled}
-              targetPower={targetPower}
-              setTargetPower={setTargetPower}
-            />
-          </div>
-        )}
 
         {/* Session controls — bottom right */}
         <div className="absolute bottom-4 right-6 flex gap-2">

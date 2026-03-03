@@ -9,7 +9,6 @@ export function useCurrentPageSettings() {
 
   return {
     hasActivityTypeFilter: !isTraining,
-    hasErgModeControl: isTraining,
     hasExplorerTilesToggle: pathname === "/heatmap",
     hasSyncPanel: pathname === "/activities",
     hideSettings: isActivityDetail || pathname.startsWith("/settings"),

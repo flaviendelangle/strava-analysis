@@ -7,7 +7,6 @@ import { useCurrentPageSettings } from "~/hooks/useCurrentPageSettings";
 import { useExplorerTilesToggle } from "~/hooks/useExplorerTilesToggle";
 
 import { ActivityTypeFilterPopover } from "./ActivityTypeFilterPopover";
-import { ErgModeControl } from "./ErgModeControl";
 
 function ExplorerTilesToggleButton() {
   const { showExplorerTiles, setShowExplorerTiles } = useExplorerTilesToggle();
@@ -31,7 +30,6 @@ function ExplorerTilesToggleButton() {
 export function SettingsToolbar() {
   const {
     hasActivityTypeFilter,
-    hasErgModeControl,
     hasExplorerTilesToggle,
     hasSyncPanel,
     hideSettings,
@@ -51,8 +49,6 @@ export function SettingsToolbar() {
           <ExplorerTilesToggleButton />
         </>
       )}
-
-      {hasErgModeControl && <ErgModeControl />}
 
       {hasSyncPanel && (
         <>

@@ -8,6 +8,7 @@ import { PowerCurve } from "~/components/charts/PowerCurve";
 import { useTypedParams } from "~/hooks/useTypedParams";
 import { NextPageWithLayout } from "~/pages/_app";
 import { formatActivityType } from "~/utils/format";
+import { getSportConfig } from "~/utils/sportConfig";
 import { trpc } from "~/utils/trpc";
 
 const routerSchema = { activityId: "string" as const };
@@ -46,7 +47,8 @@ const ActivityPage: NextPageWithLayout = () => {
           </span>
           {activity && (
             <React.Fragment>
-              <span className="rounded bg-gray-700 px-2 py-0.5 text-xs uppercase">
+              <span className="inline-flex items-center gap-1.5 rounded bg-gray-700 px-2 py-0.5 text-xs uppercase">
+                {React.createElement(getSportConfig(activity.type).icon, { className: "size-3.5" })}
                 {formatActivityType(activity.type)}
               </span>
               <span className="text-sm text-gray-400">

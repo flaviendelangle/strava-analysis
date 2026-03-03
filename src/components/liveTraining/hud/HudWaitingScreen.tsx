@@ -2,12 +2,22 @@ interface HudWaitingScreenProps {
   currentHr: number | null;
   hrConnected: boolean;
   onManualStart: () => void;
+  ergEnabled: boolean;
+  onErgEnabledChange: (enabled: boolean) => void;
+  targetPower: number;
+  onTargetPowerChange: (watts: number) => void;
+  supportsControl: boolean;
 }
 
 export function HudWaitingScreen({
   currentHr,
   hrConnected,
   onManualStart,
+  ergEnabled,
+  onErgEnabledChange,
+  targetPower,
+  onTargetPowerChange,
+  supportsControl,
 }: HudWaitingScreenProps) {
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-950">
@@ -38,6 +48,77 @@ export function HudWaitingScreen({
         <p className="animate-breathe text-2xl font-light tracking-wide text-gray-400">
           Start pedaling to begin
         </p>
+
+        {/* ERG mode toggle */}
+        {supportsControl && (
+          <div
+            className={`flex flex-col gap-4 rounded-2xl border px-6 py-4 backdrop-blur-md transition-all duration-500 ${
+              ergEnabled
+                ? "border-yellow-500/40 bg-yellow-950/30"
+                : "border-gray-600/50 bg-gray-800/60"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <svg
+                  className={`h-5 w-5 transition-colors duration-500 ${
+                    ergEnabled ? "text-yellow-400" : "text-gray-500"
+                  }`}
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M7 2v11h3v9l7-12h-4l4-8z" />
+                </svg>
+                <span className="text-sm font-medium text-white">ERG Mode</span>
+              </div>
+              <button
+                onClick={() => onErgEnabledChange(!ergEnabled)}
+                className={`relative ml-6 h-6 w-11 rounded-full transition-colors duration-300 ${
+                  ergEnabled ? "bg-yellow-500" : "bg-gray-600"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                    ergEnabled ? "translate-x-5" : ""
+                  }`}
+                />
+              </button>
+            </div>
+
+            {ergEnabled && (
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => onTargetPowerChange(targetPower - 10)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-600 text-sm text-gray-400 transition-colors hover:border-yellow-500/60 hover:text-white"
+                >
+                  -10
+                </button>
+                <button
+                  onClick={() => onTargetPowerChange(targetPower - 5)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-600 text-sm text-gray-400 transition-colors hover:border-yellow-500/60 hover:text-white"
+                >
+                  -5
+                </button>
+                <span className="min-w-20 text-center font-mono text-2xl font-bold text-yellow-400">
+                  {targetPower}
+                  <span className="ml-1 text-xs font-normal text-gray-500">W</span>
+                </span>
+                <button
+                  onClick={() => onTargetPowerChange(targetPower + 5)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-600 text-sm text-gray-400 transition-colors hover:border-yellow-500/60 hover:text-white"
+                >
+                  +5
+                </button>
+                <button
+                  onClick={() => onTargetPowerChange(targetPower + 10)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-600 text-sm text-gray-400 transition-colors hover:border-yellow-500/60 hover:text-white"
+                >
+                  +10
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         <button
           onClick={onManualStart}

@@ -99,29 +99,8 @@ export function NavBar() {
           <TooltipIfMenuCollapsed label="Live Training">
             <NavBarLink
               label="Live Training"
-              svgPath="M15.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2M5 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5m0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5m5.8-10 2.4-2.4.8.8c1.3 1.3 3 2.1 5 2.1V9c-1.5 0-2.7-.6-3.6-1.5l-1.9-1.9c-.5-.4-1-.6-1.6-.6s-1.1.2-1.4.6L7.8 8.4c-.4.4-.6.9-.6 1.4 0 .6.2 1.1.6 1.4L11 14v5h2v-6.2zM19 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5m0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5"
-              href="/training"
-            />
-          </TooltipIfMenuCollapsed>
-          <TooltipIfMenuCollapsed label="Training HUD">
-            <NavBarLink
-              label="Training HUD"
-              svgPath="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2m0 16H3V5h18zM5 15h14v-2H5zm0-4h14V9H5z"
+              svgPath="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m-2 14.5v-9l6 4.5z"
               href="/training-1"
-            />
-          </TooltipIfMenuCollapsed>
-          <TooltipIfMenuCollapsed label="Training Cockpit">
-            <NavBarLink
-              label="Training Cockpit"
-              svgPath="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3z"
-              href="/training-2"
-            />
-          </TooltipIfMenuCollapsed>
-          <TooltipIfMenuCollapsed label="Training Cards">
-            <NavBarLink
-              label="Training Cards"
-              svgPath="M4 5h16v2H4zm0 4h16v2H4zm0 4h16v2H4zm0 4h16v2H4z"
-              href="/training-3"
             />
           </TooltipIfMenuCollapsed>
         </div>

@@ -1,4 +1,21 @@
+import type { LucideIcon } from "lucide-react";
+import {
+  Activity,
+  Bike,
+  Dumbbell,
+  Footprints,
+  Mountain,
+  Snowflake,
+  Waves,
+} from "lucide-react";
+
 export class SportConfig {
+  readonly icon: LucideIcon;
+
+  constructor(icon: LucideIcon = Activity) {
+    this.icon = icon;
+  }
+
   formatSpeed(metersPerSecond: number): string {
     return `${(metersPerSecond * 3.6).toFixed(1)} km/h`;
   }
@@ -17,6 +34,10 @@ export class SportConfig {
 }
 
 class RunSportConfig extends SportConfig {
+  constructor() {
+    super(Footprints);
+  }
+
   formatSpeed(metersPerSecond: number): string {
     const timePerKm = 1000 / metersPerSecond;
     const minutes = Math.floor(timePerKm / 60);
@@ -29,6 +50,10 @@ class RunSportConfig extends SportConfig {
 }
 
 class SwimSportConfig extends SportConfig {
+  constructor() {
+    super(Waves);
+  }
+
   formatSpeed(metersPerSecond: number): string {
     const timePer100m = 100 / metersPerSecond;
     const minutes = Math.floor(timePer100m / 60);
@@ -49,8 +74,17 @@ class SwimSportConfig extends SportConfig {
 }
 
 const SPORT_CONFIGS: Record<string, SportConfig> = {
+  Ride: new SportConfig(Bike),
+  VirtualRide: new SportConfig(Bike),
   Run: new RunSportConfig(),
+  VirtualRun: new RunSportConfig(),
+  Walk: new SportConfig(Footprints),
   Swim: new SwimSportConfig(),
+  Hike: new SportConfig(Mountain),
+  WeightTraining: new SportConfig(Dumbbell),
+  NordicSki: new SportConfig(Snowflake),
+  AlpineSki: new SportConfig(Snowflake),
+  BackcountrySki: new SportConfig(Snowflake),
 };
 
 const DEFAULT_CONFIG = new SportConfig();

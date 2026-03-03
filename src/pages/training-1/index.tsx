@@ -64,11 +64,6 @@ export default function Training1Page() {
           chartData={ctrl.chartData}
           ftp={ctrl.riderSettings.ftp}
           weightKg={ctrl.riderSettings.weightKg}
-          supportsControl={ctrl.ergMode.supportsControl}
-          ergEnabled={ctrl.ergMode.ergEnabled}
-          setErgEnabled={ctrl.ergMode.setErgEnabled}
-          targetPower={ctrl.ergMode.targetPower}
-          setTargetPower={ctrl.ergMode.setTargetPower}
           onPause={ctrl.session.pause}
           onStop={ctrl.handleStop}
         />
@@ -101,6 +96,11 @@ export default function Training1Page() {
             ctrl.recorder.clear();
             ctrl.session.start();
           }}
+          ergEnabled={ctrl.ergMode.ergEnabled}
+          onErgEnabledChange={ctrl.ergMode.setErgEnabled}
+          targetPower={ctrl.ergMode.targetPower}
+          onTargetPowerChange={ctrl.ergMode.setTargetPower}
+          supportsControl={ctrl.ergMode.supportsControl}
         />
       )}
 

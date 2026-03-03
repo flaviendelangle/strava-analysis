@@ -68,8 +68,22 @@ function ActivityRow(props: {
 const columnHelper = createColumnHelper<ActivityWithoutMap>();
 
 const columns = [
+  columnHelper.accessor("type", {
+    cell: (info) => {
+      const type = info.getValue();
+      const Icon = getSportConfig(type).icon;
+      return (
+        <span className="inline-flex items-center gap-2">
+          <Icon className="size-4 shrink-0" />
+          <span className="truncate">{formatActivityType(type)}</span>
+        </span>
+      );
+    },
+    header: () => <span>Type</span>,
+    size: 2,
+  }),
   columnHelper.accessor("name", {
-    cell: (info) => info.getValue(),
+    cell: (info) => <span className="truncate">{info.getValue()}</span>,
     header: () => <span>Title</span>,
     size: 3,
   }),
@@ -77,11 +91,6 @@ const columns = [
     cell: (info) => format(new Date(info.getValue()), "P p", { locale: enGB }),
     header: () => <span>Date</span>,
     size: 2,
-  }),
-  columnHelper.accessor("type", {
-    cell: (info) => formatActivityType(info.getValue()),
-    header: () => <span>Type</span>,
-    size: 1,
   }),
   columnHelper.accessor("distance", {
     cell: (info) => {
