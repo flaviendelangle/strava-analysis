@@ -1,3 +1,5 @@
+import * as React from "react";
+
 import {
   Clock,
   Flame,
@@ -24,7 +26,9 @@ interface ActivityStatsProps {
   activity: Activity;
 }
 
-export function ActivityStats({ activity }: ActivityStatsProps) {
+export const ActivityStats = React.memo(function ActivityStats({
+  activity,
+}: ActivityStatsProps) {
   const sportConfig = getSportConfig(activity.type);
   const { resolveForDate } = useRiderSettingsTimeline();
   const activityDate = activity.startDateLocal.slice(0, 10);
@@ -235,4 +239,4 @@ export function ActivityStats({ activity }: ActivityStatsProps) {
       </div>
     </div>
   );
-}
+});

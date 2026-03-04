@@ -205,7 +205,7 @@ function PowerCurveTooltip() {
 
 // --- Component ---
 
-export default function PowerCurve({
+const PowerCurve = React.memo(function PowerCurve({
   activityTypes,
   stravaId,
 }: PowerCurveProps) {
@@ -214,7 +214,9 @@ export default function PowerCurve({
   }
 
   return <AggregatedPowerCurve activityTypes={activityTypes} />;
-}
+});
+
+export default PowerCurve;
 
 // --- Single activity mode (unchanged logic) ---
 

@@ -38,6 +38,37 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
  * Middleware that validates `input.athleteId` matches the session's athleteId.
  * Chain after `.input()` on routes that accept athleteId.
  */
+/**
+ * Simple in-memory rate limiter.
+ * Tracks requests per key within a sliding window.
+ */
+const rateLimitStore = new Map<string, number[]>();
+
+function rateLimit(key: string, maxRequests: number, windowMs: number) {
+  const now = Date.now();
+  const timestamps = (rateLimitStore.get(key) ?? []).filter(
+    (ts) => now - ts < windowMs,
+  );
+  if (timestamps.length >= maxRequests) {
+    throw new TRPCError({
+      code: "TOO_MANY_REQUESTS",
+      message: "Rate limit exceeded. Please try again later.",
+    });
+  }
+  timestamps.push(now);
+  rateLimitStore.set(key, timestamps);
+}
+
+/**
+ * Rate-limiting middleware for expensive mutations.
+ * Limits to 5 requests per minute per user.
+ */
+export const rateLimited = t.middleware(async ({ ctx, next }) => {
+  const userId = ctx.session?.user?.email ?? "anonymous";
+  rateLimit(userId, 5, 60_000);
+  return next();
+});
+
 export const validateAthleteOwnership = t.middleware(
   async ({ ctx, input, next }) => {
     const { athleteId } = input as { athleteId: number };

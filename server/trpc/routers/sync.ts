@@ -3,7 +3,12 @@ import { z } from "zod";
 
 import { activities, syncJobs } from "../../db/schema";
 import { runSyncInBackground } from "../../lib/sync";
-import { protectedProcedure, router, validateAthleteOwnership } from "../index";
+import {
+  protectedProcedure,
+  rateLimited,
+  router,
+  validateAthleteOwnership,
+} from "../index";
 
 export const syncRouter = router({
   getJob: protectedProcedure
@@ -20,6 +25,7 @@ export const syncRouter = router({
   start: protectedProcedure
     .input(z.object({ athleteId: z.number() }))
     .use(validateAthleteOwnership)
+    .use(rateLimited)
     .mutation(async ({ ctx, input }) => {
       // Check for existing in-progress sync job
       const existing = await ctx.db.query.syncJobs.findFirst({
@@ -89,6 +95,7 @@ export const syncRouter = router({
   forceResync: protectedProcedure
     .input(z.object({ athleteId: z.number() }))
     .use(validateAthleteOwnership)
+    .use(rateLimited)
     .mutation(async ({ ctx, input }) => {
       const existing = await ctx.db.query.syncJobs.findFirst({
         where: eq(syncJobs.athlete, input.athleteId),

@@ -66,8 +66,7 @@ async function syncActivitiesPhase(
   // Page through activities from newest to oldest (Strava's default sort).
   // No `after` parameter — we scan for gaps left by missed webhook events.
   // Stop when a full page yields 0 new inserts (we've caught up).
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
+  for (;;) {
     // Check if job is still active
     const job = await db.query.syncJobs.findFirst({
       where: eq(syncJobs.id, syncJobId),
@@ -139,8 +138,7 @@ async function syncStreamsPhase(
 ) {
   let totalFetched = 0;
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
+  for (;;) {
     const job = await db.query.syncJobs.findFirst({
       where: eq(syncJobs.id, syncJobId),
     });
@@ -229,8 +227,7 @@ async function computeScoresPhase(
 
   let cursor: string | undefined;
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
+  for (;;) {
     const batch = await db
       .select()
       .from(activities)
@@ -461,8 +458,7 @@ export async function recomputeAllScores(db: Database, athleteId: number) {
 
   let cursor: string | undefined;
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
+  for (;;) {
     const batch = await db
       .select()
       .from(activities)

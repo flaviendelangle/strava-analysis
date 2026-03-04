@@ -126,28 +126,32 @@ export function useTrainingPageController() {
     return stopRecording;
   }, [session.state, startRecording, stopRecording]);
 
+  // Destructure stable setters so eslint can track dependencies
+  const { setSupportsControl, setErgEnabled } = ergMode;
+  const { setTargetPower } = trainer;
+
   // Sync trainer control capability into ERG mode context
   useEffect(() => {
-    ergMode.setSupportsControl(trainer.supportsControl ?? false);
-  }, [trainer.supportsControl]); // eslint-disable-line react-hooks/exhaustive-deps
+    setSupportsControl(trainer.supportsControl ?? false);
+  }, [trainer.supportsControl, setSupportsControl]);
 
   // Auto-disable ERG when trainer disconnects
   useEffect(() => {
     if (trainer.state !== "connected") {
-      ergMode.setErgEnabled(false);
+      setErgEnabled(false);
     }
-  }, [trainer.state]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [trainer.state, setErgEnabled]);
 
   // Send target power to trainer when ERG is enabled and target changes
   useEffect(() => {
     if (!ergMode.ergEnabled || !trainer.supportsControl) return;
     const timer = setTimeout(() => {
-      trainer.setTargetPower(ergMode.targetPower).catch((err) => {
+      setTargetPower(ergMode.targetPower).catch((err) => {
         console.error("[ERG] Failed to set target power:", err);
       });
     }, 200);
     return () => clearTimeout(timer);
-  }, [ergMode.ergEnabled, ergMode.targetPower, trainer.supportsControl]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ergMode.ergEnabled, ergMode.targetPower, trainer.supportsControl, setTargetPower]);
 
   // Auto-start when power is detected while idle
   useEffect(() => {

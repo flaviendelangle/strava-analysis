@@ -11,6 +11,7 @@ import {
 
 import type { Activity } from "@server/db/types";
 
+import { useExplorerTiles } from "~/hooks/useExplorerTiles";
 import { useExplorerTilesToggle } from "~/hooks/useExplorerTilesToggle";
 import { decode } from "~/utils/polyline";
 
@@ -53,20 +54,33 @@ export default function Map(props: MapProps) {
   } = props;
   const { showExplorerTiles } = useExplorerTilesToggle();
 
+  // Decode polylines once, reused for both map rendering and explorer tiles
+  const decodedActivityPolylines = React.useMemo(() => {
+    if (routePositions || !activities) return null;
+    const result: { id: string; polyline: [number, number][] }[] = [];
+    for (const activity of activities) {
+      if (activity.mapPolyline) {
+        result.push({
+          id: String(activity.id),
+          polyline: decode(activity.mapPolyline),
+        });
+      }
+    }
+    return result;
+  }, [activities, routePositions]);
+
   const polylines = React.useMemo(() => {
     if (routePositions) {
       return [{ id: "latlng", polyline: routePositions }];
     }
-    return (activities ?? [])
-      .map((activity) => {
-        if (!activity?.mapPolyline) return null;
-        return {
-          id: String(activity.id),
-          polyline: decode(activity.mapPolyline),
-        };
-      })
-      .filter((activity) => !!activity);
-  }, [activities, routePositions]);
+    return decodedActivityPolylines ?? [];
+  }, [decodedActivityPolylines, routePositions]);
+
+  const explorerPolylines = React.useMemo(
+    () => decodedActivityPolylines?.map((p) => p.polyline) ?? [],
+    [decodedActivityPolylines],
+  );
+  const explorerTilesData = useExplorerTiles(explorerPolylines);
 
   return (
     <div className="relative h-full w-full">
@@ -78,7 +92,7 @@ export default function Map(props: MapProps) {
         <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
         {enableExplorerTiles && (
           <ExplorerTilesLayer
-            activities={activities}
+            tilesData={explorerTilesData}
             visible={showExplorerTiles}
           />
         )}
@@ -105,7 +119,7 @@ export default function Map(props: MapProps) {
       </MapContainer>
       {enableExplorerTiles && (
         <ExplorerTilesStats
-          activities={activities}
+          tilesData={explorerTilesData}
           visible={showExplorerTiles}
         />
       )}

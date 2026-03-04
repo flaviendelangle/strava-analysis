@@ -1,18 +1,14 @@
-import type { Activity } from "@server/db/types";
-
-import { useExplorerTiles } from "~/hooks/useExplorerTiles";
+import type { ExplorerTilesResult } from "~/utils/explorerTiles";
 
 interface ExplorerTilesStatsProps {
-  activities: Activity[] | null;
+  tilesData: ExplorerTilesResult | null;
   visible: boolean;
 }
 
 export function ExplorerTilesStats({
-  activities,
+  tilesData,
   visible,
 }: ExplorerTilesStatsProps) {
-  const tilesData = useExplorerTiles(activities);
-
   if (!visible || !tilesData) return null;
 
   const { stats } = tilesData;

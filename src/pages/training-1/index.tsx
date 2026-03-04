@@ -10,19 +10,19 @@ import { useTrainingPageController } from "~/hooks/useTrainingPageController";
 
 type Phase = "connection" | "waiting" | "main" | "paused" | "post";
 
+function getPhase(ctrl: ReturnType<typeof useTrainingPageController>): Phase {
+  if (ctrl.session.state === "stopped") return "post";
+  if (ctrl.session.state === "paused") return "paused";
+  if (ctrl.session.state === "running") return "main";
+  if (ctrl.hr.state === "connected" && ctrl.trainer.state === "connected")
+    return "waiting";
+  return "connection";
+}
+
 export default function Training1Page() {
   const ctrl = useTrainingPageController();
+  const phase = getPhase(ctrl);
 
-  const phase: Phase =
-    ctrl.session.state === "stopped"
-      ? "post"
-      : ctrl.session.state === "paused"
-        ? "paused"
-        : ctrl.session.state === "running"
-          ? "main"
-          : ctrl.hr.state === "connected" && ctrl.trainer.state === "connected"
-            ? "waiting"
-            : "connection";
 
   // Track paused duration
   const [pausedSeconds, setPausedSeconds] = useState(0);

@@ -35,6 +35,7 @@ export const trpc = createTRPCNext<AppRouter>({
       queryClientConfig: {
         defaultOptions: {
           queries: {
+            staleTime: 5 * 60 * 1000, // 5 minutes
             retry: (failureCount, error) => {
               if (isUnauthorized(error)) {
                 handleUnauthorized();

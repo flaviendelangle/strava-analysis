@@ -7,7 +7,7 @@ import { getSportConfig } from "~/utils/sportConfig";
 import { trpc } from "~/utils/trpc";
 
 import { MultiPanelChart } from "./MultiPanelChart";
-import type { PreparedStream, StreamConfig, XAxisMode } from "./types";
+import type { PreparedStream, XAxisMode } from "./types";
 
 const X_AXIS_OPTIONS: { value: XAxisMode; label: string }[] = [
   { value: "time", label: "Time" },
@@ -110,24 +110,22 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
     [latlngData, onHoverPositionChange],
   );
 
-  const { streams, distanceData } = React.useMemo(() => {
-    if (!activity || !streamsData || tokens.paletteOklch.length === 0) {
-      return { streams: [], distanceData: null };
-    }
+  // Parse stream JSON once — only re-runs when raw stream data changes
+  const parsedStreams = React.useMemo(() => {
+    if (!streamsData) return null;
 
     const distanceStream = streamsData.find((s) => s.type === "distance");
-    const parsedDistanceData = distanceStream
+    const distanceData = distanceStream
       ? parseStreamData(distanceStream.data)
       : null;
 
-    const preparedStreams = STREAM_DEFS.map((def): PreparedStream | null => {
+    const parsed = STREAM_DEFS.map((def) => {
       const stream = streamsData.find((element) => element.type === def.type);
-      if (!stream) {
-        return null;
-      }
+      if (!stream) return null;
 
       const yData = parseStreamData(stream.data);
       if (!yData) return null;
+
       let yMin = Infinity;
       let yMax = -Infinity;
       for (const v of yData) {
@@ -139,24 +137,38 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
       const range = yMax - yMin;
       const padding = range > 0 ? range * 0.05 : 1;
 
-      const streamConfig: StreamConfig = {
-        type: def.type,
-        title: def.title,
-        unit: def.unit,
-        color: tokens.palette[def.colorIndex] ?? tokens.palette[0],
-        area: def.area,
-      };
+      return { def, yData, yMin: yMin - padding, yMax: yMax + padding };
+    }).filter(
+      (s): s is { def: StreamDef; yData: number[]; yMin: number; yMax: number } =>
+        s !== null,
+    );
 
-      return {
-        config: streamConfig,
+    return { parsed, distanceData };
+  }, [streamsData]);
+
+  // Assemble final streams with color tokens — cheap, re-runs on theme change
+  const { streams, distanceData } = React.useMemo(() => {
+    if (!activity || !parsedStreams || tokens.paletteOklch.length === 0) {
+      return { streams: [], distanceData: null };
+    }
+
+    const preparedStreams: PreparedStream[] = parsedStreams.parsed.map(
+      ({ def, yData, yMin, yMax }) => ({
+        config: {
+          type: def.type,
+          title: def.title,
+          unit: def.unit,
+          color: tokens.palette[def.colorIndex] ?? tokens.palette[0],
+          area: def.area,
+        },
         yData,
-        yMin: yMin - padding,
-        yMax: yMax + padding,
-      };
-    }).filter((stream): stream is PreparedStream => stream !== null);
+        yMin,
+        yMax,
+      }),
+    );
 
-    return { streams: preparedStreams, distanceData: parsedDistanceData };
-  }, [streamsData, activity?.stravaId, activity?.type, tokens.palette]);
+    return { streams: preparedStreams, distanceData: parsedStreams.distanceData };
+  }, [parsedStreams, activity, tokens.palette]);
 
   const sportConfig = activity ? getSportConfig(activity.type) : null;
   const distanceAvailable = distanceData != null;

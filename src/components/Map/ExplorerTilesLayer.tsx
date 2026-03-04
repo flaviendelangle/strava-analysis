@@ -3,10 +3,13 @@ import * as React from "react";
 import * as L from "leaflet";
 import { useMap } from "react-leaflet";
 
-import type { Activity } from "@server/db/types";
-
-import { useExplorerTiles } from "~/hooks/useExplorerTiles";
-import { type TileCategory, tileToBounds } from "~/utils/explorerTiles";
+import {
+  type ClassifiedTile,
+  type TileCategory,
+  pointToTile,
+  tileToBounds,
+} from "~/utils/explorerTiles";
+import type { ExplorerTilesResult } from "~/utils/explorerTiles";
 
 const TILE_COLORS: Record<TileCategory, { fill: string; stroke: string }> = {
   maxSquare: { fill: "#7c3aed", stroke: "#6d28d9" },
@@ -15,20 +18,48 @@ const TILE_COLORS: Record<TileCategory, { fill: string; stroke: string }> = {
   isolated: { fill: "#f87171", stroke: "#ef4444" },
 };
 
+/** Get the tile coordinate range visible in the current map viewport. */
+function getVisibleTileRange(map: L.Map) {
+  const bounds = map.getBounds();
+  const nw = pointToTile(bounds.getNorth(), bounds.getWest());
+  const se = pointToTile(bounds.getSouth(), bounds.getEast());
+  return {
+    minTx: Math.min(nw.tx, se.tx) - 1,
+    maxTx: Math.max(nw.tx, se.tx) + 1,
+    minTy: Math.min(nw.ty, se.ty) - 1,
+    maxTy: Math.max(nw.ty, se.ty) + 1,
+  };
+}
+
+function isTileVisible(
+  tile: ClassifiedTile,
+  range: ReturnType<typeof getVisibleTileRange>,
+) {
+  return (
+    tile.tx >= range.minTx &&
+    tile.tx <= range.maxTx &&
+    tile.ty >= range.minTy &&
+    tile.ty <= range.maxTy
+  );
+}
+
 interface ExplorerTilesLayerProps {
-  activities: Activity[] | null;
+  tilesData: ExplorerTilesResult | null;
   visible: boolean;
 }
 
 export function ExplorerTilesLayer({
-  activities,
+  tilesData,
   visible,
 }: ExplorerTilesLayerProps) {
   const map = useMap();
-  const tilesData = useExplorerTiles(activities);
 
   const layerRef = React.useRef<L.FeatureGroup | null>(null);
   const rendererRef = React.useRef<L.Canvas | null>(null);
+  const tilesDataRef = React.useRef(tilesData);
+  React.useEffect(() => {
+    tilesDataRef.current = tilesData;
+  });
 
   // Create pane, renderer, and layer group once
   React.useEffect(() => {
@@ -46,19 +77,21 @@ export function ExplorerTilesLayer({
     };
   }, [map]);
 
-  // Update rectangles when tiles data changes
-  React.useEffect(() => {
+  const renderVisibleTiles = React.useCallback(() => {
     const layer = layerRef.current;
     const renderer = rendererRef.current;
-    if (!layer || !renderer || !tilesData) {
+    const data = tilesDataRef.current;
+    if (!layer || !renderer || !data) {
       layer?.clearLayers();
       return;
     }
 
     layer.clearLayers();
-    const { tiles } = tilesData;
+    const range = getVisibleTileRange(map);
 
-    for (const tile of tiles) {
+    for (const tile of data.tiles) {
+      if (!isTileVisible(tile, range)) continue;
+
       const bounds = tileToBounds(tile.tx, tile.ty);
       const colors = TILE_COLORS[tile.category];
 
@@ -78,7 +111,20 @@ export function ExplorerTilesLayer({
         },
       ).addTo(layer);
     }
-  }, [tilesData]);
+  }, [map]);
+
+  // Re-render tiles when data changes
+  React.useEffect(() => {
+    renderVisibleTiles();
+  }, [tilesData, renderVisibleTiles]);
+
+  // Re-render on viewport changes
+  React.useEffect(() => {
+    map.on("moveend", renderVisibleTiles);
+    return () => {
+      map.off("moveend", renderVisibleTiles);
+    };
+  }, [map, renderVisibleTiles]);
 
   // Show/hide based on visible prop
   React.useEffect(() => {
