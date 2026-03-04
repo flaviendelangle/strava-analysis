@@ -16,8 +16,8 @@ Built with Next.js, tRPC, Drizzle ORM, and PostgreSQL.
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/flaviendelangle/strava-analysis.git
-cd strava-analysis
+git clone https://github.com/flaviendelangle/undertrained.git
+cd undertrained
 pnpm install
 ```
 
