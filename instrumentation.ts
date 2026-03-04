@@ -2,6 +2,7 @@ import { inArray } from "drizzle-orm";
 
 import { db } from "./server/db";
 import { syncJobs } from "./server/db/schema";
+import { ensureWebhookSubscription } from "./server/lib/webhookSubscription";
 
 export async function register() {
   // Mark any in-progress sync jobs as failed on startup.
@@ -17,4 +18,7 @@ export async function register() {
         "computing_scores",
       ]),
     );
+
+  // Auto-register Strava webhook subscription if callback URL is configured
+  await ensureWebhookSubscription();
 }

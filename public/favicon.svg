@@ -1,47 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#7B5EBF"/>
-      <stop offset="100%" stop-color="#3A2470"/>
+      <stop offset="0%" stop-color="#2D2D2D"/>
+      <stop offset="100%" stop-color="#1A1A1A"/>
     </linearGradient>
-    <linearGradient id="summit" x1="0" y1="20" x2="0" y2="10" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FF7A3D"/>
-      <stop offset="100%" stop-color="#FC4C02"/>
+    <linearGradient id="flame" x1="0" y1="40" x2="0" y2="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF6B35"/>
+      <stop offset="100%" stop-color="#FF3F00"/>
     </linearGradient>
   </defs>
 
   <!-- Rounded square background -->
   <rect width="64" height="64" rx="14" fill="url(#bg)"/>
 
-  <!-- Subtle chart grid lines — reinforces "data" reading -->
-  <g stroke="white" stroke-width="0.5" opacity="0.1">
-    <line x1="10" y1="44" x2="54" y2="44"/>
-    <line x1="10" y1="36" x2="54" y2="36"/>
-    <line x1="10" y1="28" x2="54" y2="28"/>
-    <line x1="10" y1="20" x2="54" y2="20"/>
-  </g>
+  <!-- Pot body -->
+  <rect x="14" y="34" width="36" height="16" rx="3" fill="white" fill-opacity="0.9"/>
 
-  <!-- Mountain range / ascending chart silhouette -->
-  <path d="
-    M 8 52
-    L 18 36
-    L 24 42
-    L 34 24
-    L 38 30
-    L 48 12
-    L 56 52
-    Z
-  " fill="white" fill-opacity="0.92"/>
+  <!-- Pot rim -->
+  <rect x="11" y="32" width="42" height="4" rx="2" fill="white"/>
 
-  <!-- Orange accent cap on tallest peak -->
-  <path d="
-    M 43 20
-    L 48 12
-    L 53 20
-    Z
-  " fill="url(#summit)"/>
+  <!-- Pot handles -->
+  <rect x="6" y="33" width="7" height="2" rx="1" fill="white" fill-opacity="0.7"/>
+  <rect x="51" y="33" width="7" height="2" rx="1" fill="white" fill-opacity="0.7"/>
 
-  <!-- Small summit marker dot -->
-  <circle cx="48" cy="11" r="2.5" fill="#FC4C02"/>
-  <circle cx="48" cy="11" r="1" fill="white" opacity="0.5"/>
+  <!-- Rising chart line (coming out of pot like steam) -->
+  <polyline
+    points="18,28 24,24 30,26 36,18 42,14 46,10"
+    fill="none"
+    stroke="url(#flame)"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Chart line endpoint dot -->
+  <circle cx="46" cy="10" r="3" fill="#FF3F00"/>
+  <circle cx="46" cy="10" r="1.2" fill="white" opacity="0.5"/>
+
+  <!-- Steam wisps -->
+  <path d="M22 28 Q20 22 22 18" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
+  <path d="M40 26 Q38 20 40 16" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.2"/>
 </svg>

@@ -62,6 +62,8 @@ export function PowerHrChart(props: PowerHrChartProps) {
         label: "Power",
         data: points.map((p) => p.power ?? 0),
         yAxisId: "power",
+        valueFormatter: (value: number | null) =>
+          value != null ? `${Math.round(value)} W` : "0 W",
         colorGetter: ({ dataIndex }: { dataIndex: number }) =>
           powerColors[dataIndex],
       },
@@ -73,6 +75,8 @@ export function PowerHrChart(props: PowerHrChartProps) {
         color: "#EF4444",
         showMark: false,
         curve: "natural" as const,
+        valueFormatter: (value: number | null) =>
+          value != null ? `${Math.round(value)} bpm` : "0 bpm",
       },
       ...(hasTargetPower
         ? [

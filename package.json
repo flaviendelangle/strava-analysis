@@ -1,5 +1,5 @@
 {
-  "name": "strava-analysis",
+  "name": "overcooked",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -14,7 +14,10 @@
     "prettier": "prettier --write .",
     "test-unit": "vitest",
     "test-e2e": "playwright test",
-    "test-start": "run-s test-unit test-e2e"
+    "test-start": "run-s test-unit test-e2e",
+    "webhook:create": "tsx scripts/manage-webhook.ts create",
+    "webhook:view": "tsx scripts/manage-webhook.ts view",
+    "webhook:delete": "tsx scripts/manage-webhook.ts delete"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",

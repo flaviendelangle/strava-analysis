@@ -19,24 +19,24 @@ export const activitiesRouter = router({
     )
     .use(validateAthleteOwnership)
     .query(async ({ ctx, input }) => {
-      // Lightweight query for all distinct activity types
-      const typeRows = await ctx.db
-        .selectDistinct({ type: activities.type })
-        .from(activities)
-        .where(eq(activities.athlete, input.athleteId));
-      const allTypes = typeRows.map((r) => r.type).sort();
-
       // Build filter conditions
       const conditions = [eq(activities.athlete, input.athleteId)];
       if (input.activityTypes && input.activityTypes.length > 0) {
         conditions.push(inArray(activities.type, input.activityTypes));
       }
 
+      // Run both queries in parallel
+      const allTypesPromise = ctx.db
+        .selectDistinct({ type: activities.type })
+        .from(activities)
+        .where(eq(activities.athlete, input.athleteId))
+        .then((rows) => rows.map((r) => r.type).sort());
+
       if (input.includeMap) {
-        const filtered = await ctx.db
-          .select()
-          .from(activities)
-          .where(and(...conditions));
+        const [filtered, allTypes] = await Promise.all([
+          ctx.db.select().from(activities).where(and(...conditions)),
+          allTypesPromise,
+        ]);
         return { activities: filtered, allTypes };
       }
 
@@ -44,10 +44,13 @@ export const activitiesRouter = router({
       const { mapPolyline: _mapPolyline, ...columnsWithoutMap } =
         getTableColumns(activities);
 
-      const filtered = await ctx.db
-        .select(columnsWithoutMap)
-        .from(activities)
-        .where(and(...conditions));
+      const [filtered, allTypes] = await Promise.all([
+        ctx.db
+          .select(columnsWithoutMap)
+          .from(activities)
+          .where(and(...conditions)),
+        allTypesPromise,
+      ]);
 
       return {
         activities: filtered.map((a) => ({

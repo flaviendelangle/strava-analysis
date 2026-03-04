@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { isAfter } from "date-fns";
 
-import { isSameUnit } from "~/utils/dateUtils";
+import { startOf } from "~/utils/dateUtils";
 
 import type { Activity } from "@server/db/types";
 import { SlicePrecision } from "./useTimeSlices";
@@ -37,12 +37,20 @@ export const useGroupActivitiesByTimeSlice = ({
       >,
     );
 
+    // Build a Map for O(1) slice lookup instead of O(slices) linear scan per activity
+    const sliceByKey = new Map<string, Date>();
+    for (const slice of slices) {
+      sliceByKey.set(slice.toISOString(), slice);
+    }
+
     for (const activity of activities ?? []) {
-      const month = slices.find((date) =>
-        isSameUnit(date, new Date(activity.startDate), precision),
-      );
-      if (month) {
-        temp[month.toISOString()].activities.push(activity);
+      const normalizedKey = startOf(
+        new Date(activity.startDate),
+        precision,
+      ).toISOString();
+      const slice = sliceByKey.get(normalizedKey);
+      if (slice) {
+        temp[slice.toISOString()].activities.push(activity);
       }
     }
 

@@ -70,7 +70,7 @@ export function NavBar() {
             label={isMenuExpanded ? "Collapse menu" : "Expand menu"}
           >
             <NavBarButton
-              label="Strava analysis"
+              label="Overcooked"
               svgPath="M3 18h18v-2H3zm0-5h18v-2H3zm0-7v2h18V6z"
               onClick={() => setIsMenuExpanded((prev) => !prev)}
             />

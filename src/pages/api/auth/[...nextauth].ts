@@ -15,7 +15,7 @@ export const authOptions: AuthOptions = {
       authorization: {
         url: "https://www.strava.com/api/v3/oauth/authorize",
         params: {
-          scope: "read,activity:read,activity:write",
+          scope: "read,activity:read_all,activity:write",
           approval_prompt: "force",
           response_type: "code",
         },

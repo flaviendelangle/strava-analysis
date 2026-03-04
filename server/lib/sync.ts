@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, inArray } from "drizzle-orm";
+import { and, asc, count, eq, gt, inArray, sql } from "drizzle-orm";
 import strava from "strava-v3";
 
 import type { Database } from "../db";
@@ -24,6 +24,7 @@ import {
 
 const PAGE_SIZE = 50;
 const BATCH_SIZE = 50;
+const STREAM_FETCH_CONCURRENCY = 3;
 
 /**
  * Fire-and-forget sync orchestration.
@@ -59,22 +60,12 @@ async function syncActivitiesPhase(
 ) {
   const accessToken = await getAccessToken(db, athleteId);
 
-  // Get latest activity to use as `after` parameter
-  const latestActivity = await db
-    .select({ startDate: activities.startDate })
-    .from(activities)
-    .where(eq(activities.athlete, athleteId))
-    .orderBy(desc(activities.startDate))
-    .limit(1)
-    .then((rows) => rows[0] ?? null);
-
-  const afterTimestamp = latestActivity
-    ? Math.floor(new Date(latestActivity.startDate).getTime() / 1000)
-    : undefined;
-
   let page = 1;
   let totalInserted = 0;
 
+  // Page through activities from newest to oldest (Strava's default sort).
+  // No `after` parameter — we scan for gaps left by missed webhook events.
+  // Stop when a full page yields 0 new inserts (we've caught up).
   // eslint-disable-next-line no-constant-condition
   while (true) {
     // Check if job is still active
@@ -83,45 +74,39 @@ async function syncActivitiesPhase(
     });
     if (!job || job.status !== "fetching_activities") return;
 
-    const stravaParams: Record<string, unknown> = {
+    const pageActivities = await strava.athlete.listActivities({
       access_token: accessToken,
       per_page: PAGE_SIZE,
       page,
-    };
-    if (afterTimestamp) {
-      stravaParams.after = afterTimestamp;
-    }
+    });
 
-    const pageActivities = await strava.athlete.listActivities(stravaParams);
+    if (pageActivities.length === 0) break;
 
-    if (pageActivities.length > 0) {
-      const models = pageActivities.map((raw) => ({
-        ...getModelFromStravaActivity(raw),
-        areStreamsLoaded: false,
-      }));
+    const models = pageActivities.map((raw) => ({
+      ...getModelFromStravaActivity(raw),
+      areStreamsLoaded: false,
+    }));
 
-      const inserted = await db
-        .insert(activities)
-        .values(models)
-        .onConflictDoNothing({ target: activities.stravaId })
-        .returning({ id: activities.id });
+    await db
+      .insert(activities)
+      .values(models)
+      .onConflictDoUpdate({
+        target: activities.stravaId,
+        set: { mapPolyline: sql`excluded.map_polyline` },
+      });
 
-      const insertedCount = inserted.length;
-      totalInserted += insertedCount;
+    totalInserted += pageActivities.length;
 
-      await db
-        .update(syncJobs)
-        .set({ activitiesFetched: totalInserted })
-        .where(eq(syncJobs.id, syncJobId));
+    await db
+      .update(syncJobs)
+      .set({ activitiesFetched: totalInserted })
+      .where(eq(syncJobs.id, syncJobId));
 
-      if (pageActivities.length === PAGE_SIZE && insertedCount > 0) {
-        page++;
-        await delay(5_000);
-        continue;
-      }
-    }
+    // Last page of history (fewer than PAGE_SIZE results)
+    if (pageActivities.length < PAGE_SIZE) break;
 
-    break;
+    page++;
+    await delay(5_000);
   }
 
   // Transition to streams phase
@@ -183,27 +168,33 @@ async function syncStreamsPhase(
       return;
     }
 
-    for (const activity of batch) {
-      try {
-        const normalized = await fetchStreamsFromStrava(
-          accessToken,
-          activity.stravaId,
-        );
-
-        await storeStreams(db, activity.id, normalized);
-        totalFetched++;
-      } catch (e) {
-        console.error(
-          `[syncStreamsPhase] Failed for activity ${activity.stravaId}:`,
-          e,
-        );
-        // Mark as loaded so we don't retry forever
-        await db
-          .update(activities)
-          .set({ areStreamsLoaded: true })
-          .where(eq(activities.id, activity.id));
-      }
-    }
+    // Fetch streams concurrently with limited parallelism to respect Strava rate limits
+    const results = await runWithConcurrency(
+      batch,
+      async (activity) => {
+        try {
+          const normalized = await fetchStreamsFromStrava(
+            accessToken,
+            activity.stravaId,
+          );
+          await storeStreams(db, activity.id, normalized);
+          return true;
+        } catch (e) {
+          console.error(
+            `[syncStreamsPhase] Failed for activity ${activity.stravaId}:`,
+            e,
+          );
+          // Mark as loaded so we don't retry forever
+          await db
+            .update(activities)
+            .set({ areStreamsLoaded: true })
+            .where(eq(activities.id, activity.id));
+          return false;
+        }
+      },
+      STREAM_FETCH_CONCURRENCY,
+    );
+    totalFetched += results.filter(Boolean).length;
 
     await db
       .update(syncJobs)
@@ -256,9 +247,7 @@ async function computeScoresPhase(
 
     if (batch.length === 0) break;
 
-    for (const activity of batch) {
-      await computeActivityScoresInternal(db, activity, settingsDoc);
-    }
+    await computeActivityScoresBatch(db, batch, settingsDoc);
 
     cursor = batch[batch.length - 1].startDate;
     if (batch.length < BATCH_SIZE) break;
@@ -301,34 +290,94 @@ export async function storeStreams(
     .where(eq(activities.id, activityId));
 }
 
+type ActivityForScoring = {
+  id: number;
+  athlete: number;
+  type: string;
+  startDateLocal: string;
+  weightedAverageWatts: number | null;
+  areStreamsLoaded: boolean;
+  movingTime: number;
+};
+
+type SettingsDocForScoring = {
+  initialValues: {
+    ftp: number;
+    weightKg: number;
+    restingHr: number;
+    maxHr: number;
+    lthr: number;
+  };
+  changes: {
+    date: string;
+    ftp?: number;
+    weightKg?: number;
+    restingHr?: number;
+    maxHr?: number;
+    lthr?: number;
+  }[];
+};
+
+type StreamDoc = {
+  activityId: number;
+  type: string;
+  data: string;
+  chunkIndex: number | null;
+};
+
+/**
+ * Batch-compute scores for a set of activities.
+ * Pre-loads all required streams in a single query to avoid N+1.
+ */
+async function computeActivityScoresBatch(
+  db: Database,
+  batch: ActivityForScoring[],
+  settingsDoc: SettingsDocForScoring,
+) {
+  // Batch-load all streams for activities that have them
+  const activitiesWithStreams = batch.filter((a) => a.areStreamsLoaded);
+  let streamsMap = new Map<number, StreamDoc[]>();
+
+  if (activitiesWithStreams.length > 0) {
+    const allStreams = await db
+      .select()
+      .from(activityStreams)
+      .where(
+        and(
+          inArray(
+            activityStreams.activityId,
+            activitiesWithStreams.map((a) => a.id),
+          ),
+          inArray(activityStreams.type, ["heartrate", "watts"]),
+        ),
+      );
+
+    streamsMap = new Map<number, StreamDoc[]>();
+    for (const stream of allStreams) {
+      const existing = streamsMap.get(stream.activityId) ?? [];
+      existing.push(stream);
+      streamsMap.set(stream.activityId, existing);
+    }
+  }
+
+  // Compute scores in parallel (CPU-bound, no external API calls)
+  await Promise.all(
+    batch.map((activity) =>
+      computeActivityScoresInternal(
+        db,
+        activity,
+        settingsDoc,
+        streamsMap.get(activity.id) ?? [],
+      ),
+    ),
+  );
+}
+
 export async function computeActivityScoresInternal(
   db: Database,
-  activity: {
-    id: number;
-    athlete: number;
-    type: string;
-    startDateLocal: string;
-    weightedAverageWatts: number | null;
-    areStreamsLoaded: boolean;
-    movingTime: number;
-  },
-  settingsDoc: {
-    initialValues: {
-      ftp: number;
-      weightKg: number;
-      restingHr: number;
-      maxHr: number;
-      lthr: number;
-    };
-    changes: {
-      date: string;
-      ftp?: number;
-      weightKg?: number;
-      restingHr?: number;
-      maxHr?: number;
-      lthr?: number;
-    }[];
-  },
+  activity: ActivityForScoring,
+  settingsDoc: SettingsDocForScoring,
+  preloadedStreams?: StreamDoc[],
 ) {
   const activityDate = activity.startDateLocal.slice(0, 10);
   const settings = resolveRiderSettings(settingsDoc, activityDate);
@@ -350,15 +399,18 @@ export async function computeActivityScoresInternal(
   }
 
   if (activity.areStreamsLoaded) {
-    const streamDocs = await db
-      .select()
-      .from(activityStreams)
-      .where(
-        and(
-          eq(activityStreams.activityId, activity.id),
-          inArray(activityStreams.type, ["heartrate", "watts"]),
-        ),
-      );
+    // Use pre-loaded streams if available, otherwise query (for standalone calls)
+    const streamDocs =
+      preloadedStreams ??
+      (await db
+        .select()
+        .from(activityStreams)
+        .where(
+          and(
+            eq(activityStreams.activityId, activity.id),
+            inArray(activityStreams.type, ["heartrate", "watts"]),
+          ),
+        ));
 
     const hrDocs = streamDocs
       .filter((s) => s.type === "heartrate")
@@ -424,9 +476,7 @@ export async function recomputeAllScores(db: Database, athleteId: number) {
 
     if (batch.length === 0) break;
 
-    for (const activity of batch) {
-      await computeActivityScoresInternal(db, activity, settingsDoc);
-    }
+    await computeActivityScoresBatch(db, batch, settingsDoc);
 
     cursor = batch[batch.length - 1].startDate;
     if (batch.length < BATCH_SIZE) break;
@@ -435,4 +485,26 @@ export async function recomputeAllScores(db: Database, athleteId: number) {
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Run async tasks with limited concurrency. */
+async function runWithConcurrency<T, R>(
+  items: T[],
+  fn: (item: T) => Promise<R>,
+  concurrency: number,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const i = nextIndex++;
+      results[i] = await fn(items[i]);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, () => worker()),
+  );
+  return results;
 }

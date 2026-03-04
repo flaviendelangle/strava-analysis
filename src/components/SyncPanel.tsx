@@ -127,6 +127,7 @@ export function SyncPanel() {
     },
   );
   const startSync = trpc.sync.start.useMutation();
+  const forceResync = trpc.sync.forceResync.useMutation();
   const recomputeScores = trpc.riderSettings.recomputeScores.useMutation();
   const utils = trpc.useUtils();
   const [recomputing, setRecomputing] = React.useState(false);
@@ -191,6 +192,23 @@ export function SyncPanel() {
               <RefreshCwIcon className="size-3.5" />
               Sync all data
             </Button>
+
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full gap-1.5"
+              onClick={async () => {
+                if (!athleteId) return;
+                await forceResync.mutateAsync({ athleteId });
+                utils.sync.getJob.invalidate();
+              }}
+            >
+              <RefreshCwIcon className="size-3.5" />
+              Force full re-sync
+            </Button>
+            <span className="text-muted-foreground text-xs">
+              Re-downloads all routes and streams
+            </span>
 
             {syncJob?.status === "failed" && syncJob.lastError && (
               <div className="flex items-center gap-1.5 text-xs text-red-400">

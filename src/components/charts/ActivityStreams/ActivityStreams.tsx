@@ -51,6 +51,16 @@ const STREAMS_TO_PLOT: StreamConfig[] = [
   },
 ];
 
+function parseStreamData(data: string): number[] | null {
+  try {
+    const parsed = JSON.parse(data);
+    if (!Array.isArray(parsed)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 export default function ActivityStreams(props: ActivityStreamsProps) {
   const { stravaId, onHoverPositionChange } = props;
   const athleteId = useAthleteId();
@@ -108,7 +118,7 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
 
     const distanceStream = streamsData.find((s) => s.type === "distance");
     const parsedDistanceData = distanceStream
-      ? (JSON.parse(distanceStream.data) as number[])
+      ? parseStreamData(distanceStream.data)
       : null;
 
     const preparedStreams = STREAMS_TO_PLOT.map(
@@ -120,7 +130,8 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
           return null;
         }
 
-        const yData = JSON.parse(stream.data) as number[];
+        const yData = parseStreamData(stream.data);
+        if (!yData) return null;
         let yMin = Infinity;
         let yMax = -Infinity;
         for (const v of yData) {
@@ -142,7 +153,7 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
     ).filter((stream): stream is PreparedStream => stream !== null);
 
     return { streams: preparedStreams, distanceData: parsedDistanceData };
-  }, [streamsData, activity]);
+  }, [streamsData, activity?.stravaId, activity?.type]);
 
   const sportConfig = activity ? getSportConfig(activity.type) : null;
   const distanceAvailable = distanceData != null;

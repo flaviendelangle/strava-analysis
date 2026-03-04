@@ -347,7 +347,9 @@ export function MultiPanelChart(props: MultiPanelChartProps) {
                 className="text-zinc-500"
                 fontSize={10}
               >
-                {Math.round(tick)}
+                {panel.stream.config.unit === "m/s"
+                  ? `${Math.round(tick * 3.6)} km/h`
+                  : `${Math.round(tick)} ${panel.stream.config.unit}`}
               </text>
             ))}
 

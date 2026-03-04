@@ -131,26 +131,28 @@ export const POWER_ZONES = [
   { name: "Neuromuscular", maxPct: Infinity, color: "#9333EA" },
 ] as const;
 
-export function getPowerZoneColor(power: number, ftp: number): string {
+export function findPowerZone(
+  power: number,
+  ftp: number,
+): { zone: (typeof POWER_ZONES)[number]; index: number } {
   const pct = power / ftp;
-  for (const zone of POWER_ZONES) {
-    if (pct < zone.maxPct) return zone.color;
+  for (let i = 0; i < POWER_ZONES.length; i++) {
+    if (pct < POWER_ZONES[i].maxPct) return { zone: POWER_ZONES[i], index: i };
   }
-  return POWER_ZONES[POWER_ZONES.length - 1].color;
+  return {
+    zone: POWER_ZONES[POWER_ZONES.length - 1],
+    index: POWER_ZONES.length - 1,
+  };
+}
+
+export function getPowerZoneColor(power: number, ftp: number): string {
+  return findPowerZone(power, ftp).zone.color;
 }
 
 export function getPowerZoneName(power: number, ftp: number): string {
-  const pct = power / ftp;
-  for (const zone of POWER_ZONES) {
-    if (pct < zone.maxPct) return zone.name;
-  }
-  return POWER_ZONES[POWER_ZONES.length - 1].name;
+  return findPowerZone(power, ftp).zone.name;
 }
 
 export function getPowerZoneIndex(power: number, ftp: number): number {
-  const pct = power / ftp;
-  for (let i = 0; i < POWER_ZONES.length; i++) {
-    if (pct < POWER_ZONES[i].maxPct) return i;
-  }
-  return POWER_ZONES.length - 1;
+  return findPowerZone(power, ftp).index;
 }

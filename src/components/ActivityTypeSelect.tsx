@@ -3,6 +3,8 @@ import * as React from "react";
 import { Label } from "~/components/ui/label";
 import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
 
+import { formatActivityType } from "~/utils/format";
+
 import { Select, SelectProps } from "./primitives/Select";
 
 export function ActivityTypeSelect(props: Omit<SelectProps, "options">) {
@@ -12,7 +14,7 @@ export function ActivityTypeSelect(props: Omit<SelectProps, "options">) {
     return (
       activityTypes?.map((activityType) => ({
         value: activityType,
-        label: activityType,
+        label: formatActivityType(activityType),
       })) ?? []
     );
   }, [activityTypes]);

@@ -43,8 +43,9 @@ export default function ActivitiesCumulativeTimeline() {
     precision: "month",
   });
 
+  const metricConfig = METRICS.find((el) => el.value === metric);
+
   const series = React.useMemo(() => {
-    const metricConfig = METRICS.find((el) => el.value === metric);
     if (!metricConfig) {
       return [];
     }
@@ -82,7 +83,7 @@ export default function ActivitiesCumulativeTimeline() {
         curve: "natural" as const,
       };
     });
-  }, [groupedActivities, metric]);
+  }, [groupedActivities, metricConfig]);
 
   return (
     <ChartThemeProvider>
@@ -101,8 +102,12 @@ export default function ActivitiesCumulativeTimeline() {
             ]}
             yAxis={[
               {
-                valueFormatter: (value: number) =>
-                  Math.round(value).toLocaleString(),
+                valueFormatter: (value: number) => {
+                  const formatted = Math.round(value).toLocaleString();
+                  return metricConfig?.unit
+                    ? `${formatted} ${metricConfig.unit}`
+                    : formatted;
+                },
               },
             ]}
             series={series}

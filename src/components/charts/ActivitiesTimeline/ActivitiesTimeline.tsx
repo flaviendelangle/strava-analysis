@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
 import { useGroupActivitiesByTimeSlice } from "~/hooks/useGroupActivitiesByTimeSlice";
 import { SlicePrecision, useTimeSlices } from "~/hooks/useTimeSlices";
+import { formatActivityType } from "~/utils/format";
 
 import { METRICS, MetricSelect } from "../../MetricSelect";
 import { PrecisionSelect } from "../../PrecisionSelect";
@@ -32,8 +33,9 @@ export default function ActivitiesTimeline() {
     [groupedActivities],
   );
 
+  const metricConfig = METRICS.find((el) => el.value === metric);
+
   const series = React.useMemo(() => {
-    const metricConfig = METRICS.find((el) => el.value === metric);
     if (!metricConfig) {
       return [];
     }
@@ -44,7 +46,7 @@ export default function ActivitiesTimeline() {
     });
 
     return Array.from(activityTypes).map((activityType) => ({
-      label: activityType,
+      label: formatActivityType(activityType),
       data: groupedActivities.map((group) =>
         group.activities.reduce((acc, activity) => {
           if (activity.type === activityType) {
@@ -55,7 +57,7 @@ export default function ActivitiesTimeline() {
       ),
       stack: "total",
     }));
-  }, [groupedActivities, metric, activitiesQuery.data]);
+  }, [groupedActivities, metricConfig, activitiesQuery.data]);
 
   return (
     <ChartThemeProvider>
@@ -78,8 +80,12 @@ export default function ActivitiesTimeline() {
             ]}
             yAxis={[
               {
-                valueFormatter: (value: number) =>
-                  Math.round(value).toLocaleString(),
+                valueFormatter: (value: number) => {
+                  const formatted = Math.round(value).toLocaleString();
+                  return metricConfig?.unit
+                    ? `${formatted} ${metricConfig.unit}`
+                    : formatted;
+                },
               },
             ]}
             series={series}
