@@ -30,7 +30,7 @@ export const ActivityStats = React.memo(function ActivityStats({
   activity,
 }: ActivityStatsProps) {
   const sportConfig = getSportConfig(activity.type);
-  const { resolveForDate } = useRiderSettingsTimeline();
+  const { resolveForDate, hasSettings } = useRiderSettingsTimeline();
   const activityDate = activity.startDateLocal.slice(0, 10);
   const riderSettings = resolveForDate(activityDate);
 
@@ -48,7 +48,7 @@ export const ActivityStats = React.memo(function ActivityStats({
     activity.calories != null ||
     activity.averageCadence != null;
   const hasTrainingLoad =
-    intensityFactor != null || tss != null || hrss != null;
+    intensityFactor != null || tss != null || hrss != null || !hasSettings;
   const hasLoad = hrss != null;
 
   return (
@@ -190,49 +190,75 @@ export const ActivityStats = React.memo(function ActivityStats({
             collapsible
             defaultCollapsed
           >
-            {intensityFactor != null && (
-              <StatCard
-                label="Intensity Factor"
-                value={intensityFactor.toFixed(2)}
-                tooltip={
-                  <div className="flex flex-col gap-0.5">
-                    <div className="font-medium">
-                      Rider settings for {activityDate}
-                    </div>
-                    <div>FTP: {riderSettings.ftp} W</div>
-                  </div>
-                }
-              />
-            )}
-            {tss != null && (
-              <StatCard
-                label="TSS"
-                value={Math.round(tss).toString()}
-                tooltip={
-                  <div className="flex flex-col gap-0.5">
-                    <div className="font-medium">
-                      Rider settings for {activityDate}
-                    </div>
-                    <div>FTP: {riderSettings.ftp} W</div>
-                  </div>
-                }
-              />
-            )}
-            {hrss != null && (
-              <StatCard
-                label="HRSS"
-                value={Math.round(hrss).toString()}
-                tooltip={
-                  <div className="flex flex-col gap-0.5">
-                    <div className="font-medium">
-                      Rider settings for {activityDate}
-                    </div>
-                    <div>Resting HR: {riderSettings.restingHr} bpm</div>
-                    <div>Max HR: {riderSettings.maxHr} bpm</div>
-                    <div>LTHR: {riderSettings.lthr} bpm</div>
-                  </div>
-                }
-              />
+            {hasSettings ? (
+              <>
+                {intensityFactor != null && (
+                  <StatCard
+                    label="Intensity Factor"
+                    value={intensityFactor.toFixed(2)}
+                    tooltip={
+                      <div className="flex flex-col gap-0.5">
+                        <div className="font-medium">
+                          Rider settings for {activityDate}
+                        </div>
+                        <div>FTP: {riderSettings.ftp} W</div>
+                      </div>
+                    }
+                  />
+                )}
+                {tss != null && (
+                  <StatCard
+                    label="TSS"
+                    value={Math.round(tss).toString()}
+                    tooltip={
+                      <div className="flex flex-col gap-0.5">
+                        <div className="font-medium">
+                          Rider settings for {activityDate}
+                        </div>
+                        <div>FTP: {riderSettings.ftp} W</div>
+                      </div>
+                    }
+                  />
+                )}
+                {hrss != null && (
+                  <StatCard
+                    label="HRSS"
+                    value={Math.round(hrss).toString()}
+                    tooltip={
+                      <div className="flex flex-col gap-0.5">
+                        <div className="font-medium">
+                          Rider settings for {activityDate}
+                        </div>
+                        <div>Resting HR: {riderSettings.restingHr} bpm</div>
+                        <div>Max HR: {riderSettings.maxHr} bpm</div>
+                        <div>LTHR: {riderSettings.lthr} bpm</div>
+                      </div>
+                    }
+                  />
+                )}
+              </>
+            ) : (
+              <>
+                {isRide && (
+                  <>
+                    <StatCard
+                      label="Intensity Factor"
+                      value={null}
+                      tooltip="Configure your rider settings (FTP) to enable this metric."
+                    />
+                    <StatCard
+                      label="TSS"
+                      value={null}
+                      tooltip="Configure your rider settings (FTP) to enable this metric."
+                    />
+                  </>
+                )}
+                <StatCard
+                  label="HRSS"
+                  value={null}
+                  tooltip="Configure your rider settings (Resting HR, Max HR, LTHR) to enable this metric."
+                />
+              </>
             )}
           </StatSection>
         )}

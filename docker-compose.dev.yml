@@ -4,9 +4,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: strava
-      POSTGRES_PASSWORD: strava
-      POSTGRES_DB: strava_analysis
+      POSTGRES_USER: undertrained
+      POSTGRES_PASSWORD: undertrained
+      POSTGRES_DB: undertrained
     volumes:
       - pgdata:/var/lib/postgresql/data
 

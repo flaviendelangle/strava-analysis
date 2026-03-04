@@ -28,14 +28,14 @@ docker compose -f docker-compose.dev.yml up -d
 podman compose -f docker-compose.dev.yml up -d
 ```
 
-This starts a PostgreSQL 17 instance on `localhost:5432` with user `strava`, password `strava`, database `strava_analysis`.
+This starts a PostgreSQL 17 instance on `localhost:5432` with user `undertrained`, password `undertrained`, database `undertrained`.
 
 ### 3. Configure environment
 
 Create a `.env.local` file at the project root:
 
 ```env
-DATABASE_URL=postgresql://strava:strava@localhost:5432/strava_analysis
+DATABASE_URL=postgresql://undertrained:undertrained@localhost:5432/undertrained
 STRAVA_CLIENT_ID=<your-strava-client-id>
 STRAVA_CLIENT_SECRET=<your-strava-client-secret>
 NEXTAUTH_SECRET=<any-random-string>

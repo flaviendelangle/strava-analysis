@@ -7,20 +7,20 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_DB: strava_analysis
-          POSTGRES_USER: strava
-          POSTGRES_PASSWORD: strava
+          POSTGRES_DB: undertrained
+          POSTGRES_USER: undertrained
+          POSTGRES_PASSWORD: undertrained
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U strava"
+          --health-cmd "pg_isready -U undertrained"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
     env:
       NODE_ENV: test
       NEXTAUTH_SECRET: supersecret
-      DATABASE_URL: postgresql://strava:strava@localhost:5432/strava_analysis
+      DATABASE_URL: postgresql://undertrained:undertrained@localhost:5432/undertrained
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -72,20 +72,20 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_DB: strava_analysis
-          POSTGRES_USER: strava
-          POSTGRES_PASSWORD: strava
+          POSTGRES_DB: undertrained
+          POSTGRES_USER: undertrained
+          POSTGRES_PASSWORD: undertrained
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U strava"
+          --health-cmd "pg_isready -U undertrained"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
     env:
       NODE_ENV: test
       NEXTAUTH_SECRET: supersecret
-      DATABASE_URL: postgresql://strava:strava@localhost:5432/strava_analysis
+      DATABASE_URL: postgresql://undertrained:undertrained@localhost:5432/undertrained
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo

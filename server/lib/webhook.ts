@@ -123,18 +123,21 @@ async function handleActivityCreate(
     return;
   }
 
-  // Compute scores
+  // Compute scores (power bests are always computed; TSS/HRSS require rider settings)
   try {
-    const settingsDoc = await db.query.riderSettings.findFirst({
-      where: eq(riderSettings.athlete, stravaAthleteId),
+    const settingsDoc =
+      (await db.query.riderSettings.findFirst({
+        where: eq(riderSettings.athlete, stravaAthleteId),
+      })) ?? null;
+    const updatedActivity = await db.query.activities.findFirst({
+      where: eq(activities.id, activityId),
     });
-    if (settingsDoc) {
-      const updatedActivity = await db.query.activities.findFirst({
-        where: eq(activities.id, activityId),
-      });
-      if (updatedActivity) {
-        await computeActivityScoresInternal(db, updatedActivity, settingsDoc);
-      }
+    if (updatedActivity) {
+      await computeActivityScoresInternal(
+        db,
+        updatedActivity,
+        settingsDoc,
+      );
     }
   } catch (err) {
     console.error(
@@ -189,16 +192,19 @@ async function handleActivityUpdate(
   // If type changed, recompute scores (TSS/powerBests depend on activity type)
   if (updates.type) {
     try {
-      const settingsDoc = await db.query.riderSettings.findFirst({
-        where: eq(riderSettings.athlete, stravaAthleteId),
+      const settingsDoc =
+        (await db.query.riderSettings.findFirst({
+          where: eq(riderSettings.athlete, stravaAthleteId),
+        })) ?? null;
+      const updatedActivity = await db.query.activities.findFirst({
+        where: eq(activities.stravaId, stravaActivityId),
       });
-      if (settingsDoc) {
-        const updatedActivity = await db.query.activities.findFirst({
-          where: eq(activities.stravaId, stravaActivityId),
-        });
-        if (updatedActivity) {
-          await computeActivityScoresInternal(db, updatedActivity, settingsDoc);
-        }
+      if (updatedActivity) {
+        await computeActivityScoresInternal(
+          db,
+          updatedActivity,
+          settingsDoc,
+        );
       }
     } catch (err) {
       console.error(

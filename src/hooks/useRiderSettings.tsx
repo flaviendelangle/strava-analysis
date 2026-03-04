@@ -18,6 +18,7 @@ interface RiderSettingsContextValue {
   setTimeline: (timeline: RiderSettingsTimeline) => void;
   resolveForDate: (date: string) => RiderSettings;
   currentSettings: RiderSettings;
+  hasSettings: boolean;
 }
 
 const RiderSettingsContext = React.createContext<RiderSettingsContextValue>({
@@ -26,6 +27,7 @@ const RiderSettingsContext = React.createContext<RiderSettingsContextValue>({
   setTimeline: () => {},
   resolveForDate: () => DEFAULT_RIDER_SETTINGS,
   currentSettings: DEFAULT_RIDER_SETTINGS,
+  hasSettings: false,
 });
 
 export function RiderSettingsProvider({
@@ -81,9 +83,11 @@ export function RiderSettingsProvider({
     [timeline],
   );
 
+  const hasSettings = stored != null;
+
   const value = React.useMemo(
-    () => ({ timeline, setTimeline, resolveForDate, currentSettings }),
-    [timeline, setTimeline, resolveForDate, currentSettings],
+    () => ({ timeline, setTimeline, resolveForDate, currentSettings, hasSettings }),
+    [timeline, setTimeline, resolveForDate, currentSettings, hasSettings],
   );
 
   return <RiderSettingsContext value={value}>{children}</RiderSettingsContext>;

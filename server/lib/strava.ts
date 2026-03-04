@@ -9,6 +9,7 @@ import { env } from "../env";
 import type { StravaActivity, StravaStream } from "./stravaTypes";
 
 const STREAM_KEYS = [
+  "time",
   "distance",
   "latlng",
   "watts",

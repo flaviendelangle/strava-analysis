@@ -28,20 +28,23 @@ export interface HrssSettings {
 }
 
 /**
- * Calculates **HRSS** (Heart Rate Stress Score) from a per-second heart-rate
- * stream and the rider's HR profile settings.
+ * Calculates **HRSS** (Heart Rate Stress Score) from a heart-rate stream
+ * and the rider's HR profile settings.
  *
  * HRSS is a normalised form of Banister's TRIMP that is scaled so that
  * **one hour at LTHR produces a score of 100** — the same convention used by
  * power-based TSS.
  *
- * @param hrStream  Per-second heart-rate samples (each index = 1 second).
- * @param settings  Rider settings containing `restingHr`, `maxHr`, and `lthr`.
- * @returns         The HRSS value (unitless, TSS-equivalent scale).
+ * @param hrStream   Heart-rate samples aligned with the time stream.
+ * @param settings   Rider settings containing `restingHr`, `maxHr`, and `lthr`.
+ * @param timeStream Optional per-sample time offsets (seconds). When provided,
+ *                   actual time deltas are used instead of assuming 1 s per sample.
+ * @returns          The HRSS value (unitless, TSS-equivalent scale).
  */
 export function calculateHRSS(
   hrStream: number[],
   settings: HrssSettings,
+  timeStream?: number[],
 ): number {
   const { restingHr, maxHr, lthr } = settings;
   const hrRange = maxHr - restingHr;
@@ -58,10 +61,22 @@ export function calculateHRSS(
     return 0;
   }
 
-  const dtMinutes = 1 / 60;
   let exerciseTrimp = 0;
 
-  for (const hr of hrStream) {
+  for (let i = 0; i < hrStream.length; i++) {
+    const hr = hrStream[i];
+    if (!Number.isFinite(hr)) continue;
+
+    // Use actual time delta when time stream is available, else assume 1 s
+    let dtSeconds: number;
+    if (timeStream && i > 0) {
+      dtSeconds = timeStream[i] - timeStream[i - 1];
+      if (dtSeconds <= 0 || !Number.isFinite(dtSeconds)) continue;
+    } else {
+      dtSeconds = 1;
+    }
+
+    const dtMinutes = dtSeconds / 60;
     const hrr = Math.max(0, Math.min(1, (hr - restingHr) / hrRange));
     exerciseTrimp += dtMinutes * hrr * TRIMP_A * Math.exp(TRIMP_B * hrr);
   }
@@ -112,27 +127,66 @@ export function generatePowerCurveDurations(maxDuration: number): number[] {
 }
 
 /**
+ * Expands a sparse stream (with time offsets) into a per-second array by
+ * holding each value until the next sample. Returns the input unchanged
+ * if no time stream is provided.
+ */
+function expandToPerSecond(
+  values: number[],
+  timeStream: number[],
+): number[] {
+  if (values.length === 0) return [];
+
+  const totalSeconds = timeStream[timeStream.length - 1] + 1;
+  const result = new Array<number>(totalSeconds);
+
+  let srcIdx = 0;
+  for (let t = 0; t < totalSeconds; t++) {
+    // Advance to the latest sample at or before time t
+    while (srcIdx + 1 < timeStream.length && timeStream[srcIdx + 1] <= t) {
+      srcIdx++;
+    }
+    const v = values[srcIdx];
+    result[t] = Number.isFinite(v) ? v : 0;
+  }
+
+  return result;
+}
+
+/**
  * Computes the maximum average power for each target duration
  * using a sliding window over a per-second watts stream.
  * Durations are generated dynamically based on stream length.
+ *
+ * @param wattsStream  Watts samples aligned with the time stream.
+ * @param timeStream   Optional per-sample time offsets (seconds). When
+ *                     provided, the stream is expanded to true per-second
+ *                     data before applying the sliding window.
  */
 export function computePowerBests(
   wattsStream: number[],
+  timeStream?: number[],
 ): Record<number, number> {
+  // Expand to per-second if time stream available, also filters out NaN
+  const watts =
+    timeStream && timeStream.length === wattsStream.length
+      ? expandToPerSecond(wattsStream, timeStream)
+      : wattsStream.map((v) => (Number.isFinite(v) ? v : 0));
+
   const result: Record<number, number> = {};
-  const durations = generatePowerCurveDurations(wattsStream.length);
+  const durations = generatePowerCurveDurations(watts.length);
 
   for (const duration of durations) {
-    if (wattsStream.length < duration) continue;
+    if (watts.length < duration) continue;
 
     let windowSum = 0;
     for (let i = 0; i < duration; i++) {
-      windowSum += wattsStream[i];
+      windowSum += watts[i];
     }
     let maxSum = windowSum;
 
-    for (let i = duration; i < wattsStream.length; i++) {
-      windowSum += wattsStream[i] - wattsStream[i - duration];
+    for (let i = duration; i < watts.length; i++) {
+      windowSum += watts[i] - watts[i - duration];
       if (windowSum > maxSum) {
         maxSum = windowSum;
       }

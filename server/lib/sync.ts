@@ -91,7 +91,25 @@ async function syncActivitiesPhase(
       .values(models)
       .onConflictDoUpdate({
         target: activities.stravaId,
-        set: { mapPolyline: sql`excluded.map_polyline` },
+        set: {
+          type: sql`excluded.type`,
+          name: sql`excluded.name`,
+          distance: sql`excluded.distance`,
+          totalElevationGain: sql`excluded.total_elevation_gain`,
+          averageSpeed: sql`excluded.average_speed`,
+          averageWatts: sql`excluded.average_watts`,
+          averageCadence: sql`excluded.average_cadence`,
+          averageHeartrate: sql`excluded.average_heartrate`,
+          maxHeartrate: sql`excluded.max_heartrate`,
+          maxSpeed: sql`excluded.max_speed`,
+          maxWatts: sql`excluded.max_watts`,
+          weightedAverageWatts: sql`excluded.weighted_average_watts`,
+          kilojoules: sql`excluded.kilojoules`,
+          calories: sql`excluded.calories`,
+          movingTime: sql`excluded.moving_time`,
+          elapsedTime: sql`excluded.elapsed_time`,
+          mapPolyline: sql`excluded.map_polyline`,
+        },
       });
 
     totalInserted += pageActivities.length;
@@ -218,11 +236,10 @@ async function computeScoresPhase(
   });
 
   if (!settingsDoc) {
-    await db
-      .update(syncJobs)
-      .set({ status: "completed" })
-      .where(eq(syncJobs.id, syncJobId));
-    return;
+    console.warn(
+      `[sync] No rider settings found for athlete ${athleteId} — ` +
+        "TSS/HRSS will be skipped, but power bests will still be computed.",
+    );
   }
 
   let cursor: string | undefined;
@@ -244,7 +261,7 @@ async function computeScoresPhase(
 
     if (batch.length === 0) break;
 
-    await computeActivityScoresBatch(db, batch, settingsDoc);
+    await computeActivityScoresBatch(db, batch, settingsDoc ?? null);
 
     cursor = batch[batch.length - 1].startDate;
     if (batch.length < BATCH_SIZE) break;
@@ -329,7 +346,7 @@ type StreamDoc = {
 async function computeActivityScoresBatch(
   db: Database,
   batch: ActivityForScoring[],
-  settingsDoc: SettingsDocForScoring,
+  settingsDoc: SettingsDocForScoring | null,
 ) {
   // Batch-load all streams for activities that have them
   const activitiesWithStreams = batch.filter((a) => a.areStreamsLoaded);
@@ -345,7 +362,7 @@ async function computeActivityScoresBatch(
             activityStreams.activityId,
             activitiesWithStreams.map((a) => a.id),
           ),
-          inArray(activityStreams.type, ["heartrate", "watts"]),
+          inArray(activityStreams.type, ["time", "heartrate", "watts"]),
         ),
       );
 
@@ -373,11 +390,15 @@ async function computeActivityScoresBatch(
 export async function computeActivityScoresInternal(
   db: Database,
   activity: ActivityForScoring,
-  settingsDoc: SettingsDocForScoring,
+  settingsDoc: SettingsDocForScoring | null,
   preloadedStreams?: StreamDoc[],
 ) {
-  const activityDate = activity.startDateLocal.slice(0, 10);
-  const settings = resolveRiderSettings(settingsDoc, activityDate);
+  const settings = settingsDoc
+    ? resolveRiderSettings(
+        settingsDoc,
+        activity.startDateLocal.slice(0, 10),
+      )
+    : null;
 
   const patch: {
     tss?: number;
@@ -386,6 +407,7 @@ export async function computeActivityScoresInternal(
   } = {};
 
   if (
+    settings &&
     activity.weightedAverageWatts != null &&
     POWER_BEST_ACTIVITY_TYPES.includes(activity.type)
   ) {
@@ -408,20 +430,34 @@ export async function computeActivityScoresInternal(
         .where(
           and(
             eq(activityStreams.activityId, activity.id),
-            inArray(activityStreams.type, ["heartrate", "watts"]),
+            inArray(activityStreams.type, ["time", "heartrate", "watts"]),
           ),
         ));
 
-    const hrDocs = streamDocs
-      .filter((s) => s.type === "heartrate")
+    // Extract time stream (used for accurate HRSS and power bests)
+    const timeDocs = streamDocs
+      .filter((s) => s.type === "time")
       .sort((a, b) => (a.chunkIndex ?? 0) - (b.chunkIndex ?? 0));
-
-    if (hrDocs.length > 0) {
-      const hrData: number[] = [];
-      for (const doc of hrDocs) {
-        hrData.push(...(JSON.parse(doc.data) as number[]));
+    let timeData: number[] | undefined;
+    if (timeDocs.length > 0) {
+      timeData = [];
+      for (const doc of timeDocs) {
+        timeData.push(...(JSON.parse(doc.data) as number[]));
       }
-      patch.hrss = Math.round(calculateHRSS(hrData, settings));
+    }
+
+    if (settings) {
+      const hrDocs = streamDocs
+        .filter((s) => s.type === "heartrate")
+        .sort((a, b) => (a.chunkIndex ?? 0) - (b.chunkIndex ?? 0));
+
+      if (hrDocs.length > 0) {
+        const hrData: number[] = [];
+        for (const doc of hrDocs) {
+          hrData.push(...(JSON.parse(doc.data) as number[]));
+        }
+        patch.hrss = Math.round(calculateHRSS(hrData, settings, timeData));
+      }
     }
 
     if (POWER_BEST_ACTIVITY_TYPES.includes(activity.type)) {
@@ -434,7 +470,7 @@ export async function computeActivityScoresInternal(
         for (const doc of wattsDocs) {
           wattsData.push(...(JSON.parse(doc.data) as number[]));
         }
-        patch.powerBests = computePowerBests(wattsData);
+        patch.powerBests = computePowerBests(wattsData, timeData);
       }
     } else {
       patch.powerBests = null;
@@ -454,7 +490,12 @@ export async function recomputeAllScores(db: Database, athleteId: number) {
     where: eq(riderSettings.athlete, athleteId),
   });
 
-  if (!settingsDoc) return;
+  if (!settingsDoc) {
+    console.warn(
+      `[sync] No rider settings found for athlete ${athleteId} — ` +
+        "TSS/HRSS will be skipped, but power bests will still be computed.",
+    );
+  }
 
   let cursor: string | undefined;
 
@@ -475,7 +516,7 @@ export async function recomputeAllScores(db: Database, athleteId: number) {
 
     if (batch.length === 0) break;
 
-    await computeActivityScoresBatch(db, batch, settingsDoc);
+    await computeActivityScoresBatch(db, batch, settingsDoc ?? null);
 
     cursor = batch[batch.length - 1].startDate;
     if (batch.length < BATCH_SIZE) break;
