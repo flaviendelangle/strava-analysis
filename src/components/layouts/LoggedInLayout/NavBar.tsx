@@ -10,6 +10,7 @@ import {
   MoonIcon,
   PlayCircleIcon,
   SettingsIcon,
+  ShieldCheckIcon,
   SunIcon,
   XIcon,
 } from "lucide-react";
@@ -156,6 +157,13 @@ export function NavBar() {
           <div className="border-sidebar-border mx-3 mb-1 border-t" />
           <TooltipIfMenuCollapsed label="Settings">
             <NavBarLink icon={SettingsIcon} label="Settings" href="/settings" />
+          </TooltipIfMenuCollapsed>
+          <TooltipIfMenuCollapsed label="Privacy Policy">
+            <NavBarLink
+              icon={ShieldCheckIcon}
+              label="Privacy"
+              href="/privacy"
+            />
           </TooltipIfMenuCollapsed>
           <ThemeToggleNavButton />
           <TooltipIfMenuCollapsed label="Sign out">

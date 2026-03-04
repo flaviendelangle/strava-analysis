@@ -234,7 +234,21 @@ async function handleAthleteDeauthorization(
   stravaAthleteId: number,
 ): Promise<void> {
   console.log(`[webhook] Athlete ${stravaAthleteId} deauthorized, cleaning up`);
+  await deleteAllAthleteData(db, stravaAthleteId);
+  console.log(`[webhook] Cleanup complete for athlete ${stravaAthleteId}`);
+}
 
+// ── Shared deletion helper ──────────────────────────────────────────────
+
+/**
+ * Deletes all data for an athlete: activities (streams cascade via FK),
+ * rider settings, sync jobs, and clears OAuth tokens.
+ * Keeps the athlete row for NextAuth session reference.
+ */
+export async function deleteAllAthleteData(
+  db: Database,
+  stravaAthleteId: number,
+): Promise<void> {
   // Delete all activities (streams cascade via FK)
   await db.delete(activities).where(eq(activities.athlete, stravaAthleteId));
 
@@ -251,6 +265,4 @@ async function handleAthleteDeauthorization(
     .update(athletes)
     .set({ accessToken: "", refreshToken: "", tokenExpiresAt: 0 })
     .where(eq(athletes.stravaAthleteId, stravaAthleteId));
-
-  console.log(`[webhook] Cleanup complete for athlete ${stravaAthleteId}`);
 }

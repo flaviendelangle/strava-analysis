@@ -1,4 +1,5 @@
 import { router } from "./index";
+import { accountRouter } from "./routers/account";
 import { activitiesRouter } from "./routers/activities";
 import { activityStreamsRouter } from "./routers/activityStreams";
 import { analyticsRouter } from "./routers/analytics";
@@ -7,6 +8,7 @@ import { syncRouter } from "./routers/sync";
 import { uploadRouter } from "./routers/upload";
 
 export const appRouter = router({
+  account: accountRouter,
   activities: activitiesRouter,
   activityStreams: activityStreamsRouter,
   analytics: analyticsRouter,

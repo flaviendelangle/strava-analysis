@@ -3,6 +3,7 @@ import * as React from "react";
 import { BikeIcon } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import stravaButton from "../../public/strava-connect-button-orange.svg";
@@ -51,6 +52,13 @@ const LoginPage: NextPageWithLayout = () => {
             className="relative"
           />
         </button>
+
+        <Link
+          href="/privacy"
+          className="text-muted-foreground hover:text-foreground text-xs underline underline-offset-3"
+        >
+          Privacy Policy
+        </Link>
       </div>
     </main>
   );

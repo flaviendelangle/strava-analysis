@@ -1,18 +1,21 @@
 import * as React from "react";
 
-import { SettingsIcon } from "lucide-react";
+import { signOut } from "next-auth/react";
 
-import { LoadingButton } from "~/components/primitives/LoadingButton";
 import { ChangePointsTimeline } from "~/components/settings/ChangePointsTimeline";
 import { SettingsStepChart } from "~/components/settings/SettingsStepChart";
-import { Toolbar } from "~/components/settings/SettingsToolbar";
+import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
 import { NumberField } from "~/components/ui/number-field";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
 import { useAthleteId } from "~/hooks/useAthleteId";
 import { useRiderSettingsTimeline } from "~/hooks/useRiderSettings";
 import type { NextPageWithLayout } from "~/pages/_app";
@@ -21,18 +24,20 @@ import { trpc } from "~/utils/trpc";
 const SettingsPage: NextPageWithLayout = () => {
   const { timeline, setTimeline } = useRiderSettingsTimeline();
   const athleteId = useAthleteId();
-  const recomputeScores = trpc.riderSettings.recomputeScores.useMutation();
-  const [recomputing, setRecomputing] = React.useState(false);
+  const deleteAllData = trpc.account.deleteAllData.useMutation();
+  const [deleting, setDeleting] = React.useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 
-  const handleRecomputeScores = React.useCallback(async () => {
+  const handleDeleteAllData = React.useCallback(async () => {
     if (!athleteId) return;
-    setRecomputing(true);
+    setDeleting(true);
     try {
-      await recomputeScores.mutateAsync({ athleteId });
-    } finally {
-      setRecomputing(false);
+      await deleteAllData.mutateAsync({ athleteId });
+      await signOut({ callbackUrl: "/login" });
+    } catch {
+      setDeleting(false);
     }
-  }, [athleteId, recomputeScores]);
+  }, [athleteId, deleteAllData]);
 
   const updateStatic = (
     field: "cdA" | "crr" | "bikeWeightKg",
@@ -43,27 +48,6 @@ const SettingsPage: NextPageWithLayout = () => {
 
   return (
     <>
-      <Toolbar>
-        <SettingsIcon className="text-muted-foreground size-4" />
-        <span className="font-semibold">Settings</span>
-        <div className="min-w-0 flex-1" />
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <LoadingButton
-                loading={recomputing}
-                onClick={handleRecomputeScores}
-              />
-            }
-          >
-            Recompute all scores
-          </TooltipTrigger>
-          <TooltipContent>
-            Recalculate all activity scores using the current settings
-          </TooltipContent>
-        </Tooltip>
-      </Toolbar>
-
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
         <section className="border-border bg-card rounded-xl border p-5">
           <ChangePointsTimeline
@@ -116,6 +100,45 @@ const SettingsPage: NextPageWithLayout = () => {
               />
             </div>
           </div>
+        </section>
+
+        <section className="border-destructive/30 bg-card rounded-xl border p-5">
+          <h2 className="text-destructive mb-2 text-lg font-semibold">
+            Danger Zone
+          </h2>
+          <p className="text-muted-foreground mb-4 text-sm">
+            Permanently delete all your activities, streams, settings, and log
+            out. This cannot be undone.
+          </p>
+          <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <DialogTrigger render={<Button variant="destructive" />}>
+              Delete all my data
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete all data?</DialogTitle>
+                <DialogDescription>
+                  This will permanently delete all your activities, settings, and
+                  log you out. This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  disabled={deleting}
+                  onClick={handleDeleteAllData}
+                >
+                  {deleting ? "Deleting..." : "Delete everything"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </section>
       </div>
     </>
