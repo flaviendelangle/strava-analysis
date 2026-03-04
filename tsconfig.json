@@ -11,11 +11,7 @@
     "checkJs": true,
     "allowImportingTsExtensions": true,
     /* Bundled projects */
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "ES2022"
-    ],
+    "lib": ["dom", "dom.iterable", "ES2022"],
     "noEmit": true,
     "module": "Preserve",
     "moduleResolution": "bundler",
@@ -28,17 +24,10 @@
     "incremental": true,
     /* Path aliases */
     "paths": {
-      "~/*": [
-        "./src/*"
-      ],
-      "@server/*": [
-        "./server/*"
-      ]
+      "~/*": ["./src/*"],
+      "@server/*": ["./server/*"]
     },
-    "types": [
-      "vitest/globals",
-      "web-bluetooth"
-    ]
+    "types": ["vitest/globals", "web-bluetooth"]
   },
   "include": [
     "next-env.d.ts",
@@ -47,7 +36,5 @@
     "*.js",
     ".next/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

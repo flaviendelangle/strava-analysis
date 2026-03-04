@@ -1,4 +1,8 @@
-function decomposeSeconds(seconds: number): { h: number; m: number; s: number } {
+function decomposeSeconds(seconds: number): {
+  h: number;
+  m: number;
+  s: number;
+} {
   const abs = Math.floor(Math.abs(seconds));
   return {
     h: Math.floor(abs / 3600),
@@ -23,7 +27,8 @@ export const formatHumanDuration = (seconds: number) => {
 /** Compact elapsed time: "1:02:03" or "2:03" (no leading zero on hours/minutes). */
 export function formatElapsed(seconds: number): string {
   const { h, m, s } = decomposeSeconds(seconds);
-  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  if (h > 0)
+    return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 

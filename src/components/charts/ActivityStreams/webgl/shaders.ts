@@ -101,9 +101,7 @@ export interface GradientProgram {
   uColor: WebGLUniformLocation;
 }
 
-export function createSolidProgram(
-  gl: WebGL2RenderingContext,
-): SolidProgram {
+export function createSolidProgram(gl: WebGL2RenderingContext): SolidProgram {
   const vs = compileShader(gl, gl.VERTEX_SHADER, SOLID_VS);
   const fs = compileShader(gl, gl.FRAGMENT_SHADER, SOLID_FS);
   const program = linkProgram(gl, vs, fs);

@@ -35,7 +35,7 @@ export function HudMainView({
   onStop,
 }: HudMainViewProps) {
   return (
-    <div className="absolute inset-0 flex flex-col bg-gradient-to-br from-gray-900 to-gray-950">
+    <div className="from-background to-background absolute inset-0 flex flex-col bg-linear-to-br">
       {/* Top bar */}
       <HudTopBar
         elapsedSeconds={elapsedSeconds}
@@ -46,16 +46,12 @@ export function HudMainView({
       {/* Main area */}
       <div className="relative flex-1">
         {/* Power gauge — center-left */}
-        <div className="absolute left-8 top-1/2 -translate-y-1/2">
-          <HudPowerGauge
-            power={currentPower}
-            ftp={ftp}
-            weightKg={weightKg}
-          />
+        <div className="absolute top-1/2 left-8 -translate-y-1/2">
+          <HudPowerGauge power={currentPower} ftp={ftp} weightKg={weightKg} />
         </div>
 
         {/* Right metrics stack */}
-        <div className="absolute right-6 top-6 flex flex-col gap-3">
+        <div className="absolute top-6 right-6 flex flex-col gap-3">
           <HudMetricTile
             label="Heart Rate"
             value={currentHr}
@@ -64,19 +60,17 @@ export function HudMainView({
           />
           <HudMetricTile
             label="Cadence"
-            value={
-              currentCadence != null ? Math.round(currentCadence) : null
-            }
+            value={currentCadence != null ? Math.round(currentCadence) : null}
             unit="rpm"
             color="#f472b6"
           />
         </div>
 
         {/* Session controls — bottom right */}
-        <div className="absolute bottom-4 right-6 flex gap-2">
+        <div className="absolute right-6 bottom-4 flex gap-2">
           <button
             onClick={onPause}
-            className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-700/50 bg-gray-800/70 text-yellow-400 backdrop-blur-sm transition-colors hover:bg-gray-700/70"
+            className="border-border/50 bg-card/70 hover:bg-accent/70 flex h-12 w-12 items-center justify-center rounded-xl border text-yellow-400 backdrop-blur-sm transition-colors"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
               <rect x="6" y="4" width="4" height="16" rx="1" />
@@ -85,7 +79,7 @@ export function HudMainView({
           </button>
           <button
             onClick={onStop}
-            className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-700/50 bg-gray-800/70 text-red-400 backdrop-blur-sm transition-colors hover:bg-gray-700/70"
+            className="border-border/50 bg-card/70 hover:bg-accent/70 flex h-12 w-12 items-center justify-center rounded-xl border text-red-400 backdrop-blur-sm transition-colors"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
               <rect x="6" y="6" width="12" height="12" rx="2" />
@@ -96,7 +90,7 @@ export function HudMainView({
 
       {/* Bottom chart strip */}
       {chartData.length > 0 && (
-        <div className="h-48 border-t border-gray-700/30 bg-gray-900/80 px-4 py-2">
+        <div className="border-border/30 bg-background/80 h-48 border-t px-4 py-2">
           <PowerHrChart dataPoints={chartData} ftp={ftp} />
         </div>
       )}

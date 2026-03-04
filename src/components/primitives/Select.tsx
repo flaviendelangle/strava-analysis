@@ -1,9 +1,9 @@
 import {
-  Select as ShadSelect,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Select as ShadSelect,
 } from "~/components/ui/select";
 
 export function Select<TValue extends string = string>(
@@ -14,7 +14,13 @@ export function Select<TValue extends string = string>(
   return (
     <ShadSelect
       value={value}
-      onValueChange={onValueChange ? (v) => { if (v !== null) onValueChange(v); } : undefined}
+      onValueChange={
+        onValueChange
+          ? (v) => {
+              if (v !== null) onValueChange(v);
+            }
+          : undefined
+      }
     >
       <SelectTrigger className="min-w-36">
         <SelectValue placeholder={options[0]?.label}>

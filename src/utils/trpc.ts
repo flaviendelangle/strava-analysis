@@ -1,9 +1,9 @@
-import { httpBatchLink, TRPCClientError } from "@trpc/client";
-import { createTRPCNext } from "@trpc/next";
 import { signOut } from "next-auth/react";
 import superjson from "superjson";
 
 import type { AppRouter } from "@server/trpc/root";
+import { TRPCClientError, httpBatchLink } from "@trpc/client";
+import { createTRPCNext } from "@trpc/next";
 
 function getBaseUrl() {
   if (typeof window !== "undefined") return "";

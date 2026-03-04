@@ -12,31 +12,31 @@ export function HudTopBar({
   speedKmh,
 }: HudTopBarProps) {
   return (
-    <div className="flex h-14 items-center justify-between border-b border-gray-700/30 bg-gray-900/60 px-6 backdrop-blur-md">
+    <div className="border-border/30 bg-background/60 flex h-14 items-center justify-between border-b px-6 backdrop-blur-md">
       <div className="flex items-center gap-2">
-        <span className="text-xs uppercase tracking-wider text-gray-500">
+        <span className="text-muted-foreground text-xs tracking-wider uppercase">
           Dist
         </span>
-        <span className="font-mono text-lg text-white">
+        <span className="text-foreground font-mono text-lg">
           {distanceKm.toFixed(2)}
         </span>
-        <span className="text-xs text-gray-500">km</span>
+        <span className="text-muted-foreground text-xs">km</span>
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="font-mono text-3xl font-bold text-white">
+        <span className="text-foreground font-mono text-3xl font-bold">
           {formatElapsed(elapsedSeconds)}
         </span>
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="text-xs uppercase tracking-wider text-gray-500">
+        <span className="text-muted-foreground text-xs tracking-wider uppercase">
           Speed
         </span>
-        <span className="font-mono text-lg text-white">
+        <span className="text-foreground font-mono text-lg">
           {speedKmh != null ? speedKmh.toFixed(1) : "--"}
         </span>
-        <span className="text-xs text-gray-500">km/h</span>
+        <span className="text-muted-foreground text-xs">km/h</span>
       </div>
     </div>
   );

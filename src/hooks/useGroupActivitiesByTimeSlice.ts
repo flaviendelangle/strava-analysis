@@ -2,9 +2,10 @@ import * as React from "react";
 
 import { isAfter } from "date-fns";
 
+import type { Activity } from "@server/db/types";
+
 import { startOf } from "~/utils/dateUtils";
 
-import type { Activity } from "@server/db/types";
 import { SlicePrecision } from "./useTimeSlices";
 
 type ActivityWithoutMap = Omit<Activity, "mapPolyline">;

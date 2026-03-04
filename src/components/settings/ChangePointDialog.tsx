@@ -56,18 +56,16 @@ export function ChangePointDialog({
       return fields;
     },
   );
-  const [values, setValues] = useState<Record<TimeVaryingField, number>>(
-    () => {
-      if (baselineValues) return { ...baselineValues };
-      return {
-        ftp: existingPoint?.ftp ?? 200,
-        weightKg: existingPoint?.weightKg ?? 75,
-        restingHr: existingPoint?.restingHr ?? 50,
-        maxHr: existingPoint?.maxHr ?? 185,
-        lthr: existingPoint?.lthr ?? 163,
-      };
-    },
-  );
+  const [values, setValues] = useState<Record<TimeVaryingField, number>>(() => {
+    if (baselineValues) return { ...baselineValues };
+    return {
+      ftp: existingPoint?.ftp ?? 200,
+      weightKg: existingPoint?.weightKg ?? 75,
+      restingHr: existingPoint?.restingHr ?? 50,
+      maxHr: existingPoint?.maxHr ?? 185,
+      lthr: existingPoint?.lthr ?? 163,
+    };
+  });
 
   const handleSave = () => {
     if (isBaseline) {
@@ -125,36 +123,38 @@ export function ChangePointDialog({
               />
             </div>
           )}
-          {RIDER_FIELD_CONFIG.map(({ field, label, unit, min, step, smallStep }) => (
-            <div key={field} className="flex flex-col gap-1.5">
-              {isBaseline ? (
-                <Label>
-                  {label} ({unit})
-                </Label>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={enabledFields.has(field)}
-                    onCheckedChange={() => toggleField(field)}
-                  />
+          {RIDER_FIELD_CONFIG.map(
+            ({ field, label, unit, min, step, smallStep }) => (
+              <div key={field} className="flex flex-col gap-1.5">
+                {isBaseline ? (
                   <Label>
                     {label} ({unit})
                   </Label>
-                </div>
-              )}
-              {(isBaseline || enabledFields.has(field)) && (
-                <NumberField
-                  value={values[field]}
-                  onValueChange={(value) =>
-                    setValues((prev) => ({ ...prev, [field]: value ?? 0 }))
-                  }
-                  min={min}
-                  step={step}
-                  smallStep={smallStep}
-                />
-              )}
-            </div>
-          ))}
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={enabledFields.has(field)}
+                      onCheckedChange={() => toggleField(field)}
+                    />
+                    <Label>
+                      {label} ({unit})
+                    </Label>
+                  </div>
+                )}
+                {(isBaseline || enabledFields.has(field)) && (
+                  <NumberField
+                    value={values[field]}
+                    onValueChange={(value) =>
+                      setValues((prev) => ({ ...prev, [field]: value ?? 0 }))
+                    }
+                    min={min}
+                    step={step}
+                    smallStep={smallStep}
+                  />
+                )}
+              </div>
+            ),
+          )}
         </div>
         <DialogFooter>
           {!isBaseline && existingPoint && onDelete && (

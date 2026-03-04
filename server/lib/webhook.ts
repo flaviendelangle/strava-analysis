@@ -3,12 +3,7 @@ import strava from "strava-v3";
 
 import { db } from "../db";
 import type { Database } from "../db";
-import {
-  activities,
-  athletes,
-  riderSettings,
-  syncJobs,
-} from "../db/schema";
+import { activities, athletes, riderSettings, syncJobs } from "../db/schema";
 import {
   fetchStreamsFromStrava,
   getAccessToken,
@@ -50,7 +45,11 @@ export async function processWebhookEvent(
   if (event.object_type === "activity") {
     switch (event.aspect_type) {
       case "create":
-        return handleActivityCreate(db, athlete.stravaAthleteId, event.object_id);
+        return handleActivityCreate(
+          db,
+          athlete.stravaAthleteId,
+          event.object_id,
+        );
       case "update":
         return handleActivityUpdate(
           db,
@@ -134,11 +133,7 @@ async function handleActivityCreate(
         where: eq(activities.id, activityId),
       });
       if (updatedActivity) {
-        await computeActivityScoresInternal(
-          db,
-          updatedActivity,
-          settingsDoc,
-        );
+        await computeActivityScoresInternal(db, updatedActivity, settingsDoc);
       }
     }
   } catch (err) {
@@ -202,11 +197,7 @@ async function handleActivityUpdate(
           where: eq(activities.stravaId, stravaActivityId),
         });
         if (updatedActivity) {
-          await computeActivityScoresInternal(
-            db,
-            updatedActivity,
-            settingsDoc,
-          );
+          await computeActivityScoresInternal(db, updatedActivity, settingsDoc);
         }
       }
     } catch (err) {
@@ -242,14 +233,10 @@ async function handleAthleteDeauthorization(
   db: Database,
   stravaAthleteId: number,
 ): Promise<void> {
-  console.log(
-    `[webhook] Athlete ${stravaAthleteId} deauthorized, cleaning up`,
-  );
+  console.log(`[webhook] Athlete ${stravaAthleteId} deauthorized, cleaning up`);
 
   // Delete all activities (streams cascade via FK)
-  await db
-    .delete(activities)
-    .where(eq(activities.athlete, stravaAthleteId));
+  await db.delete(activities).where(eq(activities.athlete, stravaAthleteId));
 
   // Delete rider settings
   await db
@@ -257,9 +244,7 @@ async function handleAthleteDeauthorization(
     .where(eq(riderSettings.athlete, stravaAthleteId));
 
   // Delete sync jobs
-  await db
-    .delete(syncJobs)
-    .where(eq(syncJobs.athlete, stravaAthleteId));
+  await db.delete(syncJobs).where(eq(syncJobs.athlete, stravaAthleteId));
 
   // Clear tokens but keep athlete row (NextAuth session reference)
   await db

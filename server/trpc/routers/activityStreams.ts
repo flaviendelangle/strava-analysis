@@ -3,17 +3,13 @@ import strava from "strava-v3";
 import { z } from "zod";
 
 import { activities, activityStreams, riderSettings } from "../../db/schema";
-import { computeActivityScoresInternal, storeStreams } from "../../lib/sync";
 import {
   fetchStreamsFromStrava,
   getAccessToken,
   getModelFromStravaActivity,
 } from "../../lib/strava";
-import {
-  protectedProcedure,
-  router,
-  validateAthleteOwnership,
-} from "../index";
+import { computeActivityScoresInternal, storeStreams } from "../../lib/sync";
+import { protectedProcedure, router, validateAthleteOwnership } from "../index";
 
 const USABLE_TYPES = new Set([
   "heartrate",
@@ -37,9 +33,7 @@ export const activityStreamsRouter = router({
       });
 
       if (!activity) {
-        throw new Error(
-          `Activity with stravaId ${input.stravaId} not found`,
-        );
+        throw new Error(`Activity with stravaId ${input.stravaId} not found`);
       }
 
       if (!activity.areStreamsLoaded) {
@@ -72,9 +66,7 @@ export const activityStreamsRouter = router({
         data:
           chunks.length === 1
             ? chunks[0]
-            : JSON.stringify(
-                chunks.flatMap((c) => JSON.parse(c) as number[]),
-              ),
+            : JSON.stringify(chunks.flatMap((c) => JSON.parse(c) as number[])),
       }));
     }),
 
@@ -99,9 +91,7 @@ export const activityStreamsRouter = router({
       ]);
 
       if (!rawActivity) {
-        throw new Error(
-          `Activity ${input.stravaId} not found on Strava`,
-        );
+        throw new Error(`Activity ${input.stravaId} not found on Strava`);
       }
 
       const activity = await ctx.db.query.activities.findFirst({
@@ -154,7 +144,11 @@ export const activityStreamsRouter = router({
           where: eq(activities.id, activity.id),
         });
         if (updatedActivity) {
-          await computeActivityScoresInternal(ctx.db, updatedActivity, settingsDoc);
+          await computeActivityScoresInternal(
+            ctx.db,
+            updatedActivity,
+            settingsDoc,
+          );
         }
       }
     }),
@@ -202,7 +196,11 @@ export const activityStreamsRouter = router({
           where: eq(activities.id, activity.id),
         });
         if (updatedActivity) {
-          await computeActivityScoresInternal(ctx.db, updatedActivity, settingsDoc);
+          await computeActivityScoresInternal(
+            ctx.db,
+            updatedActivity,
+            settingsDoc,
+          );
         }
       }
     }),

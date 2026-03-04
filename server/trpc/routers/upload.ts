@@ -42,9 +42,7 @@ export const uploadRouter = router({
 
       if (!response.ok) {
         const error = await response.text();
-        throw new Error(
-          `Strava upload failed: ${response.status} ${error}`,
-        );
+        throw new Error(`Strava upload failed: ${response.status} ${error}`);
       }
 
       const result = await response.json();

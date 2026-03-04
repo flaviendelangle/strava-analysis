@@ -38,9 +38,7 @@ export function ElevationProfile({
   const fullArea = `${areaPath} L ${W} ${H} L 0 ${H} Z`;
 
   // Current position marker
-  const markerX = toX(
-    Math.min(currentDistanceMeters, totalDistanceMeters),
-  );
+  const markerX = toX(Math.min(currentDistanceMeters, totalDistanceMeters));
 
   // Interpolate current elevation for marker Y
   let markerY = H / 2;

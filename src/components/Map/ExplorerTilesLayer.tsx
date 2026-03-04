@@ -1,11 +1,12 @@
-import * as L from "leaflet";
 import * as React from "react";
+
+import * as L from "leaflet";
 import { useMap } from "react-leaflet";
 
 import type { Activity } from "@server/db/types";
-import { useExplorerTiles } from "~/hooks/useExplorerTiles";
-import { tileToBounds, type TileCategory } from "~/utils/explorerTiles";
 
+import { useExplorerTiles } from "~/hooks/useExplorerTiles";
+import { type TileCategory, tileToBounds } from "~/utils/explorerTiles";
 
 const TILE_COLORS: Record<TileCategory, { fill: string; stroke: string }> = {
   maxSquare: { fill: "#7c3aed", stroke: "#6d28d9" },

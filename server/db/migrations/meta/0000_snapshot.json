@@ -322,12 +322,8 @@
           "name": "activity_streams_activity_id_activities_id_fk",
           "tableFrom": "activity_streams",
           "tableTo": "activities",
-          "columnsFrom": [
-            "activity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["activity_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }

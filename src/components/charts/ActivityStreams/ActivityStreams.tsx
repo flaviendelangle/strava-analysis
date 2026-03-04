@@ -2,6 +2,7 @@ import * as React from "react";
 
 import { Select } from "~/components/primitives/Select";
 import { useAthleteId } from "~/hooks/useAthleteId";
+import { useChartTokens } from "~/lib/chartTokens";
 import { getSportConfig } from "~/utils/sportConfig";
 import { trpc } from "~/utils/trpc";
 
@@ -13,42 +14,39 @@ const X_AXIS_OPTIONS: { value: XAxisMode; label: string }[] = [
   { value: "distance", label: "Distance" },
 ];
 
-const STREAMS_TO_PLOT: StreamConfig[] = [
+interface StreamDef {
+  type: string;
+  title: string;
+  unit: string;
+  /** Index into the chart token palette */
+  colorIndex: number;
+  area: boolean;
+}
+
+const STREAM_DEFS: StreamDef[] = [
   {
     type: "heartrate",
     title: "Heart rate",
     unit: "bpm",
-    color: "oklch(0.637 0.237 25.331)",
+    colorIndex: 0,
     area: false,
   },
-  {
-    type: "watts",
-    title: "Power",
-    unit: "W",
-    color: "oklch(0.627 0.265 303.9)",
-    area: false,
-  },
+  { type: "watts", title: "Power", unit: "W", colorIndex: 1, area: false },
   {
     type: "cadence",
     title: "Cadence",
     unit: "rpm",
-    color: "oklch(0.656 0.241 354.308)",
+    colorIndex: 2,
     area: false,
   },
   {
     type: "velocity_smooth",
     title: "Speed",
     unit: "m/s",
-    color: "oklch(0.707 0.165 254.624)",
+    colorIndex: 3,
     area: false,
   },
-  {
-    type: "altitude",
-    title: "Altitude",
-    unit: "m",
-    color: "oklch(0.65 0.15 145)",
-    area: true,
-  },
+  { type: "altitude", title: "Altitude", unit: "m", colorIndex: 4, area: true },
 ];
 
 function parseStreamData(data: string): number[] | null {
@@ -64,6 +62,7 @@ function parseStreamData(data: string): number[] | null {
 export default function ActivityStreams(props: ActivityStreamsProps) {
   const { stravaId, onHoverPositionChange } = props;
   const athleteId = useAthleteId();
+  const tokens = useChartTokens();
 
   const { data: activity } = trpc.activities.get.useQuery({ stravaId });
   const { data: streamsData } = trpc.activityStreams.getStreams.useQuery({
@@ -112,7 +111,7 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
   );
 
   const { streams, distanceData } = React.useMemo(() => {
-    if (!activity || !streamsData) {
+    if (!activity || !streamsData || tokens.paletteOklch.length === 0) {
       return { streams: [], distanceData: null };
     }
 
@@ -121,39 +120,43 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
       ? parseStreamData(distanceStream.data)
       : null;
 
-    const preparedStreams = STREAMS_TO_PLOT.map(
-      (streamConfig): PreparedStream | null => {
-        const stream = streamsData.find(
-          (element) => element.type === streamConfig.type,
-        );
-        if (!stream) {
-          return null;
-        }
+    const preparedStreams = STREAM_DEFS.map((def): PreparedStream | null => {
+      const stream = streamsData.find((element) => element.type === def.type);
+      if (!stream) {
+        return null;
+      }
 
-        const yData = parseStreamData(stream.data);
-        if (!yData) return null;
-        let yMin = Infinity;
-        let yMax = -Infinity;
-        for (const v of yData) {
-          if (v < yMin) yMin = v;
-          if (v > yMax) yMax = v;
-        }
-        if (!Number.isFinite(yMin)) yMin = 0;
-        if (!Number.isFinite(yMax)) yMax = 1;
-        const range = yMax - yMin;
-        const padding = range > 0 ? range * 0.05 : 1;
+      const yData = parseStreamData(stream.data);
+      if (!yData) return null;
+      let yMin = Infinity;
+      let yMax = -Infinity;
+      for (const v of yData) {
+        if (v < yMin) yMin = v;
+        if (v > yMax) yMax = v;
+      }
+      if (!Number.isFinite(yMin)) yMin = 0;
+      if (!Number.isFinite(yMax)) yMax = 1;
+      const range = yMax - yMin;
+      const padding = range > 0 ? range * 0.05 : 1;
 
-        return {
-          config: streamConfig,
-          yData,
-          yMin: yMin - padding,
-          yMax: yMax + padding,
-        };
-      },
-    ).filter((stream): stream is PreparedStream => stream !== null);
+      const streamConfig: StreamConfig = {
+        type: def.type,
+        title: def.title,
+        unit: def.unit,
+        color: tokens.palette[def.colorIndex] ?? tokens.palette[0],
+        area: def.area,
+      };
+
+      return {
+        config: streamConfig,
+        yData,
+        yMin: yMin - padding,
+        yMax: yMax + padding,
+      };
+    }).filter((stream): stream is PreparedStream => stream !== null);
 
     return { streams: preparedStreams, distanceData: parsedDistanceData };
-  }, [streamsData, activity?.stravaId, activity?.type]);
+  }, [streamsData, activity?.stravaId, activity?.type, tokens.palette]);
 
   const sportConfig = activity ? getSportConfig(activity.type) : null;
   const distanceAvailable = distanceData != null;
@@ -178,7 +181,7 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
 
   if (isFetching || streamsData === undefined || streamsData === null) {
     return (
-      <div className="bg-card rounded-md p-4 text-gray-400">
+      <div className="bg-card text-muted-foreground rounded-md p-4">
         Loading stream data...
       </div>
     );
@@ -186,7 +189,7 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
 
   if (streams.length === 0) {
     return (
-      <div className="bg-card rounded-md p-4 text-gray-400">
+      <div className="bg-card text-muted-foreground rounded-md p-4">
         No stream data available for this activity.
       </div>
     );

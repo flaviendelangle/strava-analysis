@@ -2,7 +2,6 @@ import * as React from "react";
 
 import { Label } from "~/components/ui/label";
 import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
-
 import { formatActivityType } from "~/utils/format";
 
 import { Select, SelectProps } from "./primitives/Select";

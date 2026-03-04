@@ -20,15 +20,19 @@ export function HudWaitingScreen({
   supportsControl,
 }: HudWaitingScreenProps) {
   return (
-    <div className="absolute inset-0 z-40 flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-950">
+    <div className="from-background to-background absolute inset-0 z-40 flex items-center justify-center bg-linear-to-br">
       {/* Live HR badge */}
       {hrConnected && currentHr != null && (
-        <div className="absolute left-6 top-6 flex items-center gap-2 rounded-full border border-gray-700/50 bg-gray-800/70 px-4 py-2 backdrop-blur-sm">
-          <svg className="h-4 w-4 text-red-400" viewBox="0 0 24 24" fill="currentColor">
+        <div className="border-border/50 bg-card/70 absolute top-6 left-6 flex items-center gap-2 rounded-full border px-4 py-2 backdrop-blur-sm">
+          <svg
+            className="h-4 w-4 text-red-400"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
           </svg>
           <span className="font-mono text-sm text-red-400">{currentHr}</span>
-          <span className="text-xs text-gray-500">bpm</span>
+          <span className="text-muted-foreground text-xs">bpm</span>
         </div>
       )}
 
@@ -37,7 +41,7 @@ export function HudWaitingScreen({
         {/* Pedal icon */}
         <div className="relative">
           <svg
-            className="h-20 w-20 text-gray-600"
+            className="text-muted-foreground h-20 w-20"
             viewBox="0 0 24 24"
             fill="currentColor"
           >
@@ -45,7 +49,7 @@ export function HudWaitingScreen({
           </svg>
         </div>
 
-        <p className="animate-breathe text-2xl font-light tracking-wide text-gray-400">
+        <p className="animate-breathe text-muted-foreground text-2xl font-light tracking-wide">
           Start pedaling to begin
         </p>
 
@@ -54,27 +58,31 @@ export function HudWaitingScreen({
           <div
             className={`flex flex-col gap-4 rounded-2xl border px-6 py-4 backdrop-blur-md transition-all duration-500 ${
               ergEnabled
-                ? "border-yellow-500/40 bg-yellow-950/30"
-                : "border-gray-600/50 bg-gray-800/60"
+                ? "border-yellow-400/50 bg-yellow-50 dark:border-yellow-500/40 dark:bg-yellow-950/30"
+                : "border-border/50 bg-card/60"
             }`}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <svg
                   className={`h-5 w-5 transition-colors duration-500 ${
-                    ergEnabled ? "text-yellow-400" : "text-gray-500"
+                    ergEnabled
+                      ? "text-yellow-600 dark:text-yellow-400"
+                      : "text-muted-foreground"
                   }`}
                   viewBox="0 0 24 24"
                   fill="currentColor"
                 >
                   <path d="M7 2v11h3v9l7-12h-4l4-8z" />
                 </svg>
-                <span className="text-sm font-medium text-white">ERG Mode</span>
+                <span className="text-foreground text-sm font-medium">
+                  ERG Mode
+                </span>
               </div>
               <button
                 onClick={() => onErgEnabledChange(!ergEnabled)}
                 className={`relative ml-6 h-6 w-11 rounded-full transition-colors duration-300 ${
-                  ergEnabled ? "bg-yellow-500" : "bg-gray-600"
+                  ergEnabled ? "bg-yellow-500" : "bg-accent"
                 }`}
               >
                 <span
@@ -89,29 +97,31 @@ export function HudWaitingScreen({
               <div className="flex items-center justify-center gap-3">
                 <button
                   onClick={() => onTargetPowerChange(targetPower - 10)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-600 text-sm text-gray-400 transition-colors hover:border-yellow-500/60 hover:text-white"
+                  className="border-border text-muted-foreground hover:text-foreground flex h-8 w-8 items-center justify-center rounded-full border text-sm transition-colors hover:border-yellow-500/60"
                 >
                   -10
                 </button>
                 <button
                   onClick={() => onTargetPowerChange(targetPower - 5)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-600 text-sm text-gray-400 transition-colors hover:border-yellow-500/60 hover:text-white"
+                  className="border-border text-muted-foreground hover:text-foreground flex h-8 w-8 items-center justify-center rounded-full border text-sm transition-colors hover:border-yellow-500/60"
                 >
                   -5
                 </button>
-                <span className="min-w-20 text-center font-mono text-2xl font-bold text-yellow-400">
+                <span className="min-w-20 text-center font-mono text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                   {targetPower}
-                  <span className="ml-1 text-xs font-normal text-gray-500">W</span>
+                  <span className="text-muted-foreground ml-1 text-xs font-normal">
+                    W
+                  </span>
                 </span>
                 <button
                   onClick={() => onTargetPowerChange(targetPower + 5)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-600 text-sm text-gray-400 transition-colors hover:border-yellow-500/60 hover:text-white"
+                  className="border-border text-muted-foreground hover:text-foreground flex h-8 w-8 items-center justify-center rounded-full border text-sm transition-colors hover:border-yellow-500/60"
                 >
                   +5
                 </button>
                 <button
                   onClick={() => onTargetPowerChange(targetPower + 10)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-600 text-sm text-gray-400 transition-colors hover:border-yellow-500/60 hover:text-white"
+                  className="border-border text-muted-foreground hover:text-foreground flex h-8 w-8 items-center justify-center rounded-full border text-sm transition-colors hover:border-yellow-500/60"
                 >
                   +10
                 </button>
@@ -122,7 +132,7 @@ export function HudWaitingScreen({
 
         <button
           onClick={onManualStart}
-          className="mt-4 rounded-full border border-gray-600 px-6 py-2 text-sm text-gray-400 transition-colors hover:border-gray-500 hover:text-white"
+          className="border-border text-muted-foreground hover:border-border hover:text-foreground mt-4 rounded-full border px-6 py-2 text-sm transition-colors"
         >
           Start Manually
         </button>

@@ -15,8 +15,7 @@ function lngToTileX(lng: number): number {
 function latToTileY(lat: number): number {
   const latRad = (lat * Math.PI) / 180;
   return (
-    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) *
-    N
+    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * N
   );
 }
 
@@ -37,8 +36,7 @@ export function tileToBounds(
   return {
     west: (tx / N) * 360 - 180,
     east: ((tx + 1) / N) * 360 - 180,
-    north:
-      Math.atan(Math.sinh(Math.PI * (1 - (2 * ty) / N))) * (180 / Math.PI),
+    north: Math.atan(Math.sinh(Math.PI * (1 - (2 * ty) / N))) * (180 / Math.PI),
     south:
       Math.atan(Math.sinh(Math.PI * (1 - (2 * (ty + 1)) / N))) *
       (180 / Math.PI),
@@ -123,8 +121,7 @@ function walkTiles(
 
   let currentTileX = startTx;
   let currentTileY = startTy;
-  const maxSteps =
-    Math.abs(endTx - startTx) + Math.abs(endTy - startTy) + 2;
+  const maxSteps = Math.abs(endTx - startTx) + Math.abs(endTy - startTy) + 2;
 
   for (let i = 0; i < maxSteps; i++) {
     if (nextCrossingX < nextCrossingY) {

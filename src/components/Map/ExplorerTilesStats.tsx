@@ -1,6 +1,6 @@
-import { useExplorerTiles } from "~/hooks/useExplorerTiles";
-
 import type { Activity } from "@server/db/types";
+
+import { useExplorerTiles } from "~/hooks/useExplorerTiles";
 
 interface ExplorerTilesStatsProps {
   activities: Activity[] | null;

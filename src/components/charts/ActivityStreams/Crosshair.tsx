@@ -10,21 +10,19 @@ interface CrosshairProps {
   formatX: (value: number) => string;
 }
 
-export const Crosshair = React.memo(function Crosshair(
-  props: CrosshairProps,
-) {
+export const Crosshair = React.memo(function Crosshair(props: CrosshairProps) {
   const { hoverIndex, clientPos, streams, xValue, formatX } = props;
 
   return (
     <div
-      className="pointer-events-none fixed z-50 rounded-md border border-zinc-700 bg-zinc-900/95 px-3 py-2 text-xs shadow-lg backdrop-blur-sm"
+      className="border-border bg-popover/95 pointer-events-none fixed z-50 rounded-md border px-3 py-2 text-xs shadow-lg backdrop-blur-sm"
       style={{
         left: clientPos.x + 12,
         top: clientPos.y - 12,
         transform: "translateY(-100%)",
       }}
     >
-      <div className="mb-1.5 font-medium text-zinc-300">
+      <div className="text-popover-foreground mb-1.5 font-medium">
         {formatX(xValue)}
       </div>
       {streams.map((stream) => {
@@ -39,8 +37,10 @@ export const Crosshair = React.memo(function Crosshair(
               className="inline-block h-2 w-2 rounded-full"
               style={{ backgroundColor: stream.config.color }}
             />
-            <span className="text-zinc-400">{stream.config.title}:</span>
-            <span className="font-medium text-zinc-200">
+            <span className="text-muted-foreground">
+              {stream.config.title}:
+            </span>
+            <span className="text-popover-foreground font-medium">
               {formatValue(value, stream.config.unit)}
             </span>
           </div>

@@ -20,8 +20,7 @@ export default function Training1Page() {
         ? "paused"
         : ctrl.session.state === "running"
           ? "main"
-          : ctrl.hr.state === "connected" &&
-              ctrl.trainer.state === "connected"
+          : ctrl.hr.state === "connected" && ctrl.trainer.state === "connected"
             ? "waiting"
             : "connection";
 
@@ -48,7 +47,7 @@ export default function Training1Page() {
 
   return (
     <div className="relative h-full overflow-hidden">
-      <div className="absolute left-0 right-0 top-0 z-[60] p-2">
+      <div className="absolute top-0 right-0 left-0 z-[60] p-2">
         <BrowserCompatibilityBanner />
       </div>
 

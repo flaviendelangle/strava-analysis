@@ -1,19 +1,23 @@
 import * as React from "react";
 
-import { BarChartPro } from "@mui/x-charts-pro";
 import { format } from "date-fns";
+
+import { BarChartPro } from "@mui/x-charts-pro";
 
 import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
 import { useGroupActivitiesByTimeSlice } from "~/hooks/useGroupActivitiesByTimeSlice";
 import { SlicePrecision, useTimeSlices } from "~/hooks/useTimeSlices";
+import { CHART_MARGINS, useChartTokens } from "~/lib/chartTokens";
 import { formatActivityType } from "~/utils/format";
 
 import { METRICS, MetricSelect } from "../../MetricSelect";
 import { PrecisionSelect } from "../../PrecisionSelect";
 import { ChartThemeProvider } from "../ChartThemeProvider";
+import { ChartTooltip } from "../ChartTooltip";
 
 export default function ActivitiesTimeline() {
   const [metric, setMetric] = React.useState("distance");
+  const tokens = useChartTokens();
   const [precision, setPrecision] = React.useState<SlicePrecision>("month");
   const activitiesQuery = useActivitiesQuery();
 
@@ -61,8 +65,8 @@ export default function ActivitiesTimeline() {
 
   return (
     <ChartThemeProvider>
-      <div className="flex h-96 w-full flex-col rounded-md bg-secondary">
-        <div className="flex items-center gap-4 border-b border-border p-4">
+      <div className="bg-card flex h-96 w-full flex-col rounded-md">
+        <div className="border-border flex items-center gap-4 border-b p-4">
           <h3 className="text-sm font-medium">Activities Timeline</h3>
           <MetricSelect value={metric} onValueChange={setMetric} />
           <PrecisionSelect value={precision} onValueChange={setPrecision} />
@@ -89,7 +93,10 @@ export default function ActivitiesTimeline() {
               },
             ]}
             series={series}
-            margin={{ left: 72, right: 24 }}
+            colors={tokens.palette}
+            grid={{ horizontal: true }}
+            margin={CHART_MARGINS.standard}
+            slots={{ tooltip: ChartTooltip }}
           />
         </div>
       </div>

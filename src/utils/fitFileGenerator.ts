@@ -63,8 +63,10 @@ export function generateFitFile(
   };
   if (summary.avgPower != null) lapRecord.avg_power = summary.avgPower;
   if (summary.maxPower != null) lapRecord.max_power = summary.maxPower;
-  if (summary.avgHeartRate != null) lapRecord.avg_heart_rate = summary.avgHeartRate;
-  if (summary.maxHeartRate != null) lapRecord.max_heart_rate = summary.maxHeartRate;
+  if (summary.avgHeartRate != null)
+    lapRecord.avg_heart_rate = summary.avgHeartRate;
+  if (summary.maxHeartRate != null)
+    lapRecord.max_heart_rate = summary.maxHeartRate;
   if (summary.avgCadence != null) lapRecord.avg_cadence = summary.avgCadence;
   if (summary.maxCadence != null) lapRecord.max_cadence = summary.maxCadence;
   writer.writeMessage("lap", lapRecord);
@@ -84,11 +86,16 @@ export function generateFitFile(
   };
   if (summary.avgPower != null) sessionRecord.avg_power = summary.avgPower;
   if (summary.maxPower != null) sessionRecord.max_power = summary.maxPower;
-  if (summary.normalizedPower != null) sessionRecord.normalized_power = summary.normalizedPower;
-  if (summary.avgHeartRate != null) sessionRecord.avg_heart_rate = summary.avgHeartRate;
-  if (summary.maxHeartRate != null) sessionRecord.max_heart_rate = summary.maxHeartRate;
-  if (summary.avgCadence != null) sessionRecord.avg_cadence = summary.avgCadence;
-  if (summary.maxCadence != null) sessionRecord.max_cadence = summary.maxCadence;
+  if (summary.normalizedPower != null)
+    sessionRecord.normalized_power = summary.normalizedPower;
+  if (summary.avgHeartRate != null)
+    sessionRecord.avg_heart_rate = summary.avgHeartRate;
+  if (summary.maxHeartRate != null)
+    sessionRecord.max_heart_rate = summary.maxHeartRate;
+  if (summary.avgCadence != null)
+    sessionRecord.avg_cadence = summary.avgCadence;
+  if (summary.maxCadence != null)
+    sessionRecord.max_cadence = summary.maxCadence;
   if (summary.avgSpeed != null) sessionRecord.avg_speed = summary.avgSpeed;
   if (summary.maxSpeed != null) sessionRecord.max_speed = summary.maxSpeed;
   writer.writeMessage("session", sessionRecord);
@@ -102,7 +109,10 @@ export function generateFitFile(
   });
 
   const dataView = writer.finish();
-  return dataView.buffer.slice(dataView.byteOffset, dataView.byteOffset + dataView.byteLength) as ArrayBuffer;
+  return dataView.buffer.slice(
+    dataView.byteOffset,
+    dataView.byteOffset + dataView.byteLength,
+  ) as ArrayBuffer;
 }
 
 export function downloadFitFile(buffer: ArrayBuffer, name?: string): void {
@@ -111,7 +121,8 @@ export function downloadFitFile(buffer: ArrayBuffer, name?: string): void {
   const a = document.createElement("a");
   a.href = url;
   a.download =
-    name ?? `training_${new Date().toISOString().slice(0, 16).replace(":", "-")}.fit`;
+    name ??
+    `training_${new Date().toISOString().slice(0, 16).replace(":", "-")}.fit`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

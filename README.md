@@ -1,4 +1,4 @@
-# Overcooked
+# Undertrained
 
 A self-hosted web app for analyzing your Strava training data. Syncs activities and streams from Strava, computes training metrics (TSS, HRSS), and provides interactive charts, maps, and explorer tiles.
 
@@ -61,21 +61,21 @@ Open http://localhost:3000 — you'll be redirected to the login page where you 
 
 ## Scripts
 
-| Command                | Description                              |
-| ---------------------- | ---------------------------------------- |
-| `pnpm dev`             | Start Next.js dev server                 |
-| `pnpm build`           | Production build                         |
-| `pnpm start`           | Start production server                  |
-| `pnpm db:push`         | Push schema to database (dev)            |
-| `pnpm db:generate`     | Generate a migration                     |
-| `pnpm db:migrate`      | Run pending migrations                   |
-| `pnpm db:studio`       | Open Drizzle Studio (DB browser)         |
-| `pnpm lint`            | Run ESLint                               |
-| `pnpm test-unit`       | Run Vitest                               |
-| `pnpm test-e2e`        | Run Playwright                           |
-| `pnpm webhook:view`    | List active Strava webhook subscriptions |
-| `pnpm webhook:create`  | Register a new webhook subscription      |
-| `pnpm webhook:delete`  | Delete a webhook subscription            |
+| Command               | Description                              |
+| --------------------- | ---------------------------------------- |
+| `pnpm dev`            | Start Next.js dev server                 |
+| `pnpm build`          | Production build                         |
+| `pnpm start`          | Start production server                  |
+| `pnpm db:push`        | Push schema to database (dev)            |
+| `pnpm db:generate`    | Generate a migration                     |
+| `pnpm db:migrate`     | Run pending migrations                   |
+| `pnpm db:studio`      | Open Drizzle Studio (DB browser)         |
+| `pnpm lint`           | Run ESLint                               |
+| `pnpm test-unit`      | Run Vitest                               |
+| `pnpm test-e2e`       | Run Playwright                           |
+| `pnpm webhook:view`   | List active Strava webhook subscriptions |
+| `pnpm webhook:create` | Register a new webhook subscription      |
+| `pnpm webhook:delete` | Delete a webhook subscription            |
 
 ## Production deployment
 
@@ -105,16 +105,16 @@ STRAVA_WEBHOOK_CALLBACK_URL=https://yourdomain.com/api/strava/webhook
 DOMAIN=yourdomain.com
 ```
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| `POSTGRES_PASSWORD` | Yes | Password for the PostgreSQL database |
-| `NEXTAUTH_SECRET` | Yes | Random secret used to sign session cookies |
-| `NEXTAUTH_URL` | Yes | Public URL of the app |
-| `STRAVA_CLIENT_ID` | Yes | From your [Strava API application](https://www.strava.com/settings/api) |
-| `STRAVA_CLIENT_SECRET` | Yes | From your Strava API application |
-| `STRAVA_WEBHOOK_VERIFY_TOKEN` | Yes | Any random string — used to validate the webhook subscription with Strava |
-| `STRAVA_WEBHOOK_CALLBACK_URL` | No | Public webhook URL. When set, the app auto-registers a Strava webhook subscription on startup for real-time activity sync. If omitted, only manual sync is available |
-| `DOMAIN` | Yes | Domain name for Caddy to auto-provision HTTPS |
+| Variable                      | Required | Description                                                                                                                                                          |
+| ----------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POSTGRES_PASSWORD`           | Yes      | Password for the PostgreSQL database                                                                                                                                 |
+| `NEXTAUTH_SECRET`             | Yes      | Random secret used to sign session cookies                                                                                                                           |
+| `NEXTAUTH_URL`                | Yes      | Public URL of the app                                                                                                                                                |
+| `STRAVA_CLIENT_ID`            | Yes      | From your [Strava API application](https://www.strava.com/settings/api)                                                                                              |
+| `STRAVA_CLIENT_SECRET`        | Yes      | From your Strava API application                                                                                                                                     |
+| `STRAVA_WEBHOOK_VERIFY_TOKEN` | Yes      | Any random string — used to validate the webhook subscription with Strava                                                                                            |
+| `STRAVA_WEBHOOK_CALLBACK_URL` | No       | Public webhook URL. When set, the app auto-registers a Strava webhook subscription on startup for real-time activity sync. If omitted, only manual sync is available |
+| `DOMAIN`                      | Yes      | Domain name for Caddy to auto-provision HTTPS                                                                                                                        |
 
 Set the Strava API callback URL to `https://yourdomain.com/api/auth/callback/strava` in the [Strava API settings](https://www.strava.com/settings/api).
 

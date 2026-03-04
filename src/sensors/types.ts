@@ -45,7 +45,12 @@ export const DEFAULT_RIDER_SETTINGS: RiderSettings = {
 };
 
 /** Fields that can vary over time */
-export type TimeVaryingField = "ftp" | "weightKg" | "restingHr" | "maxHr" | "lthr";
+export type TimeVaryingField =
+  | "ftp"
+  | "weightKg"
+  | "restingHr"
+  | "maxHr"
+  | "lthr";
 
 /** A change point recording which fields changed on a given date */
 export interface RiderSettingsChangePoint {
@@ -128,7 +133,7 @@ export const POWER_ZONES = [
   { name: "Threshold", maxPct: 1.05, color: "#EAB308" },
   { name: "VO2max", maxPct: 1.2, color: "#F97316" },
   { name: "Anaerobic", maxPct: 1.5, color: "#EF4444" },
-  { name: "Neuromuscular", maxPct: Infinity, color: "#9333EA" },
+  { name: "Neuromuscular", maxPct: Infinity, color: "#DC2626" },
 ] as const;
 
 export function findPowerZone(

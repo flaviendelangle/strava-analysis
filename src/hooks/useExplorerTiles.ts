@@ -1,11 +1,12 @@
 import * as React from "react";
 
 import type { Activity } from "@server/db/types";
+
 import {
-  computeExplorerTiles,
   type ExplorerTilesResult,
+  computeExplorerTiles,
 } from "~/utils/explorerTiles";
-import { decode, type LatLngTuple } from "~/utils/polyline";
+import { type LatLngTuple, decode } from "~/utils/polyline";
 
 export function useExplorerTiles(
   activities: Activity[] | null,

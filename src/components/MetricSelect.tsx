@@ -1,4 +1,5 @@
 import type { Activity } from "@server/db/types";
+
 import { Select, SelectProps } from "./primitives/Select";
 
 export const METRICS: MetricConfig[] = [

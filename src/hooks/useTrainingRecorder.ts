@@ -21,9 +21,11 @@ export function useTrainingRecorder() {
       }
 
       const points = dataPointsRef.current;
-      const prevDistance = points.length > 0 ? points[points.length - 1].distance : 0;
+      const prevDistance =
+        points.length > 0 ? points[points.length - 1].distance : 0;
       // speed is in m/s, 1 second interval -> add speed meters
-      const distanceIncrement = data.speed != null && data.speed > 0 ? data.speed : 0;
+      const distanceIncrement =
+        data.speed != null && data.speed > 0 ? data.speed : 0;
 
       points.push({
         timestamp: Date.now(),
@@ -55,7 +57,8 @@ export function useTrainingRecorder() {
       if (p.speed != null) speeds.push(p.speed);
     }
 
-    const avg = (arr: number[]) => (arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : null);
+    const avg = (arr: number[]) =>
+      arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
     const max = (arr: number[]) => (arr.length > 0 ? Math.max(...arr) : null);
 
     // Normalized Power: 30s rolling average -> 4th power -> mean -> 4th root
@@ -68,7 +71,8 @@ export function useTrainingRecorder() {
         rollingAvg.push(sum / 30);
       }
       const fourthPowerMean =
-        rollingAvg.reduce((acc, v) => acc + Math.pow(v, 4), 0) / rollingAvg.length;
+        rollingAvg.reduce((acc, v) => acc + Math.pow(v, 4), 0) /
+        rollingAvg.length;
       normalizedPower = Math.round(Math.pow(fourthPowerMean, 0.25));
     }
 

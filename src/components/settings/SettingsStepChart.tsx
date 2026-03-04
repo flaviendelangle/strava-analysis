@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react";
 
-import { LineChart } from "@mui/x-charts-pro";
 import { format } from "date-fns";
 
-import type {
-  RiderSettingsTimeline,
-  TimeVaryingField,
-} from "~/sensors/types";
+import { LineChart } from "@mui/x-charts-pro";
+
+import { CHART_MARGINS, useChartTokens } from "~/lib/chartTokens";
+import type { RiderSettingsTimeline, TimeVaryingField } from "~/sensors/types";
 
 import { ChartThemeProvider } from "../charts/ChartThemeProvider";
+import { ChartTooltip } from "../charts/ChartTooltip";
 
 type Tab = "ftp" | "heartRate" | "weight";
 
@@ -32,13 +32,12 @@ const FIELD_LABELS: Record<TimeVaryingField, string> = {
   lthr: "LTHR",
 };
 
-const COLORS = ["#818cf8", "#34d399", "#fb923c"];
-
 interface SettingsStepChartProps {
   timeline: RiderSettingsTimeline;
 }
 
 export function SettingsStepChart({ timeline }: SettingsStepChartProps) {
+  const tokens = useChartTokens();
   const [activeTab, setActiveTab] = useState<Tab>("ftp");
   const fields = TAB_FIELDS[activeTab];
 
@@ -112,7 +111,7 @@ export function SettingsStepChart({ timeline }: SettingsStepChartProps) {
     data: chartData.seriesData[field],
     curve: "stepAfter" as const,
     showMark: true,
-    color: COLORS[i % COLORS.length],
+    color: tokens.palette[i % tokens.palette.length],
   }));
 
   return (
@@ -133,7 +132,7 @@ export function SettingsStepChart({ timeline }: SettingsStepChartProps) {
         ))}
       </div>
       <ChartThemeProvider>
-        <div className="h-64 w-full rounded-md bg-secondary">
+        <div className="bg-card h-64 w-full rounded-md">
           <LineChart
             xAxis={[
               {
@@ -149,7 +148,9 @@ export function SettingsStepChart({ timeline }: SettingsStepChartProps) {
               },
             ]}
             series={series}
-            margin={{ left: 72, right: 24 }}
+            grid={{ horizontal: true }}
+            margin={CHART_MARGINS.standard}
+            slots={{ tooltip: ChartTooltip }}
           />
         </div>
       </ChartThemeProvider>

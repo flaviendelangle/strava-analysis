@@ -70,7 +70,7 @@ export function HudPowerGauge({ power, ftp, weightKg }: HudPowerGaugeProps) {
         <path
           d={describeArc(START_ANGLE, END_ANGLE)}
           fill="none"
-          stroke="#374151"
+          className="stroke-border"
           strokeWidth={STROKE_WIDTH}
           strokeLinecap="round"
         />
@@ -80,7 +80,7 @@ export function HudPowerGauge({ power, ftp, weightKg }: HudPowerGaugeProps) {
 
       {/* Center content */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-mono text-7xl font-bold text-white">
+        <span className="text-foreground font-mono text-7xl font-bold">
           {power ?? "--"}
         </span>
         {power != null && (
@@ -92,7 +92,9 @@ export function HudPowerGauge({ power, ftp, weightKg }: HudPowerGaugeProps) {
           </span>
         )}
         {wattsPerKg && (
-          <span className="text-sm text-gray-400">{wattsPerKg} W/kg</span>
+          <span className="text-muted-foreground text-sm">
+            {wattsPerKg} W/kg
+          </span>
         )}
       </div>
     </div>

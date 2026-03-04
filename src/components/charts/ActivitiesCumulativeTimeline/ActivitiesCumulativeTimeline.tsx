@@ -1,8 +1,9 @@
 import * as React from "react";
 
-import { LineChart } from "@mui/x-charts-pro";
 import { format, getMonth, getYear } from "date-fns";
 import { enGB } from "date-fns/locale/en-GB";
+
+import { LineChart } from "@mui/x-charts-pro";
 
 import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
 import {
@@ -10,26 +11,19 @@ import {
   useGroupActivitiesByTimeSlice,
 } from "~/hooks/useGroupActivitiesByTimeSlice";
 import { useTimeSlices } from "~/hooks/useTimeSlices";
+import { CHART_MARGINS, useChartTokens } from "~/lib/chartTokens";
 
 import { METRICS, MetricSelect } from "../../MetricSelect";
 import { ChartThemeProvider } from "../ChartThemeProvider";
+import { ChartTooltip } from "../ChartTooltip";
 
 const MONTH_LABELS = Array.from({ length: 12 }, (_, i) =>
   format(new Date(2024, i, 1), "MMMM", { locale: enGB }),
 );
 
-const COLORS = [
-  "#818cf8", // indigo-400
-  "#34d399", // emerald-400
-  "#fb923c", // orange-400
-  "#f472b6", // pink-400
-  "#38bdf8", // sky-400
-  "#a78bfa", // violet-400
-  "#fbbf24", // amber-400
-];
-
 export default function ActivitiesCumulativeTimeline() {
   const [metric, setMetric] = React.useState("distance");
+  const tokens = useChartTokens();
   const activitiesQuery = useActivitiesQuery();
 
   const slices = useTimeSlices({
@@ -87,8 +81,8 @@ export default function ActivitiesCumulativeTimeline() {
 
   return (
     <ChartThemeProvider>
-      <div className="flex h-96 w-full flex-col rounded-md bg-secondary">
-        <div className="flex items-center gap-4 border-b border-border p-4">
+      <div className="bg-card flex h-96 w-full flex-col rounded-md">
+        <div className="border-border flex items-center gap-4 border-b p-4">
           <h3 className="text-sm font-medium">Cumulative Timeline</h3>
           <MetricSelect value={metric} onValueChange={setMetric} />
         </div>
@@ -111,8 +105,10 @@ export default function ActivitiesCumulativeTimeline() {
               },
             ]}
             series={series}
-            colors={COLORS}
-            margin={{ left: 72, right: 24 }}
+            colors={tokens.palette}
+            grid={{ horizontal: true }}
+            margin={CHART_MARGINS.standard}
+            slots={{ tooltip: ChartTooltip }}
           />
         </div>
       </div>

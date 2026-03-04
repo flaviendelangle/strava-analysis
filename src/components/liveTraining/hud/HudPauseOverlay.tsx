@@ -13,12 +13,12 @@ export function HudPauseOverlay({
   onStop,
 }: HudPauseOverlayProps) {
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-900/70 backdrop-blur-md">
+    <div className="bg-background/70 absolute inset-0 z-50 flex items-center justify-center backdrop-blur-md">
       <div className="flex flex-col items-center gap-6">
-        <span className="text-6xl font-black tracking-widest text-white/80">
+        <span className="text-foreground/80 text-6xl font-black tracking-widest">
           PAUSED
         </span>
-        <span className="font-mono text-2xl text-gray-400">
+        <span className="text-muted-foreground font-mono text-2xl">
           {formatElapsed(pausedSeconds)}
         </span>
         <div className="mt-4 flex gap-4">

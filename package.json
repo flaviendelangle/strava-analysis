@@ -1,5 +1,5 @@
 {
-  "name": "overcooked",
+  "name": "undertrained",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,6 +9,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
+    "typescript": "tsc --noEmit",
     "lint": "eslint --cache src",
     "lint-fix": "pnpm lint --fix",
     "prettier": "prettier --write .",
@@ -46,6 +47,7 @@
     "lucide-react": "^0.575.0",
     "next": "^16.1.6",
     "next-auth": "^4.24.13",
+    "next-themes": "^0.4.6",
     "postgres": "^3.4.8",
     "radix-ui": "^1.4.3",
     "react": "^19.2.4",

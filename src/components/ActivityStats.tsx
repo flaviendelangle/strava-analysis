@@ -1,8 +1,23 @@
+import {
+  Clock,
+  Flame,
+  Gauge,
+  HeartPulse,
+  Mountain,
+  Route,
+  Timer,
+  TrendingUp,
+  Zap,
+} from "lucide-react";
+
 import type { Activity } from "@server/db/types";
+
 import { StatCard } from "~/components/primitives/StatCard";
+import { StatSection } from "~/components/primitives/StatSection";
 import { useRiderSettingsTimeline } from "~/hooks/useRiderSettings";
-import { formatHumanDuration } from "~/utils/format";
+import { cn } from "~/lib/utils";
 import { POWER_BEST_ACTIVITY_TYPES } from "~/utils/constants";
+import { formatHumanDuration } from "~/utils/format";
 import { getSportConfig } from "~/utils/sportConfig";
 
 interface ActivityStatsProps {
@@ -22,118 +37,200 @@ export function ActivityStats({ activity }: ActivityStatsProps) {
   const tss = isRide ? (activity.tss ?? null) : null;
   const hrss = activity.hrss ?? null;
 
+  const hasHeartRate = activity.averageHeartrate != null;
+  const hasPower = activity.averageWatts != null;
+  const hasEnergyCadence =
+    activity.kilojoules != null ||
+    activity.calories != null ||
+    activity.averageCadence != null;
+  const hasTrainingLoad =
+    intensityFactor != null || tss != null || hrss != null;
+  const hasLoad = hrss != null;
+
   return (
-    <div className="rounded-lg bg-card p-4">
-      <h3 className="mb-3 text-lg font-medium">Activity Details</h3>
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+    <div className="border-border bg-card rounded-xl border p-5">
+      <h3 className="mb-4 text-lg font-semibold">Activity Details</h3>
+
+      {/* Hero Row */}
+      <div
+        className={cn(
+          "border-border mb-4 grid gap-2.5 border-b pb-4",
+          hasLoad ? "grid-cols-2 md:grid-cols-4" : "grid-cols-3",
+        )}
+      >
         <StatCard
+          icon={Timer}
           label="Moving Time"
           value={formatHumanDuration(activity.movingTime)}
+          variant="hero"
         />
         <StatCard
-          label="Elapsed Time"
-          value={formatHumanDuration(activity.elapsedTime)}
+          icon={Route}
+          label="Distance"
+          value={sportConfig.formatDistance(activity.distance)}
+          variant="hero"
         />
-        <StatCard label="Distance" value={sportConfig.formatDistance(activity.distance)} />
-        <StatCard
-          label="Elevation"
-          value={`${activity.totalElevationGain} m`}
-        />
-        <StatCard
-          label={`Avg ${sportConfig.speedLabel}`}
-          value={sportConfig.formatSpeed(activity.averageSpeed)}
-        />
-        {activity.maxSpeed != null && (
+        {sportConfig.heroThirdStat === "pace" ? (
           <StatCard
-            label={`Max ${sportConfig.speedLabel}`}
-            value={sportConfig.formatSpeed(activity.maxSpeed)}
+            icon={Gauge}
+            label={`Avg ${sportConfig.speedLabel}`}
+            value={sportConfig.formatSpeed(activity.averageSpeed)}
+            variant="hero"
+          />
+        ) : (
+          <StatCard
+            icon={Mountain}
+            label="Elevation"
+            value={`${activity.totalElevationGain} m`}
+            variant="hero"
           />
         )}
-        {activity.averageHeartrate != null && (
+        {hasLoad && (
           <StatCard
-            label="Avg HR"
-            value={`${Math.round(activity.averageHeartrate)} bpm`}
-          />
-        )}
-        {activity.maxHeartrate != null && (
-          <StatCard
-            label="Max HR"
-            value={`${Math.round(activity.maxHeartrate)} bpm`}
-          />
-        )}
-        {activity.averageWatts != null && (
-          <StatCard
-            label="Avg Power"
-            value={`${Math.round(activity.averageWatts)} W`}
-          />
-        )}
-        {activity.maxWatts != null && (
-          <StatCard
-            label="Max Power"
-            value={`${Math.round(activity.maxWatts)} W`}
-          />
-        )}
-        {np != null && (
-          <StatCard
-            label="Normalized Power"
-            value={`${Math.round(np)} W`}
-          />
-        )}
-        {activity.averageCadence != null && (
-          <StatCard
-            label="Avg Cadence"
-            value={`${Math.round(activity.averageCadence)} ${sportConfig.cadenceUnit}`}
-          />
-        )}
-        {activity.kilojoules != null && (
-          <StatCard
-            label="Energy"
-            value={`${Math.round(activity.kilojoules)} kJ`}
-          />
-        )}
-        {activity.calories != null && (
-          <StatCard
-            label="Calories"
-            value={`${Math.round(activity.calories)} kcal`}
-          />
-        )}
-        {intensityFactor != null && (
-          <StatCard
-            label="Intensity Factor"
-            value={intensityFactor.toFixed(2)}
-            tooltip={
-              <div className="flex flex-col gap-0.5">
-                <div className="font-medium">Rider settings for {activityDate}</div>
-                <div>FTP: {riderSettings.ftp} W</div>
-              </div>
-            }
-          />
-        )}
-        {tss != null && (
-          <StatCard
-            label="TSS"
-            value={Math.round(tss).toString()}
-            tooltip={
-              <div className="flex flex-col gap-0.5">
-                <div className="font-medium">Rider settings for {activityDate}</div>
-                <div>FTP: {riderSettings.ftp} W</div>
-              </div>
-            }
-          />
-        )}
-        {hrss != null && (
-          <StatCard
-            label="HRSS"
+            icon={TrendingUp}
+            label="Load"
             value={Math.round(hrss).toString()}
-            tooltip={
-              <div className="flex flex-col gap-0.5">
-                <div className="font-medium">Rider settings for {activityDate}</div>
-                <div>Resting HR: {riderSettings.restingHr} bpm</div>
-                <div>Max HR: {riderSettings.maxHr} bpm</div>
-                <div>LTHR: {riderSettings.lthr} bpm</div>
-              </div>
-            }
+            variant="hero"
+            tooltip="Uses HRSS (Heart Rate Stress Score). Will be configurable per sport in the future."
           />
+        )}
+      </div>
+
+      {/* Grouped Sections */}
+      <div className="flex flex-col gap-4">
+        {/* Time & Speed */}
+        <StatSection icon={Clock} title={`Time & ${sportConfig.speedLabel}`}>
+          <StatCard
+            label="Elapsed Time"
+            value={formatHumanDuration(activity.elapsedTime)}
+          />
+          <StatCard
+            label={`Avg ${sportConfig.speedLabel}`}
+            value={sportConfig.formatSpeed(activity.averageSpeed)}
+          />
+          {activity.maxSpeed != null && (
+            <StatCard
+              label={`Max ${sportConfig.speedLabel}`}
+              value={sportConfig.formatSpeed(activity.maxSpeed)}
+            />
+          )}
+        </StatSection>
+
+        {/* Heart Rate */}
+        {hasHeartRate && (
+          <StatSection icon={HeartPulse} title="Heart Rate">
+            <StatCard
+              label="Avg HR"
+              value={`${Math.round(activity.averageHeartrate!)} bpm`}
+            />
+            {activity.maxHeartrate != null && (
+              <StatCard
+                label="Max HR"
+                value={`${Math.round(activity.maxHeartrate)} bpm`}
+              />
+            )}
+          </StatSection>
+        )}
+
+        {/* Power */}
+        {hasPower && (
+          <StatSection icon={Zap} title="Power">
+            <StatCard
+              label="Avg Power"
+              value={`${Math.round(activity.averageWatts!)} W`}
+            />
+            {activity.maxWatts != null && (
+              <StatCard
+                label="Max Power"
+                value={`${Math.round(activity.maxWatts)} W`}
+              />
+            )}
+            {np != null && (
+              <StatCard
+                label="Normalized Power"
+                value={`${Math.round(np)} W`}
+              />
+            )}
+          </StatSection>
+        )}
+
+        {/* Energy & Cadence */}
+        {hasEnergyCadence && (
+          <StatSection icon={Flame} title="Energy & Cadence">
+            {activity.kilojoules != null && (
+              <StatCard
+                label="Energy"
+                value={`${Math.round(activity.kilojoules)} kJ`}
+              />
+            )}
+            {activity.calories != null && (
+              <StatCard
+                label="Calories"
+                value={`${Math.round(activity.calories)} kcal`}
+              />
+            )}
+            {activity.averageCadence != null && (
+              <StatCard
+                label="Avg Cadence"
+                value={`${Math.round(activity.averageCadence)} ${sportConfig.cadenceUnit}`}
+              />
+            )}
+          </StatSection>
+        )}
+
+        {/* Training Load Details (collapsed) */}
+        {hasTrainingLoad && (
+          <StatSection
+            icon={TrendingUp}
+            title="Training Load Details"
+            collapsible
+            defaultCollapsed
+          >
+            {intensityFactor != null && (
+              <StatCard
+                label="Intensity Factor"
+                value={intensityFactor.toFixed(2)}
+                tooltip={
+                  <div className="flex flex-col gap-0.5">
+                    <div className="font-medium">
+                      Rider settings for {activityDate}
+                    </div>
+                    <div>FTP: {riderSettings.ftp} W</div>
+                  </div>
+                }
+              />
+            )}
+            {tss != null && (
+              <StatCard
+                label="TSS"
+                value={Math.round(tss).toString()}
+                tooltip={
+                  <div className="flex flex-col gap-0.5">
+                    <div className="font-medium">
+                      Rider settings for {activityDate}
+                    </div>
+                    <div>FTP: {riderSettings.ftp} W</div>
+                  </div>
+                }
+              />
+            )}
+            {hrss != null && (
+              <StatCard
+                label="HRSS"
+                value={Math.round(hrss).toString()}
+                tooltip={
+                  <div className="flex flex-col gap-0.5">
+                    <div className="font-medium">
+                      Rider settings for {activityDate}
+                    </div>
+                    <div>Resting HR: {riderSettings.restingHr} bpm</div>
+                    <div>Max HR: {riderSettings.maxHr} bpm</div>
+                    <div>LTHR: {riderSettings.lthr} bpm</div>
+                  </div>
+                }
+              />
+            )}
+          </StatSection>
         )}
       </div>
     </div>

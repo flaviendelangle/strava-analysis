@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
-import { TRPCError } from "@trpc/server";
 import strava from "strava-v3";
+
+import { TRPCError } from "@trpc/server";
 
 import type { Database } from "../db";
 import { athletes } from "../db/schema";

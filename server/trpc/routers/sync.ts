@@ -3,11 +3,7 @@ import { z } from "zod";
 
 import { activities, syncJobs } from "../../db/schema";
 import { runSyncInBackground } from "../../lib/sync";
-import {
-  protectedProcedure,
-  router,
-  validateAthleteOwnership,
-} from "../index";
+import { protectedProcedure, router, validateAthleteOwnership } from "../index";
 
 export const syncRouter = router({
   getJob: protectedProcedure

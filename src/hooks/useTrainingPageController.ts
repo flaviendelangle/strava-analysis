@@ -8,7 +8,7 @@ import { useErgMode } from "~/hooks/useErgMode";
 import { useRiderSettings } from "~/hooks/useRiderSettings";
 import { useTrainingRecorder } from "~/hooks/useTrainingRecorder";
 import { useTrainingSession } from "~/hooks/useTrainingSession";
-import { msToKmh, SpeedSimulator } from "~/sensors/speedFromPower";
+import { SpeedSimulator, msToKmh } from "~/sensors/speedFromPower";
 import type { SensorSource, SessionDataPoint } from "~/sensors/types";
 
 /**

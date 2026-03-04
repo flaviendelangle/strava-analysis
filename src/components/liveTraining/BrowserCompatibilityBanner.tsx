@@ -25,10 +25,15 @@ function getServerCapabilities(): null {
 }
 
 export function BrowserCompatibilityBanner() {
-  const capabilities = useSyncExternalStore(subscribe, getCapabilities, getServerCapabilities);
+  const capabilities = useSyncExternalStore(
+    subscribe,
+    getCapabilities,
+    getServerCapabilities,
+  );
 
   // Still server-rendering or both APIs available — nothing to show
-  if (!capabilities || (capabilities.bluetooth && capabilities.usb)) return null;
+  if (!capabilities || (capabilities.bluetooth && capabilities.usb))
+    return null;
 
   const noBle = !capabilities.bluetooth;
   const noUsb = !capabilities.usb;

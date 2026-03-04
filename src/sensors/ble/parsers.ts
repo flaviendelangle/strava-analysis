@@ -93,8 +93,7 @@ export function parseIndoorBikeData(dataView: DataView): TrainerData | null {
   // Bit 4: Total distance present (3 bytes)
   if (flags & 0x10) {
     result.distance =
-      dataView.getUint16(offset, true) +
-      (dataView.getUint8(offset + 2) << 16); // meters
+      dataView.getUint16(offset, true) + (dataView.getUint8(offset + 2) << 16); // meters
     offset += 3;
   }
 

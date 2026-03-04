@@ -1,4 +1,5 @@
 import * as React from "react";
+
 import { EllipsisVertical, ExternalLink, RefreshCw } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
@@ -23,11 +24,16 @@ export function ActivityActionsMenu(props: ActivityActionsMenuProps) {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="outline" size="icon" disabled={loading}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="text-muted-foreground"
+            disabled={loading}
+          >
             {loading ? (
-              <RefreshCw className="size-4 animate-spin" />
+              <RefreshCw className="size-3.5 animate-spin" />
             ) : (
-              <EllipsisVertical className="size-4" />
+              <EllipsisVertical className="size-3.5" />
             )}
           </Button>
         }

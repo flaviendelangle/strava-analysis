@@ -3,6 +3,7 @@ import * as React from "react";
 import { bisector } from "d3-array";
 import { scaleLinear } from "d3-scale";
 
+import { CHART_MARGINS, useChartTokens } from "~/lib/chartTokens";
 import { formatElapsed } from "~/utils/format";
 
 import { Crosshair } from "./Crosshair";
@@ -18,7 +19,7 @@ import { type PanelRenderData, WebGLChartRenderer } from "./webgl/renderer";
 const PANEL_HEIGHT = 100;
 const ALTITUDE_PANEL_HEIGHT = 70;
 const PANEL_GAP = 4;
-const MARGIN = { top: 8, right: 16, bottom: 36, left: 56 };
+const MARGIN = CHART_MARGINS.compact;
 const Y_AXIS_TICKS = 4;
 const X_AXIS_TICKS = 8;
 const LINE_HALF_WIDTH = 0.75; // 1.5px total line width
@@ -26,7 +27,15 @@ const LINE_HALF_WIDTH = 0.75; // 1.5px total line width
 const d3Bisector = bisector<number, number>((d) => d).left;
 
 export function MultiPanelChart(props: MultiPanelChartProps) {
-  const { streams, xData, distanceData, xAxisMode, sportConfig, onHoverIndexChange } = props;
+  const {
+    streams,
+    xData,
+    distanceData,
+    xAxisMode,
+    sportConfig,
+    onHoverIndexChange,
+  } = props;
+  const tokens = useChartTokens();
   const containerRef = React.useRef<HTMLDivElement>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
   const [width, setWidth] = React.useState(0);
@@ -56,21 +65,18 @@ export function MultiPanelChart(props: MultiPanelChartProps) {
   }, []);
 
   // Initialize WebGL renderer via callback ref (canvas may mount later)
-  const canvasRef = React.useCallback(
-    (canvas: HTMLCanvasElement | null) => {
-      if (!canvas) return;
+  const canvasRef = React.useCallback((canvas: HTMLCanvasElement | null) => {
+    if (!canvas) return;
 
-      const r = new WebGLChartRenderer(canvas);
-      const ok = r.init();
-      if (!ok) {
-        console.warn("WebGL2 not available, falling back to SVG");
-        setWebglAvailable(false);
-        return;
-      }
-      setRenderer(r);
-    },
-    [],
-  );
+    const r = new WebGLChartRenderer(canvas);
+    const ok = r.init();
+    if (!ok) {
+      console.warn("WebGL2 not available, falling back to SVG");
+      setWebglAvailable(false);
+      return;
+    }
+    setRenderer(r);
+  }, []);
 
   // Dispose renderer on unmount
   React.useEffect(() => {
@@ -84,8 +90,7 @@ export function MultiPanelChart(props: MultiPanelChartProps) {
     const result: PanelLayout[] = [];
     let offset = 0;
     for (const stream of streams) {
-      const height =
-        stream.config.area ? ALTITUDE_PANEL_HEIGHT : PANEL_HEIGHT;
+      const height = stream.config.area ? ALTITUDE_PANEL_HEIGHT : PANEL_HEIGHT;
       result.push({ top: offset, height, stream });
       offset += height + PANEL_GAP;
     }
@@ -128,6 +133,11 @@ export function MultiPanelChart(props: MultiPanelChartProps) {
       renderer?.resize(width, totalHeight);
     }
   }, [renderer, width, totalHeight]);
+
+  // Sync theme colors to WebGL renderer
+  React.useEffect(() => {
+    renderer?.setThemeColors(tokens.grid.gl, tokens.gridStrong.gl);
+  }, [renderer, tokens]);
 
   // Rebuild geometry and render WebGL when data/scales change
   React.useEffect(() => {
@@ -181,7 +191,7 @@ export function MultiPanelChart(props: MultiPanelChartProps) {
 
     panelRenderData.forEach((data, i) => renderer.updatePanelData(i, data));
     renderer.render(panelRenderData, MARGIN.left, MARGIN.top, drawingWidth);
-  }, [renderer, panels, xScale, yScales, activeXData, drawingWidth]);
+  }, [renderer, panels, xScale, yScales, activeXData, drawingWidth, tokens]);
 
   // Mouse handling
   const handleMouseMove = React.useCallback(
@@ -203,10 +213,7 @@ export function MultiPanelChart(props: MultiPanelChartProps) {
         if (xAxisMode === "distance" && distanceData) {
           const distanceValue = xScale.invert(svgX);
           dataIndex = d3Bisector(distanceData, distanceValue);
-          dataIndex = Math.max(
-            0,
-            Math.min(dataIndex, distanceData.length - 1),
-          );
+          dataIndex = Math.max(0, Math.min(dataIndex, distanceData.length - 1));
         } else {
           dataIndex = Math.round(xScale.invert(svgX));
           dataIndex = Math.max(0, Math.min(dataIndex, xData.length - 1));
@@ -254,9 +261,7 @@ export function MultiPanelChart(props: MultiPanelChartProps) {
 
   // Compute crosshair x position
   const crosshairX =
-    hoverIndex !== null
-      ? xScale(activeXData[hoverIndex] ?? hoverIndex)
-      : null;
+    hoverIndex !== null ? xScale(activeXData[hoverIndex] ?? hoverIndex) : null;
 
   return (
     <div ref={containerRef} className="relative w-full">
@@ -332,6 +337,8 @@ export function MultiPanelChart(props: MultiPanelChartProps) {
                 yScale={yScales[i]}
                 activeXData={activeXData}
                 drawingWidth={drawingWidth}
+                gridColor={tokens.grid.hex}
+                separatorColor={tokens.gridStrong.hex}
               />
             )}
 
@@ -343,8 +350,7 @@ export function MultiPanelChart(props: MultiPanelChartProps) {
                 y={yScales[i](tick)}
                 textAnchor="end"
                 dominantBaseline="middle"
-                fill="currentColor"
-                className="text-zinc-500"
+                fill={tokens.axisLabel}
                 fontSize={10}
               >
                 {panel.stream.config.unit === "m/s"
@@ -375,25 +381,18 @@ export function MultiPanelChart(props: MultiPanelChartProps) {
             y1={0}
             x2={drawingWidth}
             y2={0}
-            stroke="currentColor"
-            className="text-zinc-700"
+            stroke={tokens.gridStrong.hex}
             strokeWidth={1}
           />
           {xTicks.map((tick) => {
             const x = xScale(tick);
             return (
               <g key={tick} transform={`translate(${x}, 0)`}>
-                <line
-                  y1={0}
-                  y2={5}
-                  stroke="currentColor"
-                  className="text-zinc-600"
-                />
+                <line y1={0} y2={5} stroke={tokens.gridStrong.hex} />
                 <text
                   y={18}
                   textAnchor="middle"
-                  fill="currentColor"
-                  className="text-zinc-400"
+                  fill={tokens.axisLabel}
                   fontSize={11}
                 >
                   {formatX(tick)}
@@ -411,8 +410,7 @@ export function MultiPanelChart(props: MultiPanelChartProps) {
               y1={0}
               x2={crosshairX}
               y2={drawingHeight}
-              stroke="currentColor"
-              className="text-zinc-400"
+              stroke={tokens.crosshair}
               strokeWidth={1}
               strokeDasharray="3,3"
               pointerEvents="none"
@@ -428,7 +426,7 @@ export function MultiPanelChart(props: MultiPanelChartProps) {
                   cy={cy}
                   r={3.5}
                   fill={panel.stream.config.color}
-                  stroke="#1c1c1c"
+                  stroke={tokens.cardBg}
                   strokeWidth={1.5}
                   pointerEvents="none"
                 />
@@ -461,13 +459,23 @@ interface SVGFallbackPanelProps {
   yScale: ReturnType<typeof scaleLinear<number, number>>;
   activeXData: number[];
   drawingWidth: number;
+  gridColor: string;
+  separatorColor: string;
 }
 
 const SVGFallbackPanel = React.memo(function SVGFallbackPanel(
   props: SVGFallbackPanelProps,
 ) {
-  const { panel, panelIndex, xScale, yScale, activeXData, drawingWidth } =
-    props;
+  const {
+    panel,
+    panelIndex,
+    xScale,
+    yScale,
+    activeXData,
+    drawingWidth,
+    gridColor,
+    separatorColor,
+  } = props;
   const { stream } = panel;
 
   // Build SVG path from data points (straight segments)
@@ -500,7 +508,14 @@ const SVGFallbackPanel = React.memo(function SVGFallbackPanel(
     parts.push(`L${firstX},${panel.height}`);
     parts.push("Z");
     return parts.join("");
-  }, [stream.yData, stream.config.area, xScale, yScale, activeXData, panel.height]);
+  }, [
+    stream.yData,
+    stream.config.area,
+    xScale,
+    yScale,
+    activeXData,
+    panel.height,
+  ]);
 
   const yTicks = yScale.ticks(Y_AXIS_TICKS);
 
@@ -514,8 +529,7 @@ const SVGFallbackPanel = React.memo(function SVGFallbackPanel(
           y1={yScale(tick)}
           x2={drawingWidth}
           y2={yScale(tick)}
-          stroke="currentColor"
-          className="text-zinc-800"
+          stroke={gridColor}
           strokeWidth={1}
         />
       ))}
@@ -526,8 +540,7 @@ const SVGFallbackPanel = React.memo(function SVGFallbackPanel(
         y1={panel.height}
         x2={drawingWidth}
         y2={panel.height}
-        stroke="currentColor"
-        className="text-zinc-700"
+        stroke={separatorColor}
         strokeWidth={1}
       />
 

@@ -9,10 +9,11 @@ import {
   useMap,
 } from "react-leaflet";
 
+import type { Activity } from "@server/db/types";
+
 import { useExplorerTilesToggle } from "~/hooks/useExplorerTilesToggle";
 import { decode } from "~/utils/polyline";
 
-import type { Activity } from "@server/db/types";
 import { ExplorerTilesLayer } from "./ExplorerTilesLayer";
 import { ExplorerTilesStats } from "./ExplorerTilesStats";
 
@@ -44,7 +45,12 @@ function FitBounds(props: FitBoundsProps) {
 }
 
 export default function Map(props: MapProps) {
-  const { activities, enableExplorerTiles = false, highlightPosition, routePositions } = props;
+  const {
+    activities,
+    enableExplorerTiles = false,
+    highlightPosition,
+    routePositions,
+  } = props;
   const { showExplorerTiles } = useExplorerTilesToggle();
 
   const polylines = React.useMemo(() => {
@@ -54,7 +60,10 @@ export default function Map(props: MapProps) {
     return (activities ?? [])
       .map((activity) => {
         if (!activity?.mapPolyline) return null;
-        return { id: String(activity.id), polyline: decode(activity.mapPolyline) };
+        return {
+          id: String(activity.id),
+          polyline: decode(activity.mapPolyline),
+        };
       })
       .filter((activity) => !!activity);
   }, [activities, routePositions]);

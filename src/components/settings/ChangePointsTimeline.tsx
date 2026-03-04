@@ -97,9 +97,7 @@ export function ChangePointsTimeline({
   };
 
   const handleSave = (point: RiderSettingsChangePoint) => {
-    const existingIndex = timeline.changes.findIndex(
-      (c) => c.id === point.id,
-    );
+    const existingIndex = timeline.changes.findIndex((c) => c.id === point.id);
     let newChanges: RiderSettingsChangePoint[];
     if (existingIndex >= 0) {
       newChanges = [...timeline.changes];
@@ -160,7 +158,7 @@ export function ChangePointsTimeline({
         <TableBody>
           {resolvedRows.map((row) => (
             <TableRow key={row.id}>
-              <TableCell className="font-mono text-muted-foreground">
+              <TableCell className="text-muted-foreground font-mono">
                 {row.label}
               </TableCell>
               {RIDER_FIELD_CONFIG.map(({ field }) => (
@@ -168,7 +166,7 @@ export function ChangePointsTimeline({
                   key={field}
                   className={cn(
                     "tabular-nums",
-                    row.changed.has(field) && "font-semibold text-foreground",
+                    row.changed.has(field) && "text-foreground font-semibold",
                   )}
                 >
                   {row.values[field]}

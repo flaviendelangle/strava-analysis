@@ -101,8 +101,7 @@ export function useGpxRoute() {
         if (route.points[i].cumulativeDistance >= distanceMeters) {
           const prev = route.points[i - 1];
           const curr = route.points[i];
-          const segmentDist =
-            curr.cumulativeDistance - prev.cumulativeDistance;
+          const segmentDist = curr.cumulativeDistance - prev.cumulativeDistance;
           if (segmentDist < 0.5) return 0;
           return ((curr.ele - prev.ele) / segmentDist) * 100;
         }

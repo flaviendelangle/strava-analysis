@@ -1,8 +1,11 @@
 import * as React from "react";
 
+import { SettingsIcon } from "lucide-react";
+
 import { LoadingButton } from "~/components/primitives/LoadingButton";
 import { ChangePointsTimeline } from "~/components/settings/ChangePointsTimeline";
 import { SettingsStepChart } from "~/components/settings/SettingsStepChart";
+import { Toolbar } from "~/components/settings/SettingsToolbar";
 import { Label } from "~/components/ui/label";
 import { NumberField } from "~/components/ui/number-field";
 import {
@@ -31,14 +34,19 @@ const SettingsPage: NextPageWithLayout = () => {
     }
   }, [athleteId, recomputeScores]);
 
-  const updateStatic = (field: "cdA" | "crr" | "bikeWeightKg", value: number | null) => {
+  const updateStatic = (
+    field: "cdA" | "crr" | "bikeWeightKg",
+    value: number | null,
+  ) => {
     setTimeline({ ...timeline, [field]: value ?? 0 });
   };
 
   return (
-    <div className="flex flex-col gap-8 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Settings</h1>
+    <>
+      <Toolbar>
+        <SettingsIcon className="text-muted-foreground size-4" />
+        <span className="font-semibold">Settings</span>
+        <div className="min-w-0 flex-1" />
         <Tooltip>
           <TooltipTrigger
             render={
@@ -54,62 +62,63 @@ const SettingsPage: NextPageWithLayout = () => {
             Recalculate all activity scores using the current settings
           </TooltipContent>
         </Tooltip>
+      </Toolbar>
+
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
+        <section className="border-border bg-card rounded-xl border p-5">
+          <ChangePointsTimeline
+            timeline={timeline}
+            onTimelineChange={setTimeline}
+          />
+        </section>
+
+        <section className="border-border bg-card rounded-xl border p-5">
+          <h3 className="mb-4 text-lg font-semibold">Timeline</h3>
+          <SettingsStepChart timeline={timeline} />
+        </section>
+
+        <section className="border-border bg-card rounded-xl border p-5">
+          <h2 className="mb-2 text-lg font-semibold">
+            Equipment & Aerodynamics
+          </h2>
+          <p className="text-muted-foreground mb-5 text-sm">
+            These values are constant and do not change over time.
+          </p>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+            <div className="flex flex-col gap-2">
+              <Label>Bike weight (kg)</Label>
+              <NumberField
+                value={timeline.bikeWeightKg}
+                onValueChange={(v) => updateStatic("bikeWeightKg", v)}
+                min={0}
+                step={0.5}
+                smallStep={0.1}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>CdA (drag coefficient x area)</Label>
+              <NumberField
+                value={timeline.cdA}
+                onValueChange={(v) => updateStatic("cdA", v)}
+                min={0}
+                step={0.01}
+                smallStep={0.001}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>Crr (rolling resistance)</Label>
+              <NumberField
+                value={timeline.crr}
+                onValueChange={(v) => updateStatic("crr", v)}
+                min={0}
+                step={0.001}
+                smallStep={0.0001}
+              />
+            </div>
+          </div>
+        </section>
       </div>
-
-      {/* Unified rider settings table */}
-      <section className="rounded-lg bg-card p-4">
-        <ChangePointsTimeline
-          timeline={timeline}
-          onTimelineChange={setTimeline}
-        />
-      </section>
-
-      {/* Step chart visualization */}
-      <section className="rounded-lg bg-card p-4">
-        <h3 className="mb-4 text-lg font-medium">Timeline</h3>
-        <SettingsStepChart timeline={timeline} />
-      </section>
-
-      {/* Static settings */}
-      <section className="rounded-lg bg-card p-4">
-        <h2 className="mb-4 text-lg font-medium">Equipment & Aerodynamics</h2>
-        <p className="mb-4 text-sm text-muted-foreground">
-          These values are constant and do not change over time.
-        </p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="flex flex-col gap-1.5">
-            <Label>Bike weight (kg)</Label>
-            <NumberField
-              value={timeline.bikeWeightKg}
-              onValueChange={(v) => updateStatic("bikeWeightKg", v)}
-              min={0}
-              step={0.5}
-              smallStep={0.1}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>CdA (drag coefficient x area)</Label>
-            <NumberField
-              value={timeline.cdA}
-              onValueChange={(v) => updateStatic("cdA", v)}
-              min={0}
-              step={0.01}
-              smallStep={0.001}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Crr (rolling resistance)</Label>
-            <NumberField
-              value={timeline.crr}
-              onValueChange={(v) => updateStatic("crr", v)}
-              min={0}
-              step={0.001}
-              smallStep={0.0001}
-            />
-          </div>
-        </div>
-      </section>
-    </div>
+    </>
   );
 };
 

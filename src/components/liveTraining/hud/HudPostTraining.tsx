@@ -26,28 +26,28 @@ export function HudPostTraining({
   const [activityName, setActivityName] = useState("");
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-50 max-h-[85vh] animate-slide-up overflow-y-auto rounded-t-3xl border-t border-gray-700/50 bg-gray-900/95 backdrop-blur-lg">
+    <div className="animate-slide-up border-border/50 bg-background/95 absolute inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-3xl border-t backdrop-blur-lg">
       <div className="mx-auto max-w-4xl p-6">
         {/* Handle bar */}
         <div className="mb-6 flex justify-center">
-          <div className="h-1 w-12 rounded-full bg-gray-600" />
+          <div className="bg-accent h-1 w-12 rounded-full" />
         </div>
 
         {/* Header */}
         <div className="mb-6 text-center">
-          <h2 className="text-3xl font-bold text-white">Ride Complete</h2>
-          <p className="mt-2 font-mono text-4xl font-bold text-purple-400">
+          <h2 className="text-foreground text-3xl font-bold">Ride Complete</h2>
+          <p className="mt-2 font-mono text-4xl font-bold text-teal-400">
             {formatHumanDuration(summary.elapsedSeconds)}
           </p>
         </div>
 
         {/* Activity name */}
         <div className="mb-6">
-          <label className="mb-2 block text-xs uppercase tracking-wider text-gray-400">
+          <label className="text-muted-foreground mb-2 block text-xs tracking-wider uppercase">
             Activity Name
           </label>
           <input
-            className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-lg text-white placeholder:text-gray-600 focus:border-purple-500 focus:outline-none"
+            className="border-border bg-card text-foreground placeholder:text-muted-foreground focus:border-primary w-full rounded-xl border px-4 py-3 text-lg focus:outline-none"
             value={activityName}
             onChange={(e) => setActivityName(e.target.value)}
             placeholder="Name your ride..."
@@ -109,15 +109,15 @@ export function HudPostTraining({
         </div>
 
         {/* Chart */}
-        <div className="mb-6 rounded-xl border border-gray-700/50 bg-gray-800/50 p-3">
+        <div className="border-border/50 bg-card/50 mb-6 rounded-xl border p-3">
           <div className="h-48">
             <PowerHrChart dataPoints={chartData} ftp={ftp} showAll />
           </div>
         </div>
 
         {/* Export */}
-        <div className="mb-6 rounded-xl border border-gray-700/50 bg-gray-800/50 p-4">
-          <h3 className="mb-3 text-sm font-medium uppercase text-gray-400">
+        <div className="border-border/50 bg-card/50 mb-6 rounded-xl border p-4">
+          <h3 className="text-muted-foreground mb-3 text-sm font-medium uppercase">
             Save & Share
           </h3>
           <ExportPanel

@@ -3,11 +3,7 @@ import { z } from "zod";
 
 import { riderSettings } from "../../db/schema";
 import { recomputeAllScores } from "../../lib/sync";
-import {
-  protectedProcedure,
-  router,
-  validateAthleteOwnership,
-} from "../index";
+import { protectedProcedure, router, validateAthleteOwnership } from "../index";
 
 const changePointSchema = z.object({
   id: z.string(),

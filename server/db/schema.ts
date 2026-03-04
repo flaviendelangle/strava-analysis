@@ -71,7 +71,10 @@ export const activities = pgTable(
     uniqueIndex("activities_strava_id_idx").on(t.stravaId),
     index("activities_athlete_idx").on(t.athlete),
     index("activities_athlete_start_date_idx").on(t.athlete, t.startDate),
-    index("activities_athlete_streams_loaded_idx").on(t.athlete, t.areStreamsLoaded),
+    index("activities_athlete_streams_loaded_idx").on(
+      t.athlete,
+      t.areStreamsLoaded,
+    ),
   ],
 );
 
@@ -103,28 +106,24 @@ export const riderSettings = pgTable(
     cdA: real("cd_a").notNull(),
     crr: real("crr").notNull(),
     bikeWeightKg: real("bike_weight_kg"),
-    initialValues: jsonb("initial_values")
-      .notNull()
-      .$type<{
-        ftp: number;
-        weightKg: number;
-        restingHr: number;
-        maxHr: number;
-        lthr: number;
-      }>(),
-    changes: jsonb("changes")
-      .notNull()
-      .$type<
-        Array<{
-          id: string;
-          date: string;
-          ftp?: number;
-          weightKg?: number;
-          restingHr?: number;
-          maxHr?: number;
-          lthr?: number;
-        }>
-      >(),
+    initialValues: jsonb("initial_values").notNull().$type<{
+      ftp: number;
+      weightKg: number;
+      restingHr: number;
+      maxHr: number;
+      lthr: number;
+    }>(),
+    changes: jsonb("changes").notNull().$type<
+      Array<{
+        id: string;
+        date: string;
+        ftp?: number;
+        weightKg?: number;
+        restingHr?: number;
+        maxHr?: number;
+        lthr?: number;
+      }>
+    >(),
   },
   (t) => [uniqueIndex("rider_settings_athlete_idx").on(t.athlete)],
 );

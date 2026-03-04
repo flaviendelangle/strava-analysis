@@ -3,8 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { BleConnection } from "~/sensors/ble/connection";
 import { FtmsControlPoint } from "~/sensors/ble/ftmsControl";
 import {
-  parseIndoorBikeData,
   parseCyclingPowerMeasurement,
+  parseIndoorBikeData,
   resetCpsCadenceState,
 } from "~/sensors/ble/parsers";
 import {
@@ -75,11 +75,10 @@ export function useBleTrainer() {
         // Try to acquire FTMS Control Point for ERG mode
         if (config.proto === "ftms") {
           try {
-            const controlChar =
-              await connectionRef.current.getCharacteristic(
-                FITNESS_MACHINE_SERVICE,
-                FTMS_CONTROL_POINT,
-              );
+            const controlChar = await connectionRef.current.getCharacteristic(
+              FITNESS_MACHINE_SERVICE,
+              FTMS_CONTROL_POINT,
+            );
             const control = new FtmsControlPoint(controlChar);
             await control.startNotifications((opCode, result) => {
               if (result !== 0x01) {

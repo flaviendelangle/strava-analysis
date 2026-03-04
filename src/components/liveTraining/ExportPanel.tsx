@@ -48,7 +48,9 @@ export function ExportPanel(props: ExportPanelProps) {
       }
       const base64 = btoa(binary);
 
-      const name = activityName || `Indoor Training ${summary.startTime.toLocaleDateString()}`;
+      const name =
+        activityName ||
+        `Indoor Training ${summary.startTime.toLocaleDateString()}`;
 
       const result = await uploadAction.mutateAsync({
         athleteId,
@@ -63,7 +65,10 @@ export function ExportPanel(props: ExportPanelProps) {
       let attempts = 0;
       while (attempts < MAX_UPLOAD_POLL_ATTEMPTS) {
         await new Promise((r) => setTimeout(r, UPLOAD_POLL_INTERVAL_MS));
-        const status = await checkStatusAction.mutateAsync({ athleteId, uploadId });
+        const status = await checkStatusAction.mutateAsync({
+          athleteId,
+          uploadId,
+        });
 
         if (status.activityId) {
           setActivityId(status.activityId);
@@ -90,14 +95,18 @@ export function ExportPanel(props: ExportPanelProps) {
     <div className="flex flex-wrap items-center gap-3">
       <button
         onClick={handleDownloadFit}
-        className="rounded-md bg-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-gray-500"
+        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-md px-4 py-2 text-sm font-medium"
       >
         Download FIT
       </button>
 
       <button
         onClick={handleUploadToStrava}
-        disabled={uploadState === "uploading" || uploadState === "processing" || !athleteId}
+        disabled={
+          uploadState === "uploading" ||
+          uploadState === "processing" ||
+          !athleteId
+        }
         className="rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-500 disabled:opacity-50"
       >
         {uploadState === "uploading"

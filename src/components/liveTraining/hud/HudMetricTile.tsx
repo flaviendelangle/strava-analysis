@@ -12,14 +12,14 @@ export function HudMetricTile({
   color,
 }: HudMetricTileProps) {
   return (
-    <div className="w-36 rounded-xl border border-gray-700/50 bg-gray-800/70 p-3 backdrop-blur-sm">
-      <div className="text-xs uppercase tracking-wider text-gray-500">
+    <div className="border-border/50 bg-card/70 w-36 rounded-xl border p-3 backdrop-blur-sm">
+      <div className="text-muted-foreground text-xs tracking-wider uppercase">
         {label}
       </div>
       <div className="font-mono text-3xl font-bold" style={{ color }}>
         {value ?? "--"}
       </div>
-      <div className="text-xs text-gray-500">{unit}</div>
+      <div className="text-muted-foreground text-xs">{unit}</div>
     </div>
   );
 }

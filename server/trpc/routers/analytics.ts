@@ -1,11 +1,7 @@
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 
-import {
-  protectedProcedure,
-  router,
-  validateAthleteOwnership,
-} from "../index";
+import { protectedProcedure, router, validateAthleteOwnership } from "../index";
 
 export const analyticsRouter = router({
   getPowerCurve: protectedProcedure
@@ -21,7 +17,10 @@ export const analyticsRouter = router({
     .query(async ({ ctx, input }) => {
       const typeFilter =
         input.activityTypes && input.activityTypes.length > 0
-          ? sql`AND a.type IN (${sql.join(input.activityTypes.map((t) => sql`${t}`), sql`, `)})`
+          ? sql`AND a.type IN (${sql.join(
+              input.activityTypes.map((t) => sql`${t}`),
+              sql`, `,
+            )})`
           : sql``;
 
       const dateFromFilter = input.dateFrom
@@ -90,7 +89,10 @@ export const analyticsRouter = router({
     .query(async ({ ctx, input }) => {
       const typeFilter =
         input.activityTypes && input.activityTypes.length > 0
-          ? sql`AND a.type IN (${sql.join(input.activityTypes.map((t) => sql`${t}`), sql`, `)})`
+          ? sql`AND a.type IN (${sql.join(
+              input.activityTypes.map((t) => sql`${t}`),
+              sql`, `,
+            )})`
           : sql``;
 
       const rows = await ctx.db.execute<{ year: string }>(sql`

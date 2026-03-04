@@ -1,13 +1,9 @@
 import {
-  createGradientProgram,
-  createSolidProgram,
   type GradientProgram,
   type SolidProgram,
+  createGradientProgram,
+  createSolidProgram,
 } from "./shaders";
-
-// Dark theme grid colors (hardcoded — app is always dark)
-const GRID_COLOR = new Float32Array([0.153, 0.153, 0.165, 1.0]); // zinc-800
-const SEPARATOR_COLOR = new Float32Array([0.247, 0.247, 0.275, 1.0]); // zinc-700
 
 export interface PanelRenderData {
   top: number;
@@ -44,6 +40,12 @@ export class WebGLChartRenderer {
   private panelBuffers: Map<number, PanelBuffers> = new Map();
   private dpr = 1;
   private cssHeight = 0;
+  private gridColor: Float32Array = new Float32Array([
+    0.153, 0.153, 0.165, 1.0,
+  ]);
+  private separatorColor: Float32Array = new Float32Array([
+    0.247, 0.247, 0.275, 1.0,
+  ]);
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -80,6 +82,11 @@ export class WebGLChartRenderer {
     this.canvas.height = Math.round(cssHeight * this.dpr);
   }
 
+  setThemeColors(grid: Float32Array, separator: Float32Array): void {
+    this.gridColor = grid;
+    this.separatorColor = separator;
+  }
+
   updatePanelData(panelIndex: number, data: PanelRenderData): void {
     const gl = this.gl;
     if (!gl) return;
@@ -90,7 +97,13 @@ export class WebGLChartRenderer {
     const lineVAO = gl.createVertexArray()!;
     const lineBuffer = gl.createBuffer()!;
     const lineVertexCount = data.lineMesh.length / 2;
-    this.setupVAO(gl, lineVAO, lineBuffer, data.lineMesh, this.solidProgram!.aPosition);
+    this.setupVAO(
+      gl,
+      lineVAO,
+      lineBuffer,
+      data.lineMesh,
+      this.solidProgram!.aPosition,
+    );
 
     let areaVAO: WebGLVertexArrayObject | null = null;
     let areaBuffer: WebGLBuffer | null = null;
@@ -99,16 +112,34 @@ export class WebGLChartRenderer {
       areaVAO = gl.createVertexArray()!;
       areaBuffer = gl.createBuffer()!;
       areaVertexCount = data.areaMesh.length / 2;
-      this.setupVAO(gl, areaVAO, areaBuffer, data.areaMesh, this.gradientProgram!.aPosition);
+      this.setupVAO(
+        gl,
+        areaVAO,
+        areaBuffer,
+        data.areaMesh,
+        this.gradientProgram!.aPosition,
+      );
     }
 
     const gridVAO = gl.createVertexArray()!;
     const gridBuffer = gl.createBuffer()!;
-    this.setupVAO(gl, gridVAO, gridBuffer, data.gridMesh, this.solidProgram!.aPosition);
+    this.setupVAO(
+      gl,
+      gridVAO,
+      gridBuffer,
+      data.gridMesh,
+      this.solidProgram!.aPosition,
+    );
 
     const separatorVAO = gl.createVertexArray()!;
     const separatorBuffer = gl.createBuffer()!;
-    this.setupVAO(gl, separatorVAO, separatorBuffer, data.separatorMesh, this.solidProgram!.aPosition);
+    this.setupVAO(
+      gl,
+      separatorVAO,
+      separatorBuffer,
+      data.separatorMesh,
+      this.solidProgram!.aPosition,
+    );
 
     this.panelBuffers.set(panelIndex, {
       lineVAO,
@@ -157,12 +188,12 @@ export class WebGLChartRenderer {
       // 1. Grid lines
       gl.useProgram(this.solidProgram!.program);
       gl.uniform2f(this.solidProgram!.uResolution, drawingWidth, panel.height);
-      gl.uniform4fv(this.solidProgram!.uColor, GRID_COLOR);
+      gl.uniform4fv(this.solidProgram!.uColor, this.gridColor);
       gl.bindVertexArray(buffers.gridVAO);
       gl.drawArrays(gl.LINES, 0, buffers.gridVertexCount);
 
       // 2. Separator line
-      gl.uniform4fv(this.solidProgram!.uColor, SEPARATOR_COLOR);
+      gl.uniform4fv(this.solidProgram!.uColor, this.separatorColor);
       gl.bindVertexArray(buffers.separatorVAO);
       gl.drawArrays(gl.LINES, 0, 2);
 

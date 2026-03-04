@@ -46,7 +46,9 @@ export function RiderSettingsProvider({
         ? {
             cdA: stored.cdA,
             crr: stored.crr,
-            bikeWeightKg: stored.bikeWeightKg ?? DEFAULT_RIDER_SETTINGS_TIMELINE.bikeWeightKg,
+            bikeWeightKg:
+              stored.bikeWeightKg ??
+              DEFAULT_RIDER_SETTINGS_TIMELINE.bikeWeightKg,
             initialValues: stored.initialValues,
             changes: stored.changes,
           }
@@ -84,9 +86,7 @@ export function RiderSettingsProvider({
     [timeline, setTimeline, resolveForDate, currentSettings],
   );
 
-  return (
-    <RiderSettingsContext value={value}>{children}</RiderSettingsContext>
-  );
+  return <RiderSettingsContext value={value}>{children}</RiderSettingsContext>;
 }
 
 /** Full timeline access — for the settings page and activity stats. */

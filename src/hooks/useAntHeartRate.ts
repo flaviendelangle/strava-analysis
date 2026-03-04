@@ -35,5 +35,11 @@ export function useAntHeartRate() {
     };
   }, []);
 
-  return { state, data, deviceName: null as string | null, connect, disconnect };
+  return {
+    state,
+    data,
+    deviceName: null as string | null,
+    connect,
+    disconnect,
+  };
 }

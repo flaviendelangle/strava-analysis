@@ -28,8 +28,8 @@ function HudDeviceCard({
     <div
       className={`relative w-80 overflow-hidden rounded-2xl border backdrop-blur-md transition-all duration-700 ${
         isConnected
-          ? "border-green-500/40 bg-green-950/30"
-          : "border-gray-600/50 bg-gray-800/60"
+          ? "border-green-400/50 bg-green-50 dark:border-green-500/40 dark:bg-green-950/30"
+          : "border-border/50 bg-card/60"
       }`}
     >
       <div className="flex flex-col items-center gap-4 p-8">
@@ -37,7 +37,7 @@ function HudDeviceCard({
         <div className="relative">
           <div
             className={`flex h-20 w-20 items-center justify-center rounded-full transition-colors duration-500 ${
-              isConnected ? "bg-green-500/20" : "bg-gray-700/60"
+              isConnected ? "bg-green-100 dark:bg-green-500/20" : "bg-accent/60"
             }`}
           >
             {type === "heartRate" ? (
@@ -50,7 +50,7 @@ function HudDeviceCard({
               </svg>
             ) : (
               <svg
-                className={`h-10 w-10 transition-colors duration-500 ${isConnected ? "text-green-400" : "text-purple-400"}`}
+                className={`h-10 w-10 transition-colors duration-500 ${isConnected ? "text-green-400" : "text-teal-400"}`}
                 viewBox="0 0 24 24"
                 fill="currentColor"
               >
@@ -62,9 +62,9 @@ function HudDeviceCard({
           {/* Connecting ripple rings */}
           {isConnecting && (
             <>
-              <span className="absolute inset-0 animate-ripple rounded-full border-2 border-purple-400/40" />
+              <span className="animate-ripple absolute inset-0 rounded-full border-2 border-teal-400/40" />
               <span
-                className="absolute inset-0 animate-ripple rounded-full border-2 border-purple-400/20"
+                className="animate-ripple absolute inset-0 rounded-full border-2 border-teal-400/20"
                 style={{ animationDelay: "0.75s" }}
               />
             </>
@@ -72,8 +72,14 @@ function HudDeviceCard({
 
           {/* Connected checkmark overlay */}
           {isConnected && (
-            <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-green-500 text-white shadow-lg shadow-green-500/30">
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <div className="absolute -right-1 -bottom-1 flex h-7 w-7 items-center justify-center rounded-full bg-green-500 text-green-50 shadow-lg shadow-green-500/30">
+              <svg
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+              >
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
@@ -82,10 +88,10 @@ function HudDeviceCard({
 
         {/* Label + status */}
         <div className="text-center">
-          <h3 className="text-lg font-semibold text-white">{label}</h3>
-          <p className="mt-1 text-sm text-gray-400">
+          <h3 className="text-foreground text-lg font-semibold">{label}</h3>
+          <p className="text-muted-foreground mt-1 text-sm">
             {isConnected
-              ? deviceName ?? "Connected"
+              ? (deviceName ?? "Connected")
               : isConnecting
                 ? "Searching..."
                 : "Not connected"}
@@ -93,12 +99,12 @@ function HudDeviceCard({
         </div>
 
         {/* BLE/ANT+ toggle */}
-        <div className="flex gap-1 rounded-lg bg-gray-900/70 p-1">
+        <div className="bg-background/70 flex gap-1 rounded-lg p-1">
           <button
             className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
               source === "ble"
-                ? "bg-purple-600 text-white"
-                : "text-gray-400 hover:text-gray-300"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`}
             onClick={() => onSourceChange("ble")}
             disabled={state !== "disconnected"}
@@ -108,8 +114,8 @@ function HudDeviceCard({
           <button
             className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
               source === "ant+"
-                ? "bg-purple-600 text-white"
-                : "text-gray-400 hover:text-gray-300"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`}
             onClick={() => onSourceChange("ant+")}
             disabled={state !== "disconnected"}
@@ -124,11 +130,15 @@ function HudDeviceCard({
           disabled={isConnecting}
           className={`w-full ${
             isConnected
-              ? "bg-gray-700 hover:bg-gray-600"
-              : "bg-purple-600 hover:bg-purple-500"
+              ? "bg-accent hover:bg-accent/80"
+              : "bg-primary hover:bg-primary/80"
           }`}
         >
-          {isConnected ? "Disconnect" : isConnecting ? "Searching..." : "Connect"}
+          {isConnected
+            ? "Disconnect"
+            : isConnecting
+              ? "Searching..."
+              : "Connect"}
         </Button>
       </div>
     </div>
@@ -152,10 +162,10 @@ interface HudConnectionWizardProps {
 
 export function HudConnectionWizard(props: HudConnectionWizardProps) {
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-900/95 backdrop-blur-sm">
+    <div className="bg-background/95 absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
       <div className="flex flex-col items-center gap-8">
-        <h1 className="text-3xl font-bold text-white">Connect Devices</h1>
-        <p className="text-gray-400">
+        <h1 className="text-foreground text-3xl font-bold">Connect Devices</h1>
+        <p className="text-muted-foreground">
           Pair your sensors to get started
         </p>
         <div className="flex flex-wrap justify-center gap-6">

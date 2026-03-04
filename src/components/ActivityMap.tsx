@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import type { Activity } from "@server/db/types";
+
 import { Map } from "./Map";
 
 export function ActivityMap(props: ActivityMapProps) {

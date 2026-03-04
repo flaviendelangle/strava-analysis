@@ -2,8 +2,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { env } from "@server/env";
 import {
-  processWebhookEvent,
   type StravaWebhookEvent,
+  processWebhookEvent,
 } from "@server/lib/webhook";
 import { getActiveSubscriptionId } from "@server/lib/webhookSubscription";
 

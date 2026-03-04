@@ -8,6 +8,7 @@ import {
   LinePlot,
 } from "@mui/x-charts-pro";
 
+import { CHART_MARGINS, useChartTokens } from "~/lib/chartTokens";
 import type { SessionDataPoint } from "~/sensors/types";
 import { getPowerZoneColor } from "~/sensors/types";
 
@@ -24,6 +25,7 @@ interface PowerHrChartProps {
 
 export function PowerHrChart(props: PowerHrChartProps) {
   const { dataPoints, ftp, showAll = false } = props;
+  const tokens = useChartTokens();
 
   const points = showAll ? dataPoints : dataPoints.slice(-WINDOW_SECONDS);
 
@@ -72,7 +74,7 @@ export function PowerHrChart(props: PowerHrChartProps) {
         label: "Heart Rate",
         data: points.map((p) => p.heartRate ?? 0),
         yAxisId: "hr",
-        color: "#EF4444",
+        color: tokens.palette[0],
         showMark: false,
         curve: "natural" as const,
         valueFormatter: (value: number | null) =>
@@ -85,7 +87,7 @@ export function PowerHrChart(props: PowerHrChartProps) {
               label: "Target",
               data: points.map((p) => p.targetPower ?? null),
               yAxisId: "power",
-              color: "#FACC15",
+              color: tokens.palette[7],
               showMark: false,
               curve: "step" as const,
               connectNulls: false,
@@ -136,7 +138,7 @@ export function PowerHrChart(props: PowerHrChartProps) {
         ]}
         height={200}
         skipAnimation
-        margin={{ left: 40, right: 40, top: 20, bottom: 24 }}
+        margin={CHART_MARGINS.dualAxis}
       >
         <BarPlot />
         <LinePlot />

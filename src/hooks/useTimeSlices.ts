@@ -2,9 +2,10 @@ import * as React from "react";
 
 import { isAfter, isBefore } from "date-fns";
 
+import type { Activity } from "@server/db/types";
+
 import { addUnit, endOf, startOf } from "~/utils/dateUtils";
 
-import type { Activity } from "@server/db/types";
 import { useActivitiesTimeBoundaries } from "./useActivitiesTimeBoundaries";
 
 export type SlicePrecision = "year" | "quarter" | "month" | "week";

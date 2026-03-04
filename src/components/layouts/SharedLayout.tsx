@@ -9,7 +9,7 @@ export const SharedLayout = ({ children }: SharedLayoutProps) => {
   return (
     <>
       <Head>
-        <title>Overcooked</title>
+        <title>Undertrained</title>
         <link rel="icon" href="/favicon.svg" />
       </Head>
 

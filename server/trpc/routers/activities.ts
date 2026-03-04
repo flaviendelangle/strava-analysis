@@ -2,11 +2,7 @@ import { and, eq, getTableColumns, inArray } from "drizzle-orm";
 import { z } from "zod";
 
 import { activities } from "../../db/schema";
-import {
-  protectedProcedure,
-  router,
-  validateAthleteOwnership,
-} from "../index";
+import { protectedProcedure, router, validateAthleteOwnership } from "../index";
 
 export const activitiesRouter = router({
   list: protectedProcedure
@@ -34,7 +30,10 @@ export const activitiesRouter = router({
 
       if (input.includeMap) {
         const [filtered, allTypes] = await Promise.all([
-          ctx.db.select().from(activities).where(and(...conditions)),
+          ctx.db
+            .select()
+            .from(activities)
+            .where(and(...conditions)),
           allTypesPromise,
         ]);
         return { activities: filtered, allTypes };

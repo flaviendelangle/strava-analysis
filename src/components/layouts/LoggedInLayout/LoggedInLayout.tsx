@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-import { SettingsToolbar } from "~/components/settings/SettingsToolbar";
 import { ErgModeProvider } from "~/hooks/useErgMode";
 import { ExplorerTilesProvider } from "~/hooks/useExplorerTilesToggle";
 import { RiderSettingsProvider } from "~/hooks/useRiderSettings";
@@ -21,12 +20,20 @@ export const LoggedInLayout = (props: LoggedInLayoutProps) => {
   // HTML — avoiding React hydration mismatches caused by usePathname(),
   // useCookies(), etc. returning different values on server vs client.
   if (status === "loading") {
-    return <SharedLayout><div className="h-screen" /></SharedLayout>;
+    return (
+      <SharedLayout>
+        <div className="h-screen" />
+      </SharedLayout>
+    );
   }
 
   if (status === "unauthenticated") {
     router.replace("/login");
-    return <SharedLayout><div className="h-screen" /></SharedLayout>;
+    return (
+      <SharedLayout>
+        <div className="h-screen" />
+      </SharedLayout>
+    );
   }
 
   return (
@@ -37,8 +44,7 @@ export const LoggedInLayout = (props: LoggedInLayoutProps) => {
             <div className="flex h-screen">
               <NavBar />
               <main className="flex flex-1 flex-col overflow-hidden">
-                <SettingsToolbar />
-                <div className="flex-1 overflow-y-auto">{children}</div>
+                {children}
               </main>
             </div>
           </ErgModeProvider>

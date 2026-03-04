@@ -31,6 +31,8 @@ export class SportConfig {
   readonly speedLabel: string = "Speed";
 
   readonly cadenceUnit: string = "rpm";
+
+  readonly heroThirdStat: "elevation" | "pace" = "elevation";
 }
 
 class RunSportConfig extends SportConfig {
@@ -47,6 +49,8 @@ class RunSportConfig extends SportConfig {
   override readonly speedLabel: string = "Pace";
 
   override readonly cadenceUnit: string = "spm";
+
+  override readonly heroThirdStat: "elevation" | "pace" = "pace";
 }
 
 class SwimSportConfig extends SportConfig {
@@ -71,6 +75,8 @@ class SwimSportConfig extends SportConfig {
   override readonly speedLabel: string = "Pace";
 
   override readonly cadenceUnit: string = "spm";
+
+  override readonly heroThirdStat: "elevation" | "pace" = "pace";
 }
 
 const SPORT_CONFIGS: Record<string, SportConfig> = {

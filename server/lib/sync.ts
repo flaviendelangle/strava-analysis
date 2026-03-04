@@ -1,6 +1,7 @@
 import { and, asc, count, eq, gt, inArray, sql } from "drizzle-orm";
 import strava from "strava-v3";
 
+import { POWER_BEST_ACTIVITY_TYPES } from "../../src/utils/constants";
 import type { Database } from "../db";
 import {
   activities,
@@ -14,7 +15,6 @@ import {
   computePowerBests,
   resolveRiderSettings,
 } from "./computeScores";
-import { POWER_BEST_ACTIVITY_TYPES } from "../../src/utils/constants";
 import type { normalizeStreams } from "./strava";
 import {
   fetchStreamsFromStrava,
@@ -388,7 +388,10 @@ export async function computeActivityScoresInternal(
     powerBests?: Record<number, number> | null;
   } = {};
 
-  if (activity.weightedAverageWatts != null && POWER_BEST_ACTIVITY_TYPES.includes(activity.type)) {
+  if (
+    activity.weightedAverageWatts != null &&
+    POWER_BEST_ACTIVITY_TYPES.includes(activity.type)
+  ) {
     patch.tss = Math.round(
       calculateTSS(
         activity.weightedAverageWatts,

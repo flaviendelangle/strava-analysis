@@ -10,7 +10,9 @@ let stickReady = false;
 let stickReadyPromise: Promise<boolean> | null = null;
 let stickRefCount = 0;
 
-async function getOrCreateStick(): Promise<import("ant-plus-next").WebUsbStick> {
+async function getOrCreateStick(): Promise<
+  import("ant-plus-next").WebUsbStick
+> {
   if (sharedStick && stickReady) return sharedStick;
 
   const { WebUsbStick } = await import("ant-plus-next");
@@ -41,7 +43,9 @@ async function ensureStickOpen(
   if (!stickReadyPromise) {
     stickReadyPromise = new Promise<boolean>((resolve) => {
       const timeout = setTimeout(() => {
-        logError("Startup timeout after 10s — stick did not complete handshake");
+        logError(
+          "Startup timeout after 10s — stick did not complete handshake",
+        );
         resolve(false);
       }, 10_000);
 
@@ -68,7 +72,9 @@ async function ensureStickOpen(
           // or the read loop ended (stick disconnected).
           if (!result) {
             clearTimeout(timeout);
-            logError("stick.open() returned false — connection failed. Check browser console for details.");
+            logError(
+              "stick.open() returned false — connection failed. Check browser console for details.",
+            );
             resolve(false);
           }
         },
@@ -126,12 +132,12 @@ export class AntHeartRateConnection {
 
     this.sensor = new HeartRateSensor(stick);
 
-    this.sensor.on("attached", () => log("HR: Sensor attached, scanning for devices..."));
+    this.sensor.on("attached", () =>
+      log("HR: Sensor attached, scanning for devices..."),
+    );
     this.sensor.on("detached", () => log("HR: Sensor detached"));
 
-    this.handler = (
-      state: import("ant-plus-next").HeartRateSensorState,
-    ) => {
+    this.handler = (state: import("ant-plus-next").HeartRateSensorState) => {
       if (state.ComputedHeartRate != null) {
         params.onData({
           heartRate: state.ComputedHeartRate,
@@ -171,9 +177,7 @@ export class AntTrainerConnection {
     null;
   private powerSensor: import("ant-plus-next").BicyclePowerSensor | null = null;
   private feHandler:
-    | ((
-        state: import("ant-plus-next").FitnessEquipmentSensorState,
-      ) => void)
+    | ((state: import("ant-plus-next").FitnessEquipmentSensorState) => void)
     | null = null;
   private powerHandler:
     | ((state: import("ant-plus-next").BicyclePowerSensorState) => void)
@@ -190,13 +194,18 @@ export class AntTrainerConnection {
     const stick = await getOrCreateStick();
     await ensureStickOpen(stick);
     stickRefCount++;
-    log("Trainer: Stick ready, attaching FE-C sensor on channel", TRAINER_CHANNEL);
+    log(
+      "Trainer: Stick ready, attaching FE-C sensor on channel",
+      TRAINER_CHANNEL,
+    );
 
     // Try FE-C first
     this.feSensor = new FitnessEquipmentSensor(stick);
     let feReceivedData = false;
 
-    this.feSensor.on("attached", () => log("Trainer: FE-C sensor attached, scanning..."));
+    this.feSensor.on("attached", () =>
+      log("Trainer: FE-C sensor attached, scanning..."),
+    );
     this.feSensor.on("detached", () => log("Trainer: FE-C sensor detached"));
 
     this.feHandler = (
@@ -247,8 +256,12 @@ export class AntTrainerConnection {
       // Attach BicyclePowerSensor on the same channel
       this.powerSensor = new BicyclePowerSensor(stick);
 
-      this.powerSensor.on("attached", () => log("Trainer: Power sensor attached, scanning..."));
-      this.powerSensor.on("detached", () => log("Trainer: Power sensor detached"));
+      this.powerSensor.on("attached", () =>
+        log("Trainer: Power sensor attached, scanning..."),
+      );
+      this.powerSensor.on("detached", () =>
+        log("Trainer: Power sensor detached"),
+      );
 
       this.powerHandler = (
         state: import("ant-plus-next").BicyclePowerSensorState,

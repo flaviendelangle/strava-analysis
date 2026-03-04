@@ -2,7 +2,6 @@
  * Server-side score computation utilities.
  * Pure functions — no runtime dependencies.
  */
-
 import { resolveTimeline } from "../../src/utils/resolveTimeline";
 
 /**

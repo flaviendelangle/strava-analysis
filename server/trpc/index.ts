@@ -1,11 +1,12 @@
-import { initTRPC, TRPCError } from "@trpc/server";
+import type { NextApiRequest, NextApiResponse } from "next";
 import type { Session } from "next-auth";
 import { getServerSession } from "next-auth";
-import type { NextApiRequest, NextApiResponse } from "next";
 import superjson from "superjson";
 
-import { db, type Database } from "../db";
+import { TRPCError, initTRPC } from "@trpc/server";
+
 import { authOptions } from "../../src/pages/api/auth/[...nextauth]";
+import { type Database, db } from "../db";
 
 export async function createContext(opts: {
   req: NextApiRequest;

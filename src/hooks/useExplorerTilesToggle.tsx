@@ -23,9 +23,7 @@ export function ExplorerTilesProvider({
     [showExplorerTiles],
   );
 
-  return (
-    <ExplorerTilesContext value={value}>{children}</ExplorerTilesContext>
-  );
+  return <ExplorerTilesContext value={value}>{children}</ExplorerTilesContext>;
 }
 
 export function useExplorerTilesToggle() {

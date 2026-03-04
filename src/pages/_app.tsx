@@ -1,16 +1,18 @@
 import type { ReactElement, ReactNode } from "react";
 
-import { LicenseInfo } from "@mui/x-license";
-import { CookiesProvider } from "react-cookie";
 import type { NextPage } from "next";
 import { SessionProvider } from "next-auth/react";
+import { ThemeProvider } from "next-themes";
 import type { AppProps, AppType } from "next/app";
+import { CookiesProvider } from "react-cookie";
 
-LicenseInfo.setLicenseKey(process.env.NEXT_PUBLIC_MUI_X_LICENSE_KEY!);
+import { LicenseInfo } from "@mui/x-license";
 
 import { LoggedInLayout } from "~/components/layouts/LoggedInLayout";
-import { trpc } from "~/utils/trpc";
 import "~/styles/globals.css";
+import { trpc } from "~/utils/trpc";
+
+LicenseInfo.setLicenseKey(process.env.NEXT_PUBLIC_MUI_X_LICENSE_KEY!);
 
 export type NextPageWithLayout<
   TProps = Record<string, unknown>,
@@ -31,11 +33,13 @@ const App = (({
     Component.getLayout ?? ((page) => <LoggedInLayout>{page}</LoggedInLayout>);
 
   return (
-    <CookiesProvider>
-      <SessionProvider session={session}>
-        {getLayout(<Component {...pageProps} />)}
-      </SessionProvider>
-    </CookiesProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <CookiesProvider>
+        <SessionProvider session={session}>
+          {getLayout(<Component {...pageProps} />)}
+        </SessionProvider>
+      </CookiesProvider>
+    </ThemeProvider>
   );
 }) as AppType;
 

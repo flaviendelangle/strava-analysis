@@ -13,10 +13,9 @@ export function LoadingButton(props: LoadingButtonProps) {
   );
 }
 
-interface LoadingButtonProps
-  extends Omit<
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
-    "className" | "disabled"
-  > {
+interface LoadingButtonProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "className" | "disabled"
+> {
   loading: boolean;
 }

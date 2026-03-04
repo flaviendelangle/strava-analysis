@@ -27,7 +27,11 @@ async function create() {
   });
 
   if (!res.ok) {
-    console.error("Failed to create subscription:", res.status, await res.text());
+    console.error(
+      "Failed to create subscription:",
+      res.status,
+      await res.text(),
+    );
     process.exit(1);
   }
 
@@ -42,7 +46,11 @@ async function view() {
   );
 
   if (!res.ok) {
-    console.error("Failed to view subscriptions:", res.status, await res.text());
+    console.error(
+      "Failed to view subscriptions:",
+      res.status,
+      await res.text(),
+    );
     process.exit(1);
   }
 
@@ -71,7 +79,11 @@ async function del(id: string) {
   });
 
   if (!res.ok) {
-    console.error("Failed to delete subscription:", res.status, await res.text());
+    console.error(
+      "Failed to delete subscription:",
+      res.status,
+      await res.text(),
+    );
     process.exit(1);
   }
 

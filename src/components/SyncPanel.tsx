@@ -115,11 +115,7 @@ export function SyncPanel() {
       enabled: athleteId != null,
       refetchInterval: (query) => {
         const data = query.state.data;
-        if (
-          data &&
-          data.status !== "completed" &&
-          data.status !== "failed"
-        ) {
+        if (data && data.status !== "completed" && data.status !== "failed") {
           return 3000;
         }
         return false;

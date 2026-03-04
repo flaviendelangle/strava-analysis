@@ -5,11 +5,11 @@ import { X } from "lucide-react";
 import Link from "next/link";
 
 import {
-  useAxesTooltip,
-  useMouseTracker,
-  useDrawingArea,
-  useSvgRef,
   LineChart,
+  useAxesTooltip,
+  useDrawingArea,
+  useMouseTracker,
+  useSvgRef,
 } from "@mui/x-charts-pro";
 
 import { Button } from "~/components/ui/button";
@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useAthleteId } from "~/hooks/useAthleteId";
+import { CHART_MARGINS, useChartTokens } from "~/lib/chartTokens";
 import { trpc } from "~/utils/trpc";
 
 import { ChartThemeProvider } from "../ChartThemeProvider";
@@ -40,7 +41,7 @@ interface DateRange {
   dateTo?: string;
 }
 
-const RANGE_COLORS = ["#a78bfa", "#f472b6", "#34d399", "#fbbf24", "#60a5fa"];
+// Colors resolved from tokens at render time — see SingleActivityPowerCurve / AggregatedPowerCurve
 
 function makeRollingRange(days: number, label: string): DateRange {
   const now = new Date();
@@ -150,39 +151,53 @@ function PowerCurveTooltip() {
         className="bg-popover text-popover-foreground border-border rounded-md border px-3 py-2 shadow-md"
         style={{ pointerEvents: "auto" }}
       >
-        {tooltipData.map(({ axisId, axisFormattedValue, dataIndex, seriesItems, mainAxis }) => (
-          <div key={axisId}>
-            {!mainAxis.hideTooltip && (
-              <p className="text-muted-foreground mb-1 text-xs">
-                {axisFormattedValue}
-              </p>
-            )}
-            <div className="flex flex-col gap-1">
-              {seriesItems.map(({ seriesId, color, formattedValue, formattedLabel }) => {
-                if (formattedValue == null) return null;
-                const activity = activityMetadata[seriesId]?.[dataIndex] ?? null;
-                return (
-                  <div key={seriesId} className="flex items-center gap-2 text-sm whitespace-nowrap">
-                    <span
-                      className="inline-block size-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: color }}
-                    />
-                    <span>{formattedLabel}</span>
-                    <span className="font-medium">{formattedValue}</span>
-                    {activity && (
-                      <Link
-                        href={`/activities/${activity.activityStravaId}`}
-                        className="text-muted-foreground hover:text-foreground text-xs underline"
+        {tooltipData.map(
+          ({
+            axisId,
+            axisFormattedValue,
+            dataIndex,
+            seriesItems,
+            mainAxis,
+          }) => (
+            <div key={axisId}>
+              {!mainAxis.hideTooltip && (
+                <p className="text-muted-foreground mb-1 text-xs">
+                  {axisFormattedValue}
+                </p>
+              )}
+              <div className="flex flex-col gap-1">
+                {seriesItems.map(
+                  ({ seriesId, color, formattedValue, formattedLabel }) => {
+                    if (formattedValue == null) return null;
+                    const activity =
+                      activityMetadata[seriesId]?.[dataIndex] ?? null;
+                    return (
+                      <div
+                        key={seriesId}
+                        className="flex items-center gap-2 text-sm whitespace-nowrap"
                       >
-                        {activity.activityName}
-                      </Link>
-                    )}
-                  </div>
-                );
-              })}
+                        <span
+                          className="inline-block size-2 shrink-0 rounded-full"
+                          style={{ backgroundColor: color }}
+                        />
+                        <span>{formattedLabel}</span>
+                        <span className="font-medium">{formattedValue}</span>
+                        {activity && (
+                          <Link
+                            href={`/activities/${activity.activityStravaId}`}
+                            className="text-muted-foreground hover:text-foreground text-xs underline"
+                          >
+                            {activity.activityName}
+                          </Link>
+                        )}
+                      </div>
+                    );
+                  },
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          ),
+        )}
       </div>
     </div>
   );
@@ -204,6 +219,7 @@ export default function PowerCurve({
 // --- Single activity mode (unchanged logic) ---
 
 function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
+  const tokens = useChartTokens();
   const { data: activity } = trpc.activities.get.useQuery({ stravaId });
 
   const data = React.useMemo(() => {
@@ -223,7 +239,7 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
 
   return (
     <ChartThemeProvider>
-      <div className="bg-secondary flex h-96 w-full flex-col rounded-md">
+      <div className="bg-card flex h-96 w-full flex-col rounded-md">
         <div className="border-border flex items-center gap-2 border-b p-4">
           <h3 className="text-sm font-medium">Power Curve</h3>
         </div>
@@ -247,12 +263,13 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
               {
                 data: data.map((d) => d.watts),
                 showMark: false,
-                color: "#a78bfa",
+                color: tokens.palette[1],
                 curve: "monotoneX",
                 label: "Max Average Power",
               },
             ]}
-            margin={{ left: 72, right: 24 }}
+            grid={{ horizontal: true }}
+            margin={CHART_MARGINS.standard}
           />
         </div>
       </div>
@@ -263,6 +280,7 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
 // --- Aggregated mode with multi-range support ---
 
 function AggregatedPowerCurve({ activityTypes }: { activityTypes?: string[] }) {
+  const tokens = useChartTokens();
   const athleteId = useAthleteId();
   const [ranges, setRanges] = React.useState<DateRange[]>(DEFAULT_RANGES);
 
@@ -341,19 +359,23 @@ function AggregatedPowerCurve({ activityTypes }: { activityTypes?: string[] }) {
         id: seriesId,
         data: durations.map((d) => byDuration.get(d)?.watts ?? null),
         label: ranges[i]?.label ?? `Range ${i + 1}`,
-        color: RANGE_COLORS[i % RANGE_COLORS.length],
+        color: tokens.palette[i % tokens.palette.length],
         showMark: false,
         curve: "monotoneX" as const,
       };
     });
 
-    return { xData: durations, series: chartSeries, activityMetadata: metadata };
+    return {
+      xData: durations,
+      series: chartSeries,
+      activityMetadata: metadata,
+    };
   }, [queries, ranges]);
 
   if (xData.length === 0) {
     return (
       <ChartThemeProvider>
-        <div className="bg-secondary flex h-96 w-full flex-col rounded-md">
+        <div className="bg-card flex h-96 w-full flex-col rounded-md">
           <Toolbar
             ranges={ranges}
             onAddPreset={addRange}
@@ -372,7 +394,7 @@ function AggregatedPowerCurve({ activityTypes }: { activityTypes?: string[] }) {
 
   return (
     <ChartThemeProvider>
-      <div className="bg-secondary flex h-96 w-full flex-col rounded-md">
+      <div className="bg-card flex h-96 w-full flex-col rounded-md">
         <Toolbar
           ranges={ranges}
           onAddPreset={addRange}
@@ -399,7 +421,8 @@ function AggregatedPowerCurve({ activityTypes }: { activityTypes?: string[] }) {
                 },
               ]}
               series={series}
-              margin={{ left: 72, right: 24 }}
+              grid={{ horizontal: true }}
+              margin={CHART_MARGINS.standard}
               slots={{ tooltip: PowerCurveTooltip }}
             />
           </ActivityMetadataContext.Provider>
@@ -426,6 +449,7 @@ function Toolbar({
   athleteId: number | null | undefined;
   activityTypes?: string[];
 }) {
+  const tokens = useChartTokens();
   return (
     <div className="border-border flex flex-wrap items-center gap-2 border-b p-4">
       <h3 className="text-sm font-medium">Power Curve</h3>
@@ -434,7 +458,7 @@ function Toolbar({
         <RangeChip
           key={range.id}
           range={range}
-          color={RANGE_COLORS[i % RANGE_COLORS.length]}
+          color={tokens.palette[i % tokens.palette.length]}
           onRemove={() => onRemove(range.id)}
         />
       ))}
@@ -501,7 +525,7 @@ function PresetSelect({
         }
       }}
     >
-      <SelectTrigger className="h-7 min-w-28 border-dashed text-xs text-muted-foreground">
+      <SelectTrigger className="text-muted-foreground h-7 min-w-28 border-dashed text-xs">
         <SelectValue placeholder="Add range…" />
       </SelectTrigger>
       <SelectContent>
@@ -549,7 +573,11 @@ function CustomRangePopover({ onAdd }: { onAdd: (range: DateRange) => void }) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         render={
-          <Button variant="outline" size="xs" className="border-dashed text-muted-foreground">
+          <Button
+            variant="outline"
+            size="xs"
+            className="text-muted-foreground border-dashed"
+          >
             Custom range…
           </Button>
         }
@@ -588,7 +616,7 @@ function CustomRangePopover({ onAdd }: { onAdd: (range: DateRange) => void }) {
 function EmptyChart() {
   return (
     <ChartThemeProvider>
-      <div className="bg-secondary flex h-96 w-full flex-col rounded-md">
+      <div className="bg-card flex h-96 w-full flex-col rounded-md">
         <div className="border-border flex items-center gap-2 border-b p-4">
           <h3 className="text-sm font-medium">Power Curve</h3>
         </div>

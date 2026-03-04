@@ -117,7 +117,10 @@ export class SpeedSimulator {
 
       // Driving force: F = P·η / v, clamped at low speed and capped
       const vSafe = Math.max(v, V_MIN);
-      const driveForce = Math.min((power * DRIVETRAIN_ETA) / vSafe, F_DRIVE_MAX);
+      const driveForce = Math.min(
+        (power * DRIVETRAIN_ETA) / vSafe,
+        F_DRIVE_MAX,
+      );
 
       // Aerodynamic drag: F = ½·ρ·CdA·v²
       const dragForce = 0.5 * airDensity * cdA * v * v;
