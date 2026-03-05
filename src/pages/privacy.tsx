@@ -1,4 +1,4 @@
-import { BikeIcon } from "lucide-react";
+import { ActivityIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 
@@ -14,7 +14,7 @@ function PrivacyContent() {
           href="/"
           className="text-primary mb-8 inline-flex items-center gap-2 text-sm font-medium hover:underline"
         >
-          <BikeIcon className="size-4" />
+          <ActivityIcon className="size-4" />
           Undertrained
         </Link>
 

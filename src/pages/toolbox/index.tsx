@@ -1,7 +1,8 @@
 import * as React from "react";
 
-import { CogIcon, GaugeIcon, TrendingUpIcon, TimerIcon } from "lucide-react";
+import { ActivityIcon, CogIcon, GaugeIcon, TrendingUpIcon, TimerIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 
 import { LoggedInLayout } from "~/components/layouts/LoggedInLayout";
 import { SharedLayout } from "~/components/layouts/SharedLayout";
@@ -31,10 +32,23 @@ type ToolId = (typeof TOOLS)[number]["id"];
 
 const ToolboxPage: NextPageWithLayout = () => {
   const [activeTool, setActiveTool] = React.useState<ToolId>("pace-calculator");
+  const { status } = useSession();
 
   return (
     <>
-      <Toolbar>
+      <Toolbar
+        actions={
+          status !== "authenticated" ? (
+            <Link
+              href="/login"
+              className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm font-medium transition-colors"
+            >
+              <ActivityIcon className="size-4" />
+              Sign in
+            </Link>
+          ) : undefined
+        }
+      >
         {/* Mobile: select dropdown */}
         <div className="md:hidden">
           <Select
