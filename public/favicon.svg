@@ -4,7 +4,7 @@
       <stop offset="0%" stop-color="#1E293B"/>
       <stop offset="100%" stop-color="#0F172A"/>
     </linearGradient>
-    <linearGradient id="line" x1="8" y1="0" x2="56" y2="0" gradientUnits="userSpaceOnUse">
+    <linearGradient id="line" x1="12" y1="0" x2="52" y2="0" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#38BDF8"/>
       <stop offset="60%" stop-color="#818CF8"/>
       <stop offset="100%" stop-color="#F472B6"/>
@@ -14,28 +14,13 @@
   <!-- Rounded square background -->
   <rect width="64" height="64" rx="14" fill="url(#bg)"/>
 
-  <!-- Subtle grid lines -->
-  <g stroke="white" stroke-width="0.5" opacity="0.07">
-    <line x1="10" y1="44" x2="54" y2="44"/>
-    <line x1="10" y1="36" x2="54" y2="36"/>
-    <line x1="10" y1="28" x2="54" y2="28"/>
-    <line x1="10" y1="20" x2="54" y2="20"/>
-  </g>
-
-  <!-- Chart line: rises then droops (undertrained!) -->
-  <polyline
-    points="10,42 18,36 26,24 32,18 38,22 44,32 50,40 54,46"
+  <!-- Lucide Activity icon (path converted to 64x64 space) -->
+  <path
+    d="M52 32h-4.96a4 4 0 0 0-3.86 2.92l-4.7 16.72a.5.5 0 0 1-.96 0L26.48 12.36a.5.5 0 0 0-.96 0l-4.7 16.72A4 4 0 0 1 16.98 32H12"
     fill="none"
     stroke="url(#line)"
     stroke-width="3.5"
     stroke-linecap="round"
     stroke-linejoin="round"
   />
-
-  <!-- Peak dot (the moment before the droop) -->
-  <circle cx="32" cy="18" r="3.5" fill="#818CF8"/>
-  <circle cx="32" cy="18" r="1.5" fill="white" opacity="0.5"/>
-
-  <!-- Droopy end dot -->
-  <circle cx="54" cy="46" r="2.5" fill="#F472B6" opacity="0.7"/>
 </svg>
