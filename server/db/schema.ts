@@ -22,6 +22,13 @@ export const syncJobStatusEnum = pgEnum("sync_job_status", [
   "failed",
 ]);
 
+export const syncJobModeEnum = pgEnum("sync_job_mode", [
+  "load_new",
+  "load_missing",
+  "reload_all",
+  "recompute_scores",
+]);
+
 // ── Tables ─────────────────────────────────────────────────────────────
 
 export const athletes = pgTable(
@@ -141,6 +148,7 @@ export const syncJobs = pgTable(
     streamsTotal: integer("streams_total").notNull().default(0),
     streamsFetched: integer("streams_fetched").notNull().default(0),
     lastError: text("last_error"),
+    mode: syncJobModeEnum("mode"),
     startedAt: real("started_at").notNull(),
   },
   (t) => [uniqueIndex("sync_jobs_athlete_idx").on(t.athlete)],

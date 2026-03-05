@@ -26,18 +26,32 @@ const PAGE_SIZE = 50;
 const BATCH_SIZE = 50;
 const STREAM_FETCH_CONCURRENCY = 3;
 
+export type SyncMode = "load_new" | "load_missing" | "reload_all" | "recompute_scores";
+
 /**
  * Fire-and-forget sync orchestration.
- * Runs all three phases sequentially, updating the syncJobs row at each step.
+ * Runs phases sequentially based on mode, updating the syncJobs row at each step.
  */
 export async function runSyncInBackground(
   db: Database,
   athleteId: number,
   syncJobId: number,
+  mode: SyncMode,
+  afterEpoch?: number,
 ) {
   try {
-    await syncActivitiesPhase(db, athleteId, syncJobId);
-    await syncStreamsPhase(db, athleteId, syncJobId);
+    if (mode !== "recompute_scores") {
+      const options: SyncActivitiesOptions = {};
+      if (mode === "load_new" && afterEpoch != null) {
+        options.after = afterEpoch;
+      }
+      if (mode === "load_missing") {
+        options.detectUpdates = true;
+      }
+
+      await syncActivitiesPhase(db, athleteId, syncJobId, options);
+      await syncStreamsPhase(db, athleteId, syncJobId);
+    }
     await computeScoresPhase(db, athleteId, syncJobId);
   } catch (error) {
     console.error("[sync] Fatal error:", error);
@@ -53,19 +67,22 @@ export async function runSyncInBackground(
 
 // ── Phase 1: Fetch activities from Strava ─────────────────────────────
 
+interface SyncActivitiesOptions {
+  after?: number; // epoch seconds for Strava `after` param
+  detectUpdates?: boolean; // conditionally reset areStreamsLoaded on metadata changes
+}
+
 async function syncActivitiesPhase(
   db: Database,
   athleteId: number,
   syncJobId: number,
+  options: SyncActivitiesOptions = {},
 ) {
   const accessToken = await getAccessToken(db, athleteId);
 
   let page = 1;
   let totalInserted = 0;
 
-  // Page through activities from newest to oldest (Strava's default sort).
-  // No `after` parameter — we scan for gaps left by missed webhook events.
-  // Stop when a full page yields 0 new inserts (we've caught up).
   for (;;) {
     // Check if job is still active
     const job = await db.query.syncJobs.findFirst({
@@ -77,6 +94,7 @@ async function syncActivitiesPhase(
       access_token: accessToken,
       per_page: PAGE_SIZE,
       page,
+      ...(options.after != null ? { after: options.after } : {}),
     });
 
     if (pageActivities.length === 0) break;
@@ -109,6 +127,19 @@ async function syncActivitiesPhase(
           movingTime: sql`excluded.moving_time`,
           elapsedTime: sql`excluded.elapsed_time`,
           mapPolyline: sql`excluded.map_polyline`,
+          ...(options.detectUpdates
+            ? {
+                areStreamsLoaded: sql`CASE
+                  WHEN activities.distance != excluded.distance
+                    OR activities.moving_time != excluded.moving_time
+                    OR activities.elapsed_time != excluded.elapsed_time
+                    OR activities.average_watts IS DISTINCT FROM excluded.average_watts
+                    OR activities.weighted_average_watts IS DISTINCT FROM excluded.weighted_average_watts
+                  THEN false
+                  ELSE activities.are_streams_loaded
+                END`,
+              }
+            : {}),
         },
       });
 

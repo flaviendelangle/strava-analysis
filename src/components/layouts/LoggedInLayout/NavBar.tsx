@@ -13,6 +13,7 @@ import {
   SettingsIcon,
   ShieldCheckIcon,
   SunIcon,
+  WrenchIcon,
   XIcon,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
@@ -153,6 +154,9 @@ export function NavBar() {
               href="/training-1"
             />
           </TooltipIfMenuCollapsed>
+          <TooltipIfMenuCollapsed label="Toolbox">
+            <NavBarLink icon={WrenchIcon} label="Toolbox" href="/toolbox" />
+          </TooltipIfMenuCollapsed>
         </div>
 
         <div className="flex flex-col gap-0.5">
@@ -239,6 +243,14 @@ export function MobileBottomBar() {
           >
             <ShieldCheckIcon className="size-4" />
             Privacy
+          </Link>
+          <Link
+            href="/toolbox"
+            className="text-foreground hover:bg-accent flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium"
+            onClick={() => setMoreOpen(false)}
+          >
+            <WrenchIcon className="size-4" />
+            Toolbox
           </Link>
           <button
             className="text-foreground hover:bg-accent flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium"

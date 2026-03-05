@@ -2,20 +2,43 @@ import * as React from "react";
 
 import {
   AlertCircleIcon,
+  ArrowDownToLineIcon,
   CalculatorIcon,
   CheckCircle2Icon,
+  InfoIcon,
   Loader2,
   RefreshCwIcon,
+  RotateCcwIcon,
+  SearchIcon,
 } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 import { useAthleteId } from "~/hooks/useAthleteId";
 import { trpc } from "~/utils/trpc";
+
+type SyncMode = "load_new" | "load_missing" | "reload_all" | "recompute_scores";
+
+// ── Progress bar ─────────────────────────────────────────────────────
 
 function ProgressBar(props: { value: number; max: number }) {
   const pct = props.max > 0 ? Math.round((props.value / props.max) * 100) : 0;
@@ -35,9 +58,12 @@ function ProgressBar(props: { value: number; max: number }) {
   );
 }
 
+// ── Sync progress display ────────────────────────────────────────────
+
 function SyncProgress(props: {
   syncJob: {
     status: string;
+    mode: SyncMode | null;
     activitiesFetched: number;
     activitiesPagesComplete: boolean;
     streamsTotal: number;
@@ -45,12 +71,34 @@ function SyncProgress(props: {
   };
 }) {
   const { syncJob } = props;
+  const mode = syncJob.mode ?? "load_missing";
+
+  const phaseLabel =
+    mode === "load_new"
+      ? "Checking for new activities..."
+      : mode === "reload_all"
+        ? "Downloading all activities..."
+        : mode === "recompute_scores"
+          ? "Computing training scores..."
+          : "Scanning all activities...";
+
+  // For recompute_scores, skip activity/stream phases
+  if (mode === "recompute_scores") {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
+          <Loader2 className="size-3 animate-spin" />
+          {phaseLabel}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-2">
       <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
         <Loader2 className="size-3 animate-spin" />
-        Syncing Strava data...
+        {phaseLabel}
       </div>
 
       {/* Activities phase */}
@@ -107,6 +155,194 @@ function SyncProgress(props: {
   );
 }
 
+// ── Action button with info tooltip ──────────────────────────────────
+
+function SyncAction(props: {
+  icon: React.ReactNode;
+  label: string;
+  tooltip: string;
+  onClick: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  variant?: "secondary" | "destructive";
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      <Button
+        variant={props.variant ?? "secondary"}
+        size="sm"
+        className="flex-1 justify-start gap-1.5"
+        aria-label={props.label}
+        disabled={props.disabled || props.loading}
+        onClick={props.onClick}
+      >
+        {props.loading ? (
+          <Loader2 className="size-3.5 animate-spin" />
+        ) : (
+          props.icon
+        )}
+        {props.label}
+      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                aria-label={`Info about: ${props.label}`}
+              />
+            }
+          >
+            <InfoIcon className="text-muted-foreground size-3.5" />
+          </TooltipTrigger>
+          <TooltipContent side="left" className="max-w-52">
+            {props.tooltip}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  );
+}
+
+// ── Confirm dialog for reload all ────────────────────────────────────
+
+function ReloadAllConfirmDialog(props: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Reload all activities?</DialogTitle>
+          <DialogDescription>
+            This will delete all your synced activities and streams, then
+            re-download everything from Strava. This is a very heavy operation
+            that uses significant API quota and may take a long time depending on
+            your activity history.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <DialogClose render={<Button variant="outline" />}>
+            Cancel
+          </DialogClose>
+          <Button
+            variant="destructive"
+            onClick={() => {
+              props.onConfirm();
+              props.onOpenChange(false);
+            }}
+          >
+            Reload all
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── First sync view ──────────────────────────────────────────────────
+
+function FirstSyncContent(props: {
+  onSync: () => void;
+  loading: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-muted-foreground text-xs">
+        Import your activities from Strava to get started.
+      </p>
+      <Button
+        size="sm"
+        className="w-full gap-1.5"
+        disabled={props.loading}
+        onClick={props.onSync}
+      >
+        {props.loading ? (
+          <Loader2 className="size-3.5 animate-spin" />
+        ) : (
+          <RefreshCwIcon className="size-3.5" />
+        )}
+        Sync your Strava activities
+      </Button>
+    </div>
+  );
+}
+
+// ── Idle actions view ────────────────────────────────────────────────
+
+function IdleContent(props: {
+  syncJob: {
+    status: string;
+    lastError: string | null;
+    startedAt: number;
+  } | null;
+  onAction: (mode: SyncMode) => void;
+  recomputing: boolean;
+}) {
+  const { syncJob } = props;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <SyncAction
+        icon={<ArrowDownToLineIcon className="size-3.5" />}
+        label="Load new activities"
+        tooltip="Quickly checks for activities recorded since your last sync"
+        onClick={() => props.onAction("load_new")}
+      />
+
+      <SyncAction
+        icon={<SearchIcon className="size-3.5" />}
+        label="Load missing activities"
+        tooltip="Scans your full Strava history to find gaps and re-syncs activities that were updated"
+        onClick={() => props.onAction("load_missing")}
+      />
+
+      <div className="border-border border-t" />
+
+      <SyncAction
+        icon={<RotateCcwIcon className="size-3.5" />}
+        label="Reload all activities"
+        tooltip="Deletes all local data and re-downloads everything from Strava"
+        onClick={() => props.onAction("reload_all")}
+      />
+
+      <div className="border-border border-t" />
+
+      <SyncAction
+        icon={<CalculatorIcon className="size-3.5" />}
+        label="Recompute all scores"
+        tooltip="Recalculates TSS, HRSS, and power bests using current rider settings without fetching from Strava"
+        onClick={() => props.onAction("recompute_scores")}
+        loading={props.recomputing}
+      />
+
+      {syncJob?.status === "failed" && syncJob.lastError && (
+        <div className="flex items-center gap-1.5 text-xs text-red-400">
+          <AlertCircleIcon className="size-3.5 shrink-0" />
+          <span>Last sync failed</span>
+        </div>
+      )}
+
+      {syncJob?.status === "completed" && (
+        <span className="text-muted-foreground text-xs">
+          Last synced:{" "}
+          {new Date(syncJob.startedAt).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ── Main SyncPanel ───────────────────────────────────────────────────
+
 export function SyncPanel() {
   const athleteId = useAthleteId();
   const { data: syncJob } = trpc.sync.getJob.useQuery(
@@ -123,12 +359,12 @@ export function SyncPanel() {
     },
   );
   const startSync = trpc.sync.start.useMutation();
-  const forceResync = trpc.sync.forceResync.useMutation();
-  const recomputeScores = trpc.riderSettings.recomputeScores.useMutation();
   const utils = trpc.useUtils();
-  const [recomputing, setRecomputing] = React.useState(false);
+
+  const [confirmReloadOpen, setConfirmReloadOpen] = React.useState(false);
 
   const wasSyncingRef = React.useRef(false);
+  const neverSynced = syncJob === null; // null = query returned null, undefined = query loading
 
   const isInProgress =
     syncJob != null &&
@@ -146,117 +382,74 @@ export function SyncPanel() {
     }
   }, [syncJob, isInProgress, utils]);
 
+  const handleAction = (mode: SyncMode) => {
+    if (!athleteId) return;
+    if (mode === "reload_all") {
+      setConfirmReloadOpen(true);
+      return;
+    }
+    startSync.mutate(
+      { athleteId, mode },
+      { onSuccess: () => utils.sync.getJob.invalidate() },
+    );
+  };
+
+  const handleConfirmReload = () => {
+    if (!athleteId) return;
+    startSync.mutate(
+      { athleteId, mode: "reload_all" },
+      { onSuccess: () => utils.sync.getJob.invalidate() },
+    );
+  };
+
   return (
-    <Popover>
-      <PopoverTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground gap-1.5"
-          >
-            {isInProgress ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <RefreshCwIcon className="size-3.5" />
-            )}
-            <span>Sync</span>
-            {isInProgress && (
-              <span className="bg-primary/20 text-primary-foreground size-1.5 rounded-full" />
-            )}
-            {syncJob?.status === "failed" && (
-              <span className="size-1.5 rounded-full bg-red-500" />
-            )}
-          </Button>
-        }
-      />
-      <PopoverContent align="end" className="w-64 p-3">
-        {isInProgress ? (
-          <SyncProgress syncJob={syncJob} />
-        ) : (
-          <div className="flex flex-col gap-3">
+    <>
+      <Popover defaultOpen={neverSynced}>
+        <PopoverTrigger
+          render={
             <Button
-              variant="secondary"
+              variant="ghost"
               size="sm"
-              className="w-full gap-1.5"
-              onClick={async () => {
-                if (!athleteId) return;
-                await startSync.mutateAsync({ athleteId });
-                utils.sync.getJob.invalidate();
-              }}
+              className="text-muted-foreground gap-1.5"
             >
-              <RefreshCwIcon className="size-3.5" />
-              Sync all data
-            </Button>
-
-            <Button
-              variant="secondary"
-              size="sm"
-              className="w-full gap-1.5"
-              onClick={async () => {
-                if (!athleteId) return;
-                await forceResync.mutateAsync({ athleteId });
-                utils.sync.getJob.invalidate();
-              }}
-            >
-              <RefreshCwIcon className="size-3.5" />
-              Force full re-sync
-            </Button>
-            <span className="text-muted-foreground text-xs">
-              Re-downloads all routes and streams
-            </span>
-
-            {syncJob?.status === "failed" && syncJob.lastError && (
-              <div className="flex items-center gap-1.5 text-xs text-red-400">
-                <AlertCircleIcon className="size-3.5 shrink-0" />
-                <span>Last sync failed</span>
-              </div>
-            )}
-
-            {syncJob?.status === "completed" && (
-              <span className="text-muted-foreground text-xs">
-                Last synced:{" "}
-                {new Date(syncJob.startedAt).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            )}
-
-            <div className="border-border border-t" />
-
-            <Button
-              variant="secondary"
-              size="sm"
-              className="w-full gap-1.5"
-              disabled={recomputing}
-              onClick={async () => {
-                if (!athleteId) return;
-                setRecomputing(true);
-                try {
-                  await recomputeScores.mutateAsync({ athleteId });
-                  utils.activities.list.invalidate();
-                  utils.activities.get.invalidate();
-                } finally {
-                  setRecomputing(false);
-                }
-              }}
-            >
-              {recomputing ? (
+              {isInProgress ? (
                 <Loader2 className="size-3.5 animate-spin" />
               ) : (
-                <CalculatorIcon className="size-3.5" />
+                <RefreshCwIcon className="size-3.5" />
               )}
-              Recompute all scores
+              <span>Sync</span>
+              {isInProgress && (
+                <span className="bg-primary/20 text-primary-foreground size-1.5 rounded-full" />
+              )}
+              {syncJob?.status === "failed" && (
+                <span className="size-1.5 rounded-full bg-red-500" />
+              )}
             </Button>
-            <span className="text-muted-foreground text-xs">
-              Recalculate scores using current settings
-            </span>
-          </div>
-        )}
-      </PopoverContent>
-    </Popover>
+          }
+        />
+        <PopoverContent align="end" className="w-72 p-3">
+          {isInProgress ? (
+            <SyncProgress syncJob={syncJob} />
+          ) : neverSynced ? (
+            <FirstSyncContent
+              onSync={() => handleAction("load_missing")}
+              loading={startSync.isPending}
+            />
+          ) : (
+            <IdleContent
+              syncJob={syncJob ?? null}
+              onAction={handleAction}
+              recomputing={startSync.isPending}
+            />
+          )}
+        </PopoverContent>
+      </Popover>
+
+      <ReloadAllConfirmDialog
+        open={confirmReloadOpen}
+        onOpenChange={setConfirmReloadOpen}
+        onConfirm={handleConfirmReload}
+      />
+    </>
   );
 }

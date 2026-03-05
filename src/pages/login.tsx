@@ -59,6 +59,12 @@ const LoginPage: NextPageWithLayout = () => {
         >
           Privacy Policy
         </Link>
+        <Link
+          href="/toolbox"
+          className="text-muted-foreground hover:text-foreground text-xs underline underline-offset-3"
+        >
+          Running Toolbox
+        </Link>
       </div>
     </main>
   );
