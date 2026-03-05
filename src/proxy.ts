@@ -10,6 +10,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.svg, sitemap.xml, robots.txt (metadata files)
      */
-    "/((?!login|api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
+    "/((?!login|privacy|api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
   ],
 };

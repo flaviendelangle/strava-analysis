@@ -166,14 +166,6 @@ PrivacyPage.getLayout = function getLayout(page) {
 function PrivacyLayout({ children }: { children: React.ReactNode }) {
   const { status } = useSession();
 
-  if (status === "loading") {
-    return (
-      <SharedLayout>
-        <div className="h-screen" />
-      </SharedLayout>
-    );
-  }
-
   if (status === "authenticated") {
     return <LoggedInLayout>{children}</LoggedInLayout>;
   }
