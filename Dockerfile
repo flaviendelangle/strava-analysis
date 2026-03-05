@@ -12,6 +12,8 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+ARG NEXT_PUBLIC_MUI_X_LICENSE_KEY
+ENV NEXT_PUBLIC_MUI_X_LICENSE_KEY=$NEXT_PUBLIC_MUI_X_LICENSE_KEY
 RUN pnpm build
 
 # ── Runner ──────────────────────────────────────────────────────────────
