@@ -35,7 +35,7 @@ const StatisticsPage: NextPageWithLayout = () => {
       <Toolbar>
         <ActivityTypeFilterPopover />
       </Toolbar>
-      <div className="flex flex-1 flex-col items-start gap-4 overflow-y-auto p-4">
+      <div className="flex flex-1 flex-col items-start gap-4 overflow-y-auto p-3 sm:p-4">
         <ActivitiesTimeline />
         <ActivitiesCumulativeTimeline />
         <PowerCurve activityTypes={POWER_BEST_ACTIVITY_TYPES} />

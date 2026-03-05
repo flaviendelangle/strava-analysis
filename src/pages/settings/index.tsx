@@ -48,7 +48,7 @@ const SettingsPage: NextPageWithLayout = () => {
 
   return (
     <>
-      <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 sm:gap-6 sm:p-6">
         <section className="border-border bg-card rounded-xl border p-5">
           <ChangePointsTimeline
             timeline={timeline}

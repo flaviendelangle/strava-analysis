@@ -24,6 +24,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
+import { cn } from "~/lib/utils";
 import { formatActivityType, formatDuration } from "~/utils/format";
 import { getSportConfig } from "~/utils/sportConfig";
 
@@ -45,7 +46,11 @@ function ActivityRow(props: {
     >
       {row.getVisibleCells().map((cell, cellIndex) => (
         <TableCell
-          className="flex min-w-0 items-center px-6"
+          className={cn(
+            "flex min-w-0 items-center px-3 md:px-6",
+            (cell.column.columnDef.meta as any)?.hideOnMobile &&
+              "hidden md:flex",
+          )}
           style={{ flex: cell.column.getSize() }}
           key={cell.id}
         >
@@ -81,16 +86,19 @@ const columns = [
     },
     header: () => <span>Type</span>,
     size: 2,
+    meta: { hideOnMobile: false },
   }),
   columnHelper.accessor("name", {
     cell: (info) => <span className="truncate">{info.getValue()}</span>,
     header: () => <span>Title</span>,
     size: 3,
+    meta: { hideOnMobile: false },
   }),
   columnHelper.accessor("startDateLocal", {
     cell: (info) => format(new Date(info.getValue()), "P p", { locale: enGB }),
     header: () => <span>Date</span>,
     size: 2,
+    meta: { hideOnMobile: false },
   }),
   columnHelper.accessor("distance", {
     cell: (info) => {
@@ -102,6 +110,7 @@ const columns = [
     header: () => <span>Distance</span>,
     sortingFn: "basic",
     size: 1,
+    meta: { hideOnMobile: false },
   }),
   columnHelper.accessor("totalElevationGain", {
     cell: (info) => {
@@ -111,12 +120,14 @@ const columns = [
     header: () => <span>Elevation</span>,
     sortingFn: "basic",
     size: 1,
+    meta: { hideOnMobile: true },
   }),
   columnHelper.accessor("movingTime", {
     cell: (info) => formatDuration(info.getValue()),
     header: () => <span>Moving Time</span>,
     sortingFn: "basic",
     size: 1,
+    meta: { hideOnMobile: true },
   }),
   columnHelper.accessor("hrss", {
     cell: (info) => {
@@ -126,6 +137,7 @@ const columns = [
     header: () => <span>HRSS</span>,
     sortingFn: "basic",
     size: 1,
+    meta: { hideOnMobile: true },
   }),
 ];
 
@@ -183,7 +195,11 @@ export function ActivitiesTable() {
                         : "Clear sort"
                     : undefined
                 }
-                className="flex min-w-0 items-center px-6 py-3"
+                className={cn(
+                  "flex min-w-0 items-center px-3 py-3 md:px-6",
+                  (header.column.columnDef.meta as any)?.hideOnMobile &&
+                    "hidden md:flex",
+                )}
                 style={{ flex: header.column.getSize() }}
               >
                 {header.isPlaceholder ? null : (
@@ -216,7 +232,11 @@ export function ActivitiesTable() {
                 {table.getVisibleFlatColumns().map((col) => (
                   <TableCell
                     key={col.id}
-                    className="flex min-w-0 items-center px-6"
+                    className={cn(
+                      "flex min-w-0 items-center px-3 md:px-6",
+                      (col.columnDef.meta as any)?.hideOnMobile &&
+                        "hidden md:flex",
+                    )}
                     style={{ flex: col.getSize() }}
                   >
                     <div className="bg-border h-4 w-32 animate-pulse" />

@@ -66,14 +66,14 @@ function ActivityPageContent({ stravaId }: { stravaId: number }) {
         >
           <ArrowLeftIcon className="size-4" />
         </Link>
-        <span className="font-semibold">{activity.name}</span>
-        <span className="bg-accent text-accent-foreground inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium uppercase">
+        <span className="min-w-0 truncate font-semibold">{activity.name}</span>
+        <span className="bg-accent text-accent-foreground inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium uppercase">
           {React.createElement(getSportConfig(activity.type).icon, {
             className: "size-3.5",
           })}
           {formatActivityType(activity.type)}
         </span>
-        <span className="text-muted-foreground text-sm">
+        <span className="text-muted-foreground hidden shrink-0 text-sm sm:inline">
           {new Date(activity.startDateLocal).toLocaleDateString(undefined, {
             weekday: "long",
             year: "numeric",
@@ -83,8 +83,8 @@ function ActivityPageContent({ stravaId }: { stravaId: number }) {
         </span>
       </Toolbar>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-6">
-        <div className="flex flex-col gap-6 lg:flex-row">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 sm:gap-6 sm:p-6">
+        <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row">
           <div className="lg:flex-1">
             <ActivityStats activity={activity} />
           </div>
@@ -123,8 +123,8 @@ function ActivityPageSkeleton() {
         <div className="bg-accent h-5 w-40 animate-pulse rounded" />
       </Toolbar>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-6">
-        <div className="flex flex-col gap-6 lg:flex-row">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 sm:gap-6 sm:p-6">
+        <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row">
           <div className="lg:flex-1">
             <div className="border-border bg-card rounded-xl border p-5">
               <div className="bg-accent mb-4 h-7 w-36 animate-pulse rounded" />

@@ -202,12 +202,40 @@ export function useChartTokens(): ChartTokens {
 }
 
 // ---------------------------------------------------------------------------
+// Compact number formatting for mobile y-axis labels
+// ---------------------------------------------------------------------------
+
+export function formatCompact(value: number): string {
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000) {
+    const v = value / 1_000_000;
+    return `${Number.isInteger(v) ? v : +v.toPrecision(2)}M`;
+  }
+  if (abs >= 1_000) {
+    const v = value / 1_000;
+    return `${Number.isInteger(v) ? v : +v.toPrecision(2)}k`;
+  }
+  return String(Math.round(value));
+}
+
+// ---------------------------------------------------------------------------
 // Standard margin presets
 // ---------------------------------------------------------------------------
 
+/**
+ * Axis sizes — override MUI defaults (45px width, 25px height).
+ * These are additive with the margin, so keep margin small.
+ */
+export const AXIS_SIZE = {
+  desktop: { width: 60, height: 25 },
+  mobile: { width: 32, height: 20 },
+} as const;
+
 export const CHART_MARGINS = {
   /** Standard single-panel chart with y-axis on left */
-  standard: { left: 72, right: 24, top: 16, bottom: 32 },
+  standard: { left: 8, right: 16, top: 16, bottom: 8 },
+  /** Standard margins for mobile */
+  standardMobile: { left: 4, right: 4, top: 4, bottom: 4 },
   /** Compact margin for dense multi-panel layouts */
   compact: { top: 8, right: 16, bottom: 36, left: 56 },
   /** Dual-axis chart with labels on both sides */

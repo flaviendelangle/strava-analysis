@@ -22,7 +22,7 @@ export function Select<TValue extends string = string>(
           : undefined
       }
     >
-      <SelectTrigger className="min-w-36">
+      <SelectTrigger className="sm:min-w-36">
         <SelectValue placeholder={options[0]?.label}>
           {(value: string | null) => {
             if (value == null) return options[0]?.label;

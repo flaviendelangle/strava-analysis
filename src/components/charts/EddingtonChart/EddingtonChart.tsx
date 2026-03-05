@@ -5,7 +5,8 @@ import { BarChartPro } from "@mui/x-charts-pro";
 import { Button } from "~/components/ui/button";
 import { useAthleteId } from "~/hooks/useAthleteId";
 import { useEddingtonData } from "~/hooks/useEddingtonData";
-import { CHART_MARGINS, useChartTokens } from "~/lib/chartTokens";
+import { useIsMobile } from "~/hooks/useIsMobile";
+import { CHART_MARGINS, AXIS_SIZE, formatCompact, useChartTokens } from "~/lib/chartTokens";
 import { trpc } from "~/utils/trpc";
 
 import { ChartThemeProvider } from "../ChartThemeProvider";
@@ -22,6 +23,7 @@ const UNIT_LABEL = "km";
 export default function EddingtonChart() {
   const [activeTab, setActiveTab] = React.useState(0);
   const tokens = useChartTokens();
+  const isMobile = useIsMobile();
   const athleteId = useAthleteId();
 
   const tab = TABS[activeTab];
@@ -34,8 +36,8 @@ export default function EddingtonChart() {
   const eddington = useEddingtonData(data?.activities, DISTANCE_DIVISOR);
 
   const header = (
-    <div className="border-border flex items-center gap-2 border-b p-4">
-      <h3 className="text-sm font-medium">Eddington Number</h3>
+    <div className="border-border flex items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
+      <h3 className="shrink-0 text-xs font-medium sm:text-sm">Eddington Number</h3>
       {eddington && eddington.eddingtonNumber > 0 && (
         <span className="rounded bg-orange-500/20 px-2 py-0.5 text-xs font-semibold text-orange-400">
           E = {eddington.eddingtonNumber}
@@ -81,14 +83,15 @@ export default function EddingtonChart() {
     <ChartThemeProvider>
       <div className="bg-card flex h-96 w-full flex-col rounded-md">
         {header}
-        <div className="flex-1">
+        <div className="min-h-0 flex-1">
           <BarChartPro
             xAxis={[
               {
                 id: "distance",
                 scaleType: "band",
                 data: xAxisData,
-                label: UNIT_LABEL,
+                label: isMobile ? undefined : UNIT_LABEL,
+                height: isMobile ? AXIS_SIZE.mobile.height : AXIS_SIZE.desktop.height,
                 valueFormatter: (value: number) => `${value}`,
                 colorMap: {
                   type: "ordinal",
@@ -99,9 +102,12 @@ export default function EddingtonChart() {
             ]}
             yAxis={[
               {
-                label: "Days",
+                label: isMobile ? undefined : "Days",
                 valueFormatter: (value: number) =>
-                  Math.round(value).toLocaleString(),
+                  isMobile
+                    ? formatCompact(value)
+                    : Math.round(value).toLocaleString(),
+                width: isMobile ? AXIS_SIZE.mobile.width : AXIS_SIZE.desktop.width,
               },
             ]}
             series={[
@@ -111,7 +117,8 @@ export default function EddingtonChart() {
               },
             ]}
             grid={{ horizontal: true }}
-            margin={CHART_MARGINS.standard}
+            margin={isMobile ? CHART_MARGINS.standardMobile : CHART_MARGINS.standard}
+            hideLegend={isMobile}
             slots={{ tooltip: ChartTooltip }}
           />
         </div>

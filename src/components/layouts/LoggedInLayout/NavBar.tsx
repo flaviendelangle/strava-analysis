@@ -3,6 +3,7 @@ import * as React from "react";
 import {
   BarChart3Icon,
   BikeIcon,
+  EllipsisIcon,
   ListIcon,
   LogOutIcon,
   MapIcon,
@@ -101,6 +102,7 @@ function ThemeToggleNavButton() {
   );
 }
 
+/* ── Desktop sidebar ── */
 export function NavBar() {
   const [isMenuExpanded, setIsMenuExpanded] = React.useState(false);
 
@@ -108,7 +110,7 @@ export function NavBar() {
     <NavBarContext value={{ isMenuExpanded }}>
       <nav
         data-expanded={isMenuExpanded}
-        className="bg-sidebar border-sidebar-border flex h-full w-14 shrink-0 flex-col justify-between border-r py-3 data-[expanded=true]:w-52"
+        className="bg-sidebar border-sidebar-border hidden h-full w-14 shrink-0 flex-col justify-between border-r py-3 md:flex data-[expanded=true]:w-52"
       >
         <div className="flex flex-col gap-0.5">
           <TooltipIfMenuCollapsed
@@ -176,5 +178,119 @@ export function NavBar() {
         </div>
       </nav>
     </NavBarContext>
+  );
+}
+
+/* ── Mobile bottom tab bar ── */
+
+interface MobileTabLinkProps {
+  icon: React.ElementType;
+  label: string;
+  href: string;
+}
+
+function MobileTabLink({ icon: Icon, label, href }: MobileTabLinkProps) {
+  const pathname = usePathname();
+  const isActive = (pathname ?? "").startsWith(href);
+
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex flex-1 flex-col items-center justify-center gap-0.5 py-1 text-[10px] font-medium transition-colors",
+        isActive
+          ? "text-primary"
+          : "text-muted-foreground active:text-foreground",
+      )}
+    >
+      <Icon className="size-5" />
+      <span>{label}</span>
+    </Link>
+  );
+}
+
+export function MobileBottomBar() {
+  const [moreOpen, setMoreOpen] = React.useState(false);
+  const { resolvedTheme, setTheme } = useTheme();
+
+  return (
+    <>
+      {/* More menu overlay */}
+      {moreOpen && (
+        <div
+          className="bg-background/80 fixed inset-0 z-40 backdrop-blur-sm md:hidden"
+          onClick={() => setMoreOpen(false)}
+        />
+      )}
+      {moreOpen && (
+        <div className="bg-popover border-border fixed right-2 bottom-16 z-50 rounded-xl border p-1 shadow-lg md:hidden">
+          <Link
+            href="/settings"
+            className="text-foreground hover:bg-accent flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium"
+            onClick={() => setMoreOpen(false)}
+          >
+            <SettingsIcon className="size-4" />
+            Settings
+          </Link>
+          <Link
+            href="/privacy"
+            className="text-foreground hover:bg-accent flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium"
+            onClick={() => setMoreOpen(false)}
+          >
+            <ShieldCheckIcon className="size-4" />
+            Privacy
+          </Link>
+          <button
+            className="text-foreground hover:bg-accent flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium"
+            onClick={() => {
+              setTheme(resolvedTheme === "dark" ? "light" : "dark");
+              setMoreOpen(false);
+            }}
+          >
+            {resolvedTheme === "dark" ? (
+              <SunIcon className="size-4" />
+            ) : (
+              <MoonIcon className="size-4" />
+            )}
+            {resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
+          </button>
+          <button
+            className="text-foreground hover:bg-accent flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium"
+            onClick={() => signOut({ callbackUrl: "/login" })}
+          >
+            <LogOutIcon className="size-4" />
+            Sign out
+          </button>
+        </div>
+      )}
+
+      {/* Bottom tab bar */}
+      <nav className="bg-sidebar border-sidebar-border fixed right-0 bottom-0 left-0 z-30 flex h-14 items-stretch border-t md:hidden">
+        <MobileTabLink icon={ListIcon} label="Activities" href="/activities" />
+        <MobileTabLink icon={MapIcon} label="Heatmap" href="/heatmap" />
+        <MobileTabLink
+          icon={BarChart3Icon}
+          label="Statistics"
+          href="/statistics"
+        />
+        <MobileTabLink
+          icon={PlayCircleIcon}
+          label="Training"
+          href="/training-1"
+        />
+        <button
+          className={cn(
+            "flex flex-1 flex-col items-center justify-center gap-0.5 py-1 text-[10px] font-medium transition-colors",
+            moreOpen
+              ? "text-primary"
+              : "text-muted-foreground active:text-foreground",
+          )}
+          onClick={() => setMoreOpen((prev) => !prev)}
+        >
+          <EllipsisIcon className="size-5" />
+          <span>More</span>
+        </button>
+      </nav>
+    </>
   );
 }

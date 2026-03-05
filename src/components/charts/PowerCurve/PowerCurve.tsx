@@ -27,7 +27,8 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useAthleteId } from "~/hooks/useAthleteId";
-import { CHART_MARGINS, useChartTokens } from "~/lib/chartTokens";
+import { useIsMobile } from "~/hooks/useIsMobile";
+import { CHART_MARGINS, AXIS_SIZE, formatCompact, useChartTokens } from "~/lib/chartTokens";
 import { trpc } from "~/utils/trpc";
 
 import { ChartThemeProvider } from "../ChartThemeProvider";
@@ -222,6 +223,7 @@ export default PowerCurve;
 
 function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
   const tokens = useChartTokens();
+  const isMobile = useIsMobile();
   const { data: activity } = trpc.activities.get.useQuery({ stravaId });
 
   const data = React.useMemo(() => {
@@ -242,23 +244,26 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
   return (
     <ChartThemeProvider>
       <div className="bg-card flex h-96 w-full flex-col rounded-md">
-        <div className="border-border flex items-center gap-2 border-b p-4">
-          <h3 className="text-sm font-medium">Power Curve</h3>
+        <div className="border-border flex items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
+          <h3 className="shrink-0 text-xs font-medium sm:text-sm">Power Curve</h3>
         </div>
-        <div className="flex-1">
+        <div className="min-h-0 flex-1">
           <LineChart
             xAxis={[
               {
                 scaleType: "log",
                 data: data.map((d) => d.duration),
                 valueFormatter: (value: number) => formatDuration(value),
-                label: "Duration",
+                label: isMobile ? undefined : "Duration",
+                height: isMobile ? AXIS_SIZE.mobile.height : AXIS_SIZE.desktop.height,
               },
             ]}
             yAxis={[
               {
-                label: "Watts",
-                valueFormatter: (value: number) => `${Math.round(value)} W`,
+                label: isMobile ? undefined : "Watts",
+                valueFormatter: (value: number) =>
+                  isMobile ? formatCompact(value) : `${Math.round(value)} W`,
+                width: isMobile ? AXIS_SIZE.mobile.width : AXIS_SIZE.desktop.width,
               },
             ]}
             series={[
@@ -271,7 +276,8 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
               },
             ]}
             grid={{ horizontal: true }}
-            margin={CHART_MARGINS.standard}
+            margin={isMobile ? CHART_MARGINS.standardMobile : CHART_MARGINS.standard}
+            hideLegend={isMobile}
           />
         </div>
       </div>
@@ -283,6 +289,7 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
 
 function AggregatedPowerCurve({ activityTypes }: { activityTypes?: string[] }) {
   const tokens = useChartTokens();
+  const isMobile = useIsMobile();
   const athleteId = useAthleteId();
   const [ranges, setRanges] = React.useState<DateRange[]>(DEFAULT_RANGES);
 
@@ -405,7 +412,7 @@ function AggregatedPowerCurve({ activityTypes }: { activityTypes?: string[] }) {
           athleteId={athleteId}
           activityTypes={activityTypes}
         />
-        <div className="flex-1">
+        <div className="min-h-0 flex-1">
           <ActivityMetadataContext.Provider value={activityMetadata}>
             <LineChart
               xAxis={[
@@ -413,18 +420,22 @@ function AggregatedPowerCurve({ activityTypes }: { activityTypes?: string[] }) {
                   scaleType: "log",
                   data: xData,
                   valueFormatter: (value: number) => formatDuration(value),
-                  label: "Duration",
+                  label: isMobile ? undefined : "Duration",
+                  height: isMobile ? AXIS_SIZE.mobile.height : AXIS_SIZE.desktop.height,
                 },
               ]}
               yAxis={[
                 {
-                  label: "Watts",
-                  valueFormatter: (value: number) => `${Math.round(value)} W`,
+                  label: isMobile ? undefined : "Watts",
+                  valueFormatter: (value: number) =>
+                    isMobile ? formatCompact(value) : `${Math.round(value)} W`,
+                  width: isMobile ? AXIS_SIZE.mobile.width : AXIS_SIZE.desktop.width,
                 },
               ]}
               series={series}
               grid={{ horizontal: true }}
-              margin={CHART_MARGINS.standard}
+              margin={isMobile ? CHART_MARGINS.standardMobile : CHART_MARGINS.standard}
+              hideLegend={isMobile}
               slots={{ tooltip: PowerCurveTooltip }}
             />
           </ActivityMetadataContext.Provider>
@@ -453,8 +464,8 @@ function Toolbar({
 }) {
   const tokens = useChartTokens();
   return (
-    <div className="border-border flex flex-wrap items-center gap-2 border-b p-4">
-      <h3 className="text-sm font-medium">Power Curve</h3>
+    <div className="border-border flex flex-wrap items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
+      <h3 className="shrink-0 text-xs font-medium sm:text-sm">Power Curve</h3>
       <div className="bg-border mx-1 h-4 w-px" />
       {ranges.map((range, i) => (
         <RangeChip
@@ -619,8 +630,8 @@ function EmptyChart() {
   return (
     <ChartThemeProvider>
       <div className="bg-card flex h-96 w-full flex-col rounded-md">
-        <div className="border-border flex items-center gap-2 border-b p-4">
-          <h3 className="text-sm font-medium">Power Curve</h3>
+        <div className="border-border flex items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
+          <h3 className="shrink-0 text-xs font-medium sm:text-sm">Power Curve</h3>
         </div>
         <div className="text-muted-foreground flex flex-1 items-center justify-center">
           No power data available

@@ -8,7 +8,7 @@ import { ExplorerTilesProvider } from "~/hooks/useExplorerTilesToggle";
 import { RiderSettingsProvider } from "~/hooks/useRiderSettings";
 
 import { SharedLayout } from "../SharedLayout";
-import { NavBar } from "./NavBar";
+import { MobileBottomBar, NavBar } from "./NavBar";
 
 export const LoggedInLayout = (props: LoggedInLayoutProps) => {
   const { children } = props;
@@ -43,9 +43,10 @@ export const LoggedInLayout = (props: LoggedInLayoutProps) => {
           <ErgModeProvider>
             <div className="flex h-screen">
               <NavBar />
-              <main className="flex flex-1 flex-col overflow-hidden">
+              <main className="flex flex-1 flex-col overflow-hidden pb-14 md:pb-0">
                 {children}
               </main>
+              <MobileBottomBar />
             </div>
           </ErgModeProvider>
         </RiderSettingsProvider>

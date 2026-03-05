@@ -14,7 +14,7 @@ export const SharedLayout = ({ children }: SharedLayoutProps) => {
       </Head>
 
       <div className="h-screen">{children}</div>
-      <span className="bg-background absolute right-0 bottom-0 rounded-tl-lg">
+      <span className="bg-background absolute right-0 bottom-0 hidden rounded-tl-lg md:block">
         <Image
           priority
           src={stravaBanner}

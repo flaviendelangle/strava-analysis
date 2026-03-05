@@ -10,8 +10,9 @@ import {
   GroupedActivities,
   useGroupActivitiesByTimeSlice,
 } from "~/hooks/useGroupActivitiesByTimeSlice";
+import { useIsMobile } from "~/hooks/useIsMobile";
 import { useTimeSlices } from "~/hooks/useTimeSlices";
-import { CHART_MARGINS, useChartTokens } from "~/lib/chartTokens";
+import { CHART_MARGINS, AXIS_SIZE, formatCompact, useChartTokens } from "~/lib/chartTokens";
 
 import { METRICS, MetricSelect } from "../../MetricSelect";
 import { ChartThemeProvider } from "../ChartThemeProvider";
@@ -24,6 +25,7 @@ const MONTH_LABELS = Array.from({ length: 12 }, (_, i) =>
 export default function ActivitiesCumulativeTimeline() {
   const [metric, setMetric] = React.useState("distance");
   const tokens = useChartTokens();
+  const isMobile = useIsMobile();
   const activitiesQuery = useActivitiesQuery();
 
   const slices = useTimeSlices({
@@ -82,32 +84,36 @@ export default function ActivitiesCumulativeTimeline() {
   return (
     <ChartThemeProvider>
       <div className="bg-card flex h-96 w-full flex-col rounded-md">
-        <div className="border-border flex items-center gap-4 border-b p-4">
-          <h3 className="text-sm font-medium">Cumulative Timeline</h3>
+        <div className="border-border flex items-center gap-1.5 border-b p-2 sm:gap-4 sm:p-4">
+          <h3 className="shrink-0 text-xs font-medium sm:text-sm">Cumulative Timeline</h3>
           <MetricSelect value={metric} onValueChange={setMetric} />
         </div>
-        <div className="flex-1">
+        <div className="min-h-0 flex-1">
           <LineChart
             xAxis={[
               {
                 scaleType: "band",
                 data: MONTH_LABELS,
+                height: isMobile ? AXIS_SIZE.mobile.height : AXIS_SIZE.desktop.height,
               },
             ]}
             yAxis={[
               {
                 valueFormatter: (value: number) => {
+                  if (isMobile) return formatCompact(value);
                   const formatted = Math.round(value).toLocaleString();
                   return metricConfig?.unit
                     ? `${formatted} ${metricConfig.unit}`
                     : formatted;
                 },
+                width: isMobile ? AXIS_SIZE.mobile.width : AXIS_SIZE.desktop.width,
               },
             ]}
             series={series}
             colors={tokens.palette}
             grid={{ horizontal: true }}
-            margin={CHART_MARGINS.standard}
+            margin={isMobile ? CHART_MARGINS.standardMobile : CHART_MARGINS.standard}
+            hideLegend={isMobile}
             slots={{ tooltip: ChartTooltip }}
           />
         </div>
