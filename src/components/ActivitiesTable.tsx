@@ -24,7 +24,6 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
-import { cn } from "~/lib/utils";
 import { formatActivityType, formatDuration } from "~/utils/format";
 import { getSportConfig } from "~/utils/sportConfig";
 
@@ -40,18 +39,16 @@ function ActivityRow(props: {
 
   return (
     <TableRow
-      className="data-[odd=true]:bg-secondary data-[odd=true]:hover:bg-accent relative flex w-full"
+      className="data-[odd=true]:bg-secondary data-[odd=true]:hover:bg-accent relative flex w-full border-0"
       data-odd={index % 2 === 1}
       style={style}
     >
-      {row.getVisibleCells().map((cell, cellIndex) => (
+      {row.getVisibleCells().map((cell, cellIndex) => {
+        const minWidth = (cell.column.columnDef.meta as any)?.minWidth;
+        return (
         <TableCell
-          className={cn(
-            "flex min-w-0 items-center px-3 md:px-6",
-            (cell.column.columnDef.meta as any)?.hideOnMobile &&
-              "hidden md:flex",
-          )}
-          style={{ flex: cell.column.getSize() }}
+          className="flex min-w-0 items-center px-3 md:px-6"
+          style={{ flex: cell.column.getSize(), minWidth }}
           key={cell.id}
         >
           {cellIndex === 0 ? (
@@ -65,7 +62,8 @@ function ActivityRow(props: {
             flexRender(cell.column.columnDef.cell, cell.getContext())
           )}
         </TableCell>
-      ))}
+        );
+      })}
     </TableRow>
   );
 }
@@ -84,21 +82,21 @@ const columns = [
         </span>
       );
     },
-    header: () => <span>Type</span>,
+    header: () => <span>Sport</span>,
     size: 2,
-    meta: { hideOnMobile: false },
+    meta: { minWidth: 155 },
   }),
   columnHelper.accessor("name", {
     cell: (info) => <span className="truncate">{info.getValue()}</span>,
     header: () => <span>Title</span>,
     size: 3,
-    meta: { hideOnMobile: false },
+    meta: { minWidth: 140 },
   }),
   columnHelper.accessor("startDateLocal", {
-    cell: (info) => format(new Date(info.getValue()), "P p", { locale: enGB }),
+    cell: (info) => <span className="truncate">{format(new Date(info.getValue()), "P p", { locale: enGB })}</span>,
     header: () => <span>Date</span>,
     size: 2,
-    meta: { hideOnMobile: false },
+    meta: { minWidth: 140 },
   }),
   columnHelper.accessor("distance", {
     cell: (info) => {
@@ -110,7 +108,6 @@ const columns = [
     header: () => <span>Distance</span>,
     sortingFn: "basic",
     size: 1,
-    meta: { hideOnMobile: false },
   }),
   columnHelper.accessor("totalElevationGain", {
     cell: (info) => {
@@ -120,14 +117,12 @@ const columns = [
     header: () => <span>Elevation</span>,
     sortingFn: "basic",
     size: 1,
-    meta: { hideOnMobile: true },
   }),
   columnHelper.accessor("movingTime", {
     cell: (info) => formatDuration(info.getValue()),
     header: () => <span>Moving Time</span>,
     sortingFn: "basic",
     size: 1,
-    meta: { hideOnMobile: true },
   }),
   columnHelper.accessor("hrss", {
     cell: (info) => {
@@ -137,7 +132,6 @@ const columns = [
     header: () => <span>HRSS</span>,
     sortingFn: "basic",
     size: 1,
-    meta: { hideOnMobile: true },
   }),
 ];
 
@@ -176,8 +170,8 @@ export function ActivitiesTable() {
   return (
     <Table
       containerRef={tableContainerRef}
-      containerClassName="min-h-0 flex-1"
-      className="border-border text-muted-foreground grid border border-solid text-left text-sm"
+      containerClassName="border-border min-h-0 flex-1 md:border"
+      className="text-muted-foreground grid min-w-[700px] text-left text-sm"
     >
       <TableHeader className="bg-accent text-muted-foreground sticky top-0 z-10 grid text-xs uppercase">
         {table.getHeaderGroups().map((headerGroup) => (
@@ -195,12 +189,8 @@ export function ActivitiesTable() {
                         : "Clear sort"
                     : undefined
                 }
-                className={cn(
-                  "flex min-w-0 items-center px-3 py-3 md:px-6",
-                  (header.column.columnDef.meta as any)?.hideOnMobile &&
-                    "hidden md:flex",
-                )}
-                style={{ flex: header.column.getSize() }}
+                className="flex min-w-0 items-center px-3 py-3 md:px-6"
+                style={{ flex: header.column.getSize(), minWidth: (header.column.columnDef.meta as any)?.minWidth }}
               >
                 {header.isPlaceholder ? null : (
                   <div
@@ -232,12 +222,8 @@ export function ActivitiesTable() {
                 {table.getVisibleFlatColumns().map((col) => (
                   <TableCell
                     key={col.id}
-                    className={cn(
-                      "flex min-w-0 items-center px-3 md:px-6",
-                      (col.columnDef.meta as any)?.hideOnMobile &&
-                        "hidden md:flex",
-                    )}
-                    style={{ flex: col.getSize() }}
+                    className="flex min-w-0 items-center px-3 md:px-6"
+                    style={{ flex: col.getSize(), minWidth: (col.columnDef.meta as any)?.minWidth }}
                   >
                     <div className="bg-border h-4 w-32 animate-pulse" />
                   </TableCell>

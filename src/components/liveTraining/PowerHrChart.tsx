@@ -9,6 +9,7 @@ import {
 } from "@mui/x-charts-pro";
 
 import { CHART_MARGINS, useChartTokens } from "~/lib/chartTokens";
+import { useIsMobile } from "~/hooks/useIsMobile";
 import type { SessionDataPoint } from "~/sensors/types";
 import { getPowerZoneColor } from "~/sensors/types";
 
@@ -26,6 +27,7 @@ interface PowerHrChartProps {
 export function PowerHrChart(props: PowerHrChartProps) {
   const { dataPoints, ftp, showAll = false } = props;
   const tokens = useChartTokens();
+  const isMobile = useIsMobile();
 
   const points = showAll ? dataPoints : dataPoints.slice(-WINDOW_SECONDS);
 
@@ -138,7 +140,7 @@ export function PowerHrChart(props: PowerHrChartProps) {
         ]}
         height={200}
         skipAnimation
-        margin={CHART_MARGINS.dualAxis}
+        margin={isMobile ? { left: 24, right: 24, top: 8, bottom: 20 } : CHART_MARGINS.dualAxis}
       >
         <BarPlot />
         <LinePlot />

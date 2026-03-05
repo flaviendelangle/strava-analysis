@@ -26,23 +26,23 @@ function HudDeviceCard({
 
   return (
     <div
-      className={`relative w-80 overflow-hidden rounded-2xl border backdrop-blur-md transition-all duration-700 ${
+      className={`relative w-full max-w-80 overflow-hidden rounded-2xl border backdrop-blur-md transition-all duration-700 sm:min-w-80 sm:max-w-none ${
         isConnected
           ? "border-green-400/50 bg-green-50 dark:border-green-500/40 dark:bg-green-950/30"
           : "border-border/50 bg-card/60"
       }`}
     >
-      <div className="flex flex-col items-center gap-4 p-8">
+      <div className="flex flex-col items-center gap-3 p-4 sm:gap-4 sm:p-8">
         {/* Sensor icon with animation */}
         <div className="relative">
           <div
-            className={`flex h-20 w-20 items-center justify-center rounded-full transition-colors duration-500 ${
+            className={`flex h-12 w-12 items-center justify-center rounded-full transition-colors duration-500 sm:h-20 sm:w-20 ${
               isConnected ? "bg-green-100 dark:bg-green-500/20" : "bg-accent/60"
             }`}
           >
             {type === "heartRate" ? (
               <svg
-                className={`h-10 w-10 transition-colors duration-500 ${isConnected ? "text-green-400" : "text-red-400"}`}
+                className={`h-6 w-6 transition-colors duration-500 sm:h-10 sm:w-10 ${isConnected ? "text-green-400" : "text-red-400"}`}
                 viewBox="0 0 24 24"
                 fill="currentColor"
               >
@@ -50,7 +50,7 @@ function HudDeviceCard({
               </svg>
             ) : (
               <svg
-                className={`h-10 w-10 transition-colors duration-500 ${isConnected ? "text-green-400" : "text-teal-400"}`}
+                className={`h-6 w-6 transition-colors duration-500 sm:h-10 sm:w-10 ${isConnected ? "text-green-400" : "text-teal-400"}`}
                 viewBox="0 0 24 24"
                 fill="currentColor"
               >
@@ -88,8 +88,8 @@ function HudDeviceCard({
 
         {/* Label + status */}
         <div className="text-center">
-          <h3 className="text-foreground text-lg font-semibold">{label}</h3>
-          <p className="text-muted-foreground mt-1 text-sm">
+          <h3 className="text-foreground text-base font-semibold sm:text-lg">{label}</h3>
+          <p className="text-muted-foreground mt-0.5 text-xs sm:mt-1 sm:text-sm">
             {isConnected
               ? (deviceName ?? "Connected")
               : isConnecting
@@ -162,13 +162,13 @@ interface HudConnectionWizardProps {
 
 export function HudConnectionWizard(props: HudConnectionWizardProps) {
   return (
-    <div className="bg-background/95 absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-      <div className="flex flex-col items-center gap-8">
-        <h1 className="text-foreground text-3xl font-bold">Connect Devices</h1>
-        <p className="text-muted-foreground">
+    <div className="bg-background/95 absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+      <div className="flex flex-col items-center gap-4 sm:gap-8">
+        <h1 className="text-foreground text-xl font-bold sm:text-3xl">Connect Devices</h1>
+        <p className="text-muted-foreground text-sm sm:text-base">
           Pair your sensors to get started
         </p>
-        <div className="flex flex-wrap justify-center gap-6">
+        <div className="flex w-full flex-col items-center gap-4 sm:flex-row sm:justify-center sm:gap-6">
           <HudDeviceCard
             type="heartRate"
             state={props.hrState}

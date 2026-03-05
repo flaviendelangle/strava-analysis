@@ -12,7 +12,7 @@ const ActivitiesPage: NextPageWithLayout = () => {
         <div className="bg-border mx-1 h-4 w-px" />
         <SyncPanel />
       </Toolbar>
-      <div className="flex flex-1 flex-col gap-4 overflow-hidden p-4">
+      <div className="flex flex-1 flex-col gap-4 overflow-hidden p-0 md:p-4">
         <ActivitiesTable />
       </div>
     </>

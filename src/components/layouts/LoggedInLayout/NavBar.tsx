@@ -218,7 +218,7 @@ export function MobileBottomBar() {
       {/* More menu overlay */}
       {moreOpen && (
         <div
-          className="bg-background/80 fixed inset-0 z-40 backdrop-blur-sm md:hidden"
+          className="bg-background/30 fixed inset-0 z-40 backdrop-blur-[1px] md:hidden"
           onClick={() => setMoreOpen(false)}
         />
       )}
