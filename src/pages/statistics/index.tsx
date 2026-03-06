@@ -1,6 +1,6 @@
 import nextDynamic from "next/dynamic";
 
-import { ActivityTypeFilterPopover } from "~/components/settings/ActivityTypeFilterPopover";
+import { ActivityFilterPopover } from "~/components/settings/ActivityFilterPopover";
 import { Toolbar } from "~/components/settings/SettingsToolbar";
 import { NextPageWithLayout } from "~/pages/_app";
 import { POWER_BEST_ACTIVITY_TYPES } from "~/utils/constants";
@@ -33,7 +33,7 @@ const StatisticsPage: NextPageWithLayout = () => {
   return (
     <>
       <Toolbar>
-        <ActivityTypeFilterPopover />
+        <ActivityFilterPopover />
       </Toolbar>
       <div className="flex flex-1 flex-col items-start gap-4 overflow-y-auto p-3 sm:p-4">
         <ActivitiesTimeline />

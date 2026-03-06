@@ -29,6 +29,13 @@
       "when": 1772708154705,
       "tag": "0003_aromatic_mephisto",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1772784155148,
+      "tag": "0004_dashing_franklin_richards",
+      "breakpoints": true
     }
   ]
 }

@@ -72,6 +72,7 @@ export const activities = pgTable(
     areStreamsLoaded: boolean("are_streams_loaded").notNull().default(false),
     hrss: real("hrss"),
     tss: real("tss"),
+    workoutType: integer("workout_type"),
     powerBests: jsonb("power_bests").$type<Record<number, number>>(),
   },
   (t) => [

@@ -1,7 +1,7 @@
 import { GridIcon } from "lucide-react";
 
 import { ActivitiesMap } from "~/components/ActivitiesMap";
-import { ActivityTypeFilterPopover } from "~/components/settings/ActivityTypeFilterPopover";
+import { ActivityFilterPopover } from "~/components/settings/ActivityFilterPopover";
 import { Toolbar } from "~/components/settings/SettingsToolbar";
 import { Button } from "~/components/ui/button";
 import { useExplorerTilesToggle } from "~/hooks/useExplorerTilesToggle";
@@ -31,7 +31,7 @@ const HeatmapPage: NextPageWithLayout = () => {
   return (
     <>
       <Toolbar>
-        <ActivityTypeFilterPopover />
+        <ActivityFilterPopover />
         <div className="bg-border mx-1 h-4 w-px" />
         <ExplorerTilesToggleButton />
       </Toolbar>

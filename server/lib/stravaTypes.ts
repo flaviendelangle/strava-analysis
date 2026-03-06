@@ -20,6 +20,7 @@ export interface StravaActivity {
   calories?: number;
   moving_time: number;
   elapsed_time: number;
+  workout_type?: number | null;
   map?: {
     summary_polyline?: string;
   } | null;

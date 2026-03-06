@@ -9,6 +9,7 @@ export const analyticsRouter = router({
       z.object({
         athleteId: z.number(),
         activityTypes: z.array(z.string()).optional(),
+        workoutTypes: z.array(z.number()).optional(),
         dateFrom: z.string().optional(),
         dateTo: z.string().optional(),
       }),
@@ -19,6 +20,14 @@ export const analyticsRouter = router({
         input.activityTypes && input.activityTypes.length > 0
           ? sql`AND a.type IN (${sql.join(
               input.activityTypes.map((t) => sql`${t}`),
+              sql`, `,
+            )})`
+          : sql``;
+
+      const workoutTypeFilter =
+        input.workoutTypes && input.workoutTypes.length > 0
+          ? sql`AND a.workout_type IN (${sql.join(
+              input.workoutTypes.map((t) => sql`${t}`),
               sql`, `,
             )})`
           : sql``;
@@ -48,6 +57,7 @@ export const analyticsRouter = router({
           WHERE a.athlete = ${input.athleteId}
             AND a.power_bests IS NOT NULL
             ${typeFilter}
+            ${workoutTypeFilter}
             ${dateFromFilter}
             ${dateToFilter}
         ),
@@ -83,6 +93,7 @@ export const analyticsRouter = router({
       z.object({
         athleteId: z.number(),
         activityTypes: z.array(z.string()).optional(),
+        workoutTypes: z.array(z.number()).optional(),
       }),
     )
     .use(validateAthleteOwnership)
@@ -95,12 +106,21 @@ export const analyticsRouter = router({
             )})`
           : sql``;
 
+      const workoutTypeFilter =
+        input.workoutTypes && input.workoutTypes.length > 0
+          ? sql`AND a.workout_type IN (${sql.join(
+              input.workoutTypes.map((t) => sql`${t}`),
+              sql`, `,
+            )})`
+          : sql``;
+
       const rows = await ctx.db.execute<{ year: string }>(sql`
         SELECT DISTINCT EXTRACT(YEAR FROM a.start_date::timestamp)::int AS year
         FROM activities a
         WHERE a.athlete = ${input.athleteId}
           AND a.power_bests IS NOT NULL
           ${typeFilter}
+          ${workoutTypeFilter}
         ORDER BY year DESC
       `);
 

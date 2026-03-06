@@ -128,6 +128,7 @@ export const activityStreamsRouter = router({
           movingTime: model.movingTime,
           elapsedTime: model.elapsedTime,
           mapPolyline: model.mapPolyline,
+          workoutType: model.workoutType,
           areStreamsLoaded: false,
         })
         .where(eq(activities.id, activity.id));

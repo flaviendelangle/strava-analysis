@@ -6,14 +6,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import { useActivityFilter } from "~/hooks/useActivityFilter";
 
-import {
-  ActivityTypeFilter,
-  useActivityTypeFilterCount,
-} from "./ActivityTypeFilter";
+import { ActivityFilterPanel } from "./ActivityFilterPanel";
 
-export function ActivityTypeFilterPopover() {
-  const selectedCount = useActivityTypeFilterCount();
+export function ActivityFilterPopover() {
+  const { activeFilterCount } = useActivityFilter();
 
   return (
     <Popover>
@@ -26,19 +24,16 @@ export function ActivityTypeFilterPopover() {
           >
             <FilterIcon className="size-3.5" />
             <span>Filter</span>
-            {selectedCount > 0 && (
+            {activeFilterCount > 0 && (
               <span className="bg-primary/20 text-primary-foreground rounded px-1 text-xs">
-                {selectedCount}
+                {activeFilterCount}
               </span>
             )}
           </Button>
         }
       />
-      <PopoverContent align="start" className="w-48 p-3">
-        <div className="text-muted-foreground mb-2 text-xs font-medium">
-          Activity Types
-        </div>
-        <ActivityTypeFilter />
+      <PopoverContent align="start" className="w-72 p-3">
+        <ActivityFilterPanel />
       </PopoverContent>
     </Popover>
   );

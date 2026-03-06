@@ -22,10 +22,16 @@ function ToolboxTable(
   return <BaseTable {...props} />;
 }
 
-function ToolboxTableHeader(
-  props: React.ComponentProps<typeof BaseTableHeader>,
-) {
-  return <BaseTableHeader {...props} />;
+function ToolboxTableHeader({
+  className,
+  ...props
+}: React.ComponentProps<typeof BaseTableHeader>) {
+  return (
+    <BaseTableHeader
+      className={cn("bg-background sticky top-0 z-10", className)}
+      {...props}
+    />
+  );
 }
 
 function ToolboxTableHeaderRow({

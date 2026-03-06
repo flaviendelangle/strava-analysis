@@ -109,6 +109,7 @@ export function getModelFromStravaActivity(activity: StravaActivity) {
     calories: activity.calories ?? undefined,
     movingTime: activity.moving_time,
     elapsedTime: activity.elapsed_time,
+    workoutType: activity.workout_type ?? undefined,
     mapPolyline: activity.map?.summary_polyline ?? undefined,
   };
 }

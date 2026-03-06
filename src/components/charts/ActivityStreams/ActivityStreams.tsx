@@ -60,7 +60,7 @@ function parseStreamData(data: string): number[] | null {
 }
 
 export default function ActivityStreams(props: ActivityStreamsProps) {
-  const { stravaId, onHoverPositionChange } = props;
+  const { stravaId, onHoverPositionChange, hiddenStreams } = props;
   const athleteId = useAthleteId();
   const tokens = useChartTokens();
 
@@ -119,7 +119,11 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
       ? parseStreamData(distanceStream.data)
       : null;
 
-    const parsed = STREAM_DEFS.map((def) => {
+    const defs = hiddenStreams
+      ? STREAM_DEFS.filter((d) => !hiddenStreams.includes(d.type))
+      : STREAM_DEFS;
+
+    const parsed = defs.map((def) => {
       const stream = streamsData.find((element) => element.type === def.type);
       if (!stream) return null;
 
@@ -144,7 +148,7 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
     );
 
     return { parsed, distanceData };
-  }, [streamsData]);
+  }, [streamsData, hiddenStreams]);
 
   // Assemble final streams with color tokens — cheap, re-runs on theme change
   const { streams, distanceData } = React.useMemo(() => {
@@ -233,4 +237,5 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
 interface ActivityStreamsProps {
   stravaId: number;
   onHoverPositionChange?: (position: [number, number] | null) => void;
+  hiddenStreams?: string[];
 }

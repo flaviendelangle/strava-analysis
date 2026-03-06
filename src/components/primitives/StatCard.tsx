@@ -28,7 +28,7 @@ export function StatCard({
   const isHero = variant === "hero";
 
   const card = (
-    <div className={cn(className)}>
+    <div className={cn("w-fit", className)}>
       <div className="flex items-center gap-1.5">
         {Icon && (
           <Icon

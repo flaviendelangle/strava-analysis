@@ -127,6 +127,7 @@ async function syncActivitiesPhase(
           movingTime: sql`excluded.moving_time`,
           elapsedTime: sql`excluded.elapsed_time`,
           mapPolyline: sql`excluded.map_polyline`,
+          workoutType: sql`excluded.workout_type`,
           ...(options.detectUpdates
             ? {
                 areStreamsLoaded: sql`CASE

@@ -10,6 +10,7 @@ import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -85,12 +86,21 @@ const columns = [
     header: () => <span>Sport</span>,
     size: 2,
     meta: { minWidth: 155 },
+    filterFn: (row, _columnId, filterValue: string[]) => {
+      if (filterValue.length === 0) return true;
+      return filterValue.includes(row.getValue("type"));
+    },
   }),
   columnHelper.accessor("name", {
     cell: (info) => <span className="truncate">{info.getValue()}</span>,
     header: () => <span>Title</span>,
     size: 3,
     meta: { minWidth: 140 },
+    filterFn: (row, _columnId, filterValue: string) => {
+      if (!filterValue) return true;
+      const name: string = row.getValue("name");
+      return name.toLowerCase().includes(filterValue.toLowerCase());
+    },
   }),
   columnHelper.accessor("startDateLocal", {
     cell: (info) => <span className="truncate">{format(new Date(info.getValue()), "P p", { locale: enGB })}</span>,
@@ -139,7 +149,7 @@ const ROW_HEIGHT = 48;
 const VIRTUALIZER_OVERSCAN = 20;
 const SKELETON_ROW_COUNT = 25;
 
-export function ActivitiesTable() {
+export function ActivitiesTable(props: { nameFilter?: string }) {
   const activitiesQuery = useActivitiesQuery();
   const tableContainerRef = React.useRef<HTMLDivElement>(null);
 
@@ -148,10 +158,17 @@ export function ActivitiesTable() {
     [activitiesQuery.data],
   );
 
+  const columnFilters = React.useMemo(
+    () => (props.nameFilter ? [{ id: "name", value: props.nameFilter }] : []),
+    [props.nameFilter],
+  );
+
   const table = useReactTable({
     data,
     columns,
+    state: { columnFilters },
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     initialState: {
       sorting: [{ id: "startDateLocal", desc: true }],
@@ -168,87 +185,89 @@ export function ActivitiesTable() {
   });
 
   return (
-    <Table
-      containerRef={tableContainerRef}
-      containerClassName="border-border min-h-0 flex-1 md:border"
-      className="text-muted-foreground grid min-w-[700px] text-left text-sm"
-    >
-      <TableHeader className="bg-accent text-muted-foreground sticky top-0 z-10 grid text-xs uppercase">
-        {table.getHeaderGroups().map((headerGroup) => (
-          <TableRow key={headerGroup.id} className="flex w-full">
-            {headerGroup.headers.map((header) => (
-              <TableHead
-                key={header.id}
-                onClick={header.column.getToggleSortingHandler()}
-                title={
-                  header.column.getCanSort()
-                    ? header.column.getNextSortingOrder() === "asc"
-                      ? "Sort ascending"
-                      : header.column.getNextSortingOrder() === "desc"
-                        ? "Sort descending"
-                        : "Clear sort"
-                    : undefined
-                }
-                className="flex min-w-0 items-center px-3 py-3 md:px-6"
-                style={{ flex: header.column.getSize(), minWidth: (header.column.columnDef.meta as any)?.minWidth }}
-              >
-                {header.isPlaceholder ? null : (
-                  <div
-                    className="inline-flex items-center data-[sortable=true]:cursor-pointer"
-                    data-sortable={header.column.getCanSort()}
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-                    {{
-                      asc: <span>&nbsp;&#9650;</span>,
-                      desc: <span>&nbsp;&#9660;</span>,
-                    }[header.column.getIsSorted() as string] ?? null}
-                  </div>
-                )}
-              </TableHead>
-            ))}
-          </TableRow>
-        ))}
-      </TableHeader>
-      <TableBody
-        className="relative grid"
-        style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <Table
+        containerRef={tableContainerRef}
+        containerClassName="border-border min-h-0 flex-1 md:border"
+        className="text-muted-foreground grid min-w-[700px] text-left text-sm"
       >
-        {activitiesQuery.isLoading
-          ? Array.from({ length: SKELETON_ROW_COUNT }).map((_, index) => (
-              <TableRow key={index} className="odd:bg-secondary flex h-12">
-                {table.getVisibleFlatColumns().map((col) => (
-                  <TableCell
-                    key={col.id}
-                    className="flex min-w-0 items-center px-3 md:px-6"
-                    style={{ flex: col.getSize(), minWidth: (col.columnDef.meta as any)?.minWidth }}
-                  >
-                    <div className="bg-border h-4 w-32 animate-pulse" />
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
-          : rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const row = rows[virtualRow.index];
-              return (
-                <ActivityRow
-                  key={row.id}
-                  row={row}
-                  index={virtualRow.index}
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: `${virtualRow.size}px`,
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
-                />
-              );
-            })}
-      </TableBody>
-    </Table>
+        <TableHeader className="bg-accent text-muted-foreground sticky top-0 z-10 grid text-xs uppercase">
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id} className="flex w-full">
+              {headerGroup.headers.map((header) => (
+                <TableHead
+                  key={header.id}
+                  onClick={header.column.getToggleSortingHandler()}
+                  title={
+                    header.column.getCanSort()
+                      ? header.column.getNextSortingOrder() === "asc"
+                        ? "Sort ascending"
+                        : header.column.getNextSortingOrder() === "desc"
+                          ? "Sort descending"
+                          : "Clear sort"
+                      : undefined
+                  }
+                  className="flex min-w-0 items-center px-3 py-3 md:px-6"
+                  style={{ flex: header.column.getSize(), minWidth: (header.column.columnDef.meta as any)?.minWidth }}
+                >
+                  {header.isPlaceholder ? null : (
+                    <div
+                      className="inline-flex items-center data-[sortable=true]:cursor-pointer"
+                      data-sortable={header.column.getCanSort()}
+                    >
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
+                      {{
+                        asc: <span>&nbsp;&#9650;</span>,
+                        desc: <span>&nbsp;&#9660;</span>,
+                      }[header.column.getIsSorted() as string] ?? null}
+                    </div>
+                  )}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody
+          className="relative grid"
+          style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+        >
+          {activitiesQuery.isLoading
+            ? Array.from({ length: SKELETON_ROW_COUNT }).map((_, index) => (
+                <TableRow key={index} className="odd:bg-secondary flex h-12">
+                  {table.getVisibleFlatColumns().map((col) => (
+                    <TableCell
+                      key={col.id}
+                      className="flex min-w-0 items-center px-3 md:px-6"
+                      style={{ flex: col.getSize(), minWidth: (col.columnDef.meta as any)?.minWidth }}
+                    >
+                      <div className="bg-border h-4 w-32 animate-pulse" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            : rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const row = rows[virtualRow.index];
+                return (
+                  <ActivityRow
+                    key={row.id}
+                    row={row}
+                    index={virtualRow.index}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  />
+                );
+              })}
+        </TableBody>
+      </Table>
+    </div>
   );
 }

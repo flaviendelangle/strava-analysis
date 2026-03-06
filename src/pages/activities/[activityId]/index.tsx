@@ -1,7 +1,9 @@
 import * as React from "react";
 
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, Maximize2, Minimize2 } from "lucide-react";
 import Link from "next/link";
+
+import type { Activity } from "@server/db/types";
 
 import { ActivityActionsMenu } from "~/components/ActivityActionsMenu";
 import { ActivityMap } from "~/components/ActivityMap";
@@ -10,6 +12,7 @@ import { ActivityStreams } from "~/components/charts/ActivityStreams";
 import { PowerCurve } from "~/components/charts/PowerCurve";
 import { Toolbar } from "~/components/settings/SettingsToolbar";
 import { useTypedParams } from "~/hooks/useTypedParams";
+import { cn } from "~/lib/utils";
 import { NextPageWithLayout } from "~/pages/_app";
 import { formatActivityType } from "~/utils/format";
 import { getSportConfig } from "~/utils/sportConfig";
@@ -36,6 +39,7 @@ function ActivityPageContent({ stravaId }: { stravaId: number }) {
   const [hoverPosition, setHoverPosition] = React.useState<
     [number, number] | null
   >(null);
+  const [mapExpanded, setMapExpanded] = React.useState(false);
 
   const [activity] = trpc.activities.get.useSuspenseQuery({ stravaId });
   const [streamsData] = trpc.activityStreams.getStreams.useSuspenseQuery({
@@ -56,6 +60,18 @@ function ActivityPageContent({ stravaId }: { stravaId: number }) {
       </div>
     );
   }
+
+  const hasMap = !!activity.mapPolyline;
+  const hasPower =
+    activity.averageWatts != null &&
+    (activity.type === "Ride" || activity.type === "VirtualRide");
+
+  const hiddenStreams = React.useMemo(() => {
+    const hidden: string[] = [];
+    if (activity.distance === 0) hidden.push("velocity_smooth");
+    if (activity.totalElevationGain === 0) hidden.push("altitude");
+    return hidden;
+  }, [activity.distance, activity.totalElevationGain]);
 
   return (
     <>
@@ -83,35 +99,57 @@ function ActivityPageContent({ stravaId }: { stravaId: number }) {
         </span>
       </Toolbar>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 sm:gap-6 sm:p-6">
-        <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row">
-          <div className="lg:flex-1">
-            <ActivityStats activity={activity} />
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
+        {hasMap && mapExpanded && (
+          <div className="absolute inset-0 z-10">
+            <ActivityMap
+              activity={activity}
+              highlightPosition={hoverPosition}
+              routePositions={latlngRoute}
+            />
+            <button
+              onClick={() => setMapExpanded(false)}
+              className="bg-background/80 hover:bg-background text-foreground absolute right-3 top-3 z-20 flex size-8 items-center justify-center rounded-lg backdrop-blur-sm transition-colors"
+              title="Collapse map"
+            >
+              <Minimize2 className="size-4" />
+            </button>
           </div>
-
-          {activity.mapPolyline && (
-            <div className="border-border h-96 w-full overflow-hidden rounded-xl border lg:h-auto lg:min-h-96 lg:flex-1">
-              <ActivityMap
-                activity={activity}
-                highlightPosition={hoverPosition}
-                routePositions={latlngRoute}
-              />
-            </div>
-          )}
+        )}
+        {hasMap && !mapExpanded && (
+          <div className="relative h-[50vh] min-h-80 max-h-[600px] w-full">
+            <ActivityMap
+              activity={activity}
+              highlightPosition={hoverPosition}
+              routePositions={latlngRoute}
+            />
+            <div className="from-background pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t to-transparent" />
+            <button
+              onClick={() => setMapExpanded(true)}
+              className="bg-background/80 hover:bg-background text-foreground absolute right-3 top-3 flex size-8 items-center justify-center rounded-lg backdrop-blur-sm transition-colors"
+              title="Expand map"
+            >
+              <Maximize2 className="size-4" />
+            </button>
+          </div>
+        )}
+        <div className="mx-auto flex w-full max-w-screen-xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+          <ActivityStats activity={activity} />
+          <ActivityStreams
+            stravaId={activity.stravaId}
+            onHoverPositionChange={setHoverPosition}
+            hiddenStreams={hiddenStreams}
+          />
+          {hasPower && <PowerCurve stravaId={activity.stravaId} />}
         </div>
-
-        <ActivityStreams
-          stravaId={activity.stravaId}
-          onHoverPositionChange={setHoverPosition}
-        />
-        {activity.averageWatts != null &&
-          (activity.type === "Ride" || activity.type === "VirtualRide") && (
-            <PowerCurve stravaId={activity.stravaId} />
-          )}
       </div>
     </>
   );
 }
+
+// ──────────────────────────────────────────────
+// Skeleton
+// ──────────────────────────────────────────────
 
 function ActivityPageSkeleton() {
   return (
@@ -123,42 +161,38 @@ function ActivityPageSkeleton() {
         <div className="bg-accent h-5 w-40 animate-pulse rounded" />
       </Toolbar>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 sm:gap-6 sm:p-6">
-        <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row">
-          <div className="lg:flex-1">
-            <div className="border-border bg-card rounded-xl border p-5">
-              <div className="bg-accent mb-4 h-7 w-36 animate-pulse rounded" />
-              {/* Hero row skeleton */}
-              <div className="border-border mb-4 grid grid-cols-3 gap-2.5 border-b pb-4">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i}>
-                    <div className="bg-accent mb-1 h-3 w-16 animate-pulse rounded" />
-                    <div className="bg-accent mt-1 h-8 w-24 animate-pulse rounded" />
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <div className="bg-secondary h-[50vh] min-h-80 max-h-[600px] w-full animate-pulse" />
+        <div className="mx-auto flex w-full max-w-screen-xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+          <div className="border-border bg-card rounded-xl border p-5">
+            <div className="bg-accent mb-4 h-7 w-36 animate-pulse rounded" />
+            <div className="border-border mb-4 grid grid-cols-3 gap-2.5 border-b pb-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i}>
+                  <div className="bg-accent mb-1 h-3 w-16 animate-pulse rounded" />
+                  <div className="bg-accent mt-1 h-8 w-24 animate-pulse rounded" />
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-col gap-4">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i}>
+                  <div className="bg-accent mb-2 h-3 w-24 animate-pulse rounded" />
+                  <div className="grid grid-cols-2 gap-x-2 md:grid-cols-3">
+                    {Array.from({ length: 3 }).map((_, j) => (
+                      <div key={j}>
+                        <div className="bg-accent mb-1 h-3 w-14 animate-pulse rounded" />
+                        <div className="bg-accent h-7 w-20 animate-pulse rounded" />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              {/* Section skeletons */}
-              <div className="flex flex-col gap-4">
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <div key={i}>
-                    <div className="bg-accent mb-2 h-3 w-24 animate-pulse rounded" />
-                    <div className="grid grid-cols-2 gap-x-2 md:grid-cols-3">
-                      {Array.from({ length: 3 }).map((_, j) => (
-                        <div key={j}>
-                          <div className="bg-accent mb-1 h-3 w-14 animate-pulse rounded" />
-                          <div className="bg-accent h-7 w-20 animate-pulse rounded" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="border-border bg-secondary h-96 w-full animate-pulse rounded-xl border lg:h-auto lg:min-h-96 lg:flex-1" />
+          <div className="bg-card h-64 animate-pulse rounded-xl" />
+          <div className="bg-secondary h-96 animate-pulse rounded-xl" />
         </div>
-        <div className="bg-card h-64 animate-pulse rounded-xl" />
-        <div className="bg-secondary h-96 animate-pulse rounded-xl" />
       </div>
     </>
   );

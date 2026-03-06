@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { useActivityFilter } from "~/hooks/useActivityFilter";
 import { useAthleteId } from "~/hooks/useAthleteId";
 import { useIsMobile } from "~/hooks/useIsMobile";
 import { CHART_MARGINS, AXIS_SIZE, formatCompact, useChartTokens } from "~/lib/chartTokens";
@@ -91,6 +92,7 @@ const DEFAULT_RANGES: DateRange[] = [presetToRange("1y")];
 
 interface PowerCurveProps {
   activityTypes?: string[];
+  workoutTypes?: number[];
   stravaId?: number;
 }
 
@@ -208,13 +210,14 @@ function PowerCurveTooltip() {
 
 const PowerCurve = React.memo(function PowerCurve({
   activityTypes,
+  workoutTypes,
   stravaId,
 }: PowerCurveProps) {
   if (stravaId != null) {
     return <SingleActivityPowerCurve stravaId={stravaId} />;
   }
 
-  return <AggregatedPowerCurve activityTypes={activityTypes} />;
+  return <AggregatedPowerCurve activityTypes={activityTypes} workoutTypes={workoutTypes} />;
 });
 
 export default PowerCurve;
@@ -287,10 +290,12 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
 
 // --- Aggregated mode with multi-range support ---
 
-function AggregatedPowerCurve({ activityTypes }: { activityTypes?: string[] }) {
+function AggregatedPowerCurve({ activityTypes, workoutTypes: workoutTypesProp }: { activityTypes?: string[]; workoutTypes?: number[] }) {
   const tokens = useChartTokens();
   const isMobile = useIsMobile();
   const athleteId = useAthleteId();
+  const filter = useActivityFilter();
+  const workoutTypes = workoutTypesProp ?? (filter.workoutTypes.length > 0 ? filter.workoutTypes : undefined);
   const [ranges, setRanges] = React.useState<DateRange[]>(DEFAULT_RANGES);
 
   const addRange = (range: DateRange) => {
@@ -311,6 +316,7 @@ function AggregatedPowerCurve({ activityTypes }: { activityTypes?: string[] }) {
         {
           athleteId: athleteId!,
           activityTypes,
+          workoutTypes,
           dateFrom: range.dateFrom,
           dateTo: range.dateTo,
         },
@@ -392,6 +398,7 @@ function AggregatedPowerCurve({ activityTypes }: { activityTypes?: string[] }) {
             onRemove={removeRange}
             athleteId={athleteId}
             activityTypes={activityTypes}
+            workoutTypes={workoutTypes}
           />
           <div className="text-muted-foreground flex flex-1 items-center justify-center">
             No power data available
@@ -411,6 +418,7 @@ function AggregatedPowerCurve({ activityTypes }: { activityTypes?: string[] }) {
           onRemove={removeRange}
           athleteId={athleteId}
           activityTypes={activityTypes}
+          workoutTypes={workoutTypes}
         />
         <div className="min-h-0 flex-1">
           <ActivityMetadataContext.Provider value={activityMetadata}>
@@ -454,6 +462,7 @@ function Toolbar({
   onRemove,
   athleteId,
   activityTypes,
+  workoutTypes,
 }: {
   ranges: DateRange[];
   onAddPreset: (range: DateRange) => void;
@@ -461,6 +470,7 @@ function Toolbar({
   onRemove: (id: string) => void;
   athleteId: number | null | undefined;
   activityTypes?: string[];
+  workoutTypes?: number[];
 }) {
   const tokens = useChartTokens();
   return (
@@ -479,6 +489,7 @@ function Toolbar({
         onSelect={onAddPreset}
         athleteId={athleteId}
         activityTypes={activityTypes}
+        workoutTypes={workoutTypes}
       />
       <CustomRangePopover onAdd={onAddCustom} />
     </div>
@@ -516,13 +527,15 @@ function PresetSelect({
   onSelect,
   athleteId,
   activityTypes,
+  workoutTypes,
 }: {
   onSelect: (range: DateRange) => void;
   athleteId: number | null | undefined;
   activityTypes?: string[];
+  workoutTypes?: number[];
 }) {
   const { data: years } = trpc.analytics.getPowerCurveYears.useQuery(
-    { athleteId: athleteId!, activityTypes },
+    { athleteId: athleteId!, activityTypes, workoutTypes },
     { enabled: athleteId != null },
   );
 

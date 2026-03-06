@@ -1,4 +1,4 @@
-import { and, eq, getTableColumns, inArray } from "drizzle-orm";
+import { and, eq, getTableColumns, gte, inArray, isNotNull, lte } from "drizzle-orm";
 import { z } from "zod";
 
 import { activities } from "../../db/schema";
@@ -10,7 +10,10 @@ export const activitiesRouter = router({
       z.object({
         athleteId: z.number(),
         activityTypes: z.array(z.string()).optional(),
+        workoutTypes: z.array(z.number()).optional(),
         includeMap: z.boolean().optional(),
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
       }),
     )
     .use(validateAthleteOwnership)
@@ -20,6 +23,15 @@ export const activitiesRouter = router({
       if (input.activityTypes && input.activityTypes.length > 0) {
         conditions.push(inArray(activities.type, input.activityTypes));
       }
+      if (input.workoutTypes && input.workoutTypes.length > 0) {
+        conditions.push(inArray(activities.workoutType, input.workoutTypes));
+      }
+      if (input.dateFrom) {
+        conditions.push(gte(activities.startDate, input.dateFrom));
+      }
+      if (input.dateTo) {
+        conditions.push(lte(activities.startDate, input.dateTo));
+      }
 
       // Run both queries in parallel
       const allTypesPromise = ctx.db
@@ -28,27 +40,35 @@ export const activitiesRouter = router({
         .where(eq(activities.athlete, input.athleteId))
         .then((rows) => rows.map((r) => r.type).sort());
 
+      const allWorkoutTypesPromise = ctx.db
+        .selectDistinct({ workoutType: activities.workoutType })
+        .from(activities)
+        .where(and(eq(activities.athlete, input.athleteId), isNotNull(activities.workoutType)))
+        .then((rows) => rows.map((r) => r.workoutType as number).sort((a, b) => a - b));
+
       if (input.includeMap) {
-        const [filtered, allTypes] = await Promise.all([
+        const [filtered, allTypes, allWorkoutTypes] = await Promise.all([
           ctx.db
             .select()
             .from(activities)
             .where(and(...conditions)),
           allTypesPromise,
+          allWorkoutTypesPromise,
         ]);
-        return { activities: filtered, allTypes };
+        return { activities: filtered, allTypes, allWorkoutTypes };
       }
 
       // Exclude mapPolyline at query level when not needed
       const { mapPolyline: _mapPolyline, ...columnsWithoutMap } =
         getTableColumns(activities);
 
-      const [filtered, allTypes] = await Promise.all([
+      const [filtered, allTypes, allWorkoutTypes] = await Promise.all([
         ctx.db
           .select(columnsWithoutMap)
           .from(activities)
           .where(and(...conditions)),
         allTypesPromise,
+        allWorkoutTypesPromise,
       ]);
 
       return {
@@ -57,6 +77,7 @@ export const activitiesRouter = router({
           mapPolyline: null as string | null,
         })),
         allTypes,
+        allWorkoutTypes,
       };
     }),
 
