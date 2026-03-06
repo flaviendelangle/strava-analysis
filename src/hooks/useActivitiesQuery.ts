@@ -6,11 +6,11 @@ import { useActivityFilter } from "./useActivityFilter";
 import { useAthleteId } from "./useAthleteId";
 
 export function useActivitiesQuery() {
-  const { activityTypes, workoutTypes, dateFrom, dateTo } = useActivityFilter();
+  const { activityTypes, workoutTypes, timePeriodId } = useActivityFilter();
   const athleteId = useAthleteId();
 
   const result = trpc.activities.list.useQuery(
-    { athleteId: athleteId!, activityTypes, workoutTypes, dateFrom, dateTo },
+    { athleteId: athleteId!, activityTypes, workoutTypes, timePeriodId },
     { enabled: athleteId != null, placeholderData: keepPreviousData },
   );
 

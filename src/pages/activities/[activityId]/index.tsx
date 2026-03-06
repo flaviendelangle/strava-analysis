@@ -8,6 +8,7 @@ import type { Activity } from "@server/db/types";
 import { ActivityActionsMenu } from "~/components/ActivityActionsMenu";
 import { ActivityMap } from "~/components/ActivityMap";
 import { ActivityStats } from "~/components/ActivityStats";
+import { ElevationProfile } from "~/components/ElevationProfile";
 import { ActivityStreams } from "~/components/charts/ActivityStreams";
 import { PowerCurve } from "~/components/charts/PowerCurve";
 import { Toolbar } from "~/components/settings/SettingsToolbar";
@@ -51,6 +52,20 @@ function ActivityPageContent({ stravaId }: { stravaId: number }) {
     const stream = streamsData.find((s) => s.type === "latlng");
     if (!stream) return null;
     return JSON.parse(stream.data) as [number, number][];
+  }, [streamsData]);
+
+  const altitudeData = React.useMemo(() => {
+    if (!streamsData) return null;
+    const stream = streamsData.find((s) => s.type === "altitude");
+    if (!stream) return null;
+    return JSON.parse(stream.data) as number[];
+  }, [streamsData]);
+
+  const distanceData = React.useMemo(() => {
+    if (!streamsData) return null;
+    const stream = streamsData.find((s) => s.type === "distance");
+    if (!stream) return null;
+    return JSON.parse(stream.data) as number[];
   }, [streamsData]);
 
   if (!activity) {
@@ -101,19 +116,29 @@ function ActivityPageContent({ stravaId }: { stravaId: number }) {
 
       <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
         {hasMap && mapExpanded && (
-          <div className="absolute inset-0 z-10">
-            <ActivityMap
-              activity={activity}
-              highlightPosition={hoverPosition}
-              routePositions={latlngRoute}
-            />
-            <button
-              onClick={() => setMapExpanded(false)}
-              className="bg-background/80 hover:bg-background text-foreground absolute right-3 top-3 z-20 flex size-8 items-center justify-center rounded-lg backdrop-blur-sm transition-colors"
-              title="Collapse map"
-            >
-              <Minimize2 className="size-4" />
-            </button>
+          <div className="bg-background fixed inset-0 z-50 flex flex-col">
+            <div className="relative min-h-0 flex-1">
+              <ActivityMap
+                activity={activity}
+                highlightPosition={hoverPosition}
+                routePositions={latlngRoute}
+              />
+              <button
+                onClick={() => setMapExpanded(false)}
+                className="bg-background/80 hover:bg-background text-foreground absolute right-3 top-3 z-20 flex size-8 items-center justify-center rounded-lg backdrop-blur-sm transition-colors"
+                title="Collapse map"
+              >
+                <Minimize2 className="size-4" />
+              </button>
+            </div>
+            {altitudeData && (
+              <ElevationProfile
+                altitudeData={altitudeData}
+                distanceData={distanceData}
+                latlngData={latlngRoute}
+                onHoverPositionChange={setHoverPosition}
+              />
+            )}
           </div>
         )}
         {hasMap && !mapExpanded && (

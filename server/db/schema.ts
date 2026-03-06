@@ -136,6 +136,19 @@ export const riderSettings = pgTable(
   (t) => [uniqueIndex("rider_settings_athlete_idx").on(t.athlete)],
 );
 
+export const timePeriods = pgTable(
+  "time_periods",
+  {
+    id: serial("id").primaryKey(),
+    athlete: integer("athlete").notNull(),
+    name: text("name").notNull(),
+    startDate: text("start_date").notNull(),
+    endDate: text("end_date").notNull(),
+    sportTypes: jsonb("sport_types").$type<string[]>(),
+  },
+  (t) => [index("time_periods_athlete_idx").on(t.athlete)],
+);
+
 export const syncJobs = pgTable(
   "sync_jobs",
   {

@@ -3,6 +3,7 @@ import * as React from "react";
 import { ActivityIcon, CogIcon, GaugeIcon, TrendingUpIcon, TimerIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useRouter } from "next/router";
 
 import { LoggedInLayout } from "~/components/layouts/LoggedInLayout";
 import { SharedLayout } from "~/components/layouts/SharedLayout";
@@ -31,8 +32,18 @@ const TOOLS = [
 type ToolId = (typeof TOOLS)[number]["id"];
 
 const ToolboxPage: NextPageWithLayout = () => {
-  const [activeTool, setActiveTool] = React.useState<ToolId>("pace-calculator");
+  const router = useRouter();
+  const rawTab = Array.isArray(router.query.tab) ? router.query.tab[0] : undefined;
+  const activeTool = TOOLS.some((t) => t.id === rawTab) ? (rawTab as ToolId) : undefined;
   const { status } = useSession();
+
+  React.useEffect(() => {
+    if (router.isReady && !activeTool) {
+      void router.replace(`/toolbox/${TOOLS[0].id}`);
+    }
+  }, [router, activeTool]);
+
+  if (!activeTool) return null;
 
   return (
     <>
@@ -53,7 +64,7 @@ const ToolboxPage: NextPageWithLayout = () => {
         <div className="md:hidden">
           <Select
             value={activeTool}
-            onValueChange={(val) => setActiveTool(val as ToolId)}
+            onValueChange={(val) => router.push(`/toolbox/${val}`)}
           >
             <SelectTrigger size="sm">
               <SelectValue>
@@ -97,7 +108,7 @@ const ToolboxPage: NextPageWithLayout = () => {
                     ? "bg-primary/10 text-primary"
                     : undefined
                 }
-                onClick={() => setActiveTool(tool.id)}
+                render={<Link href={`/toolbox/${tool.id}`} />}
               >
                 <Icon className="size-4" />
                 {tool.label}

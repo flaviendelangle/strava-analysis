@@ -227,9 +227,20 @@ export default PowerCurve;
 function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
   const tokens = useChartTokens();
   const isMobile = useIsMobile();
+  const athleteId = useAthleteId();
+  const [showAllTime, setShowAllTime] = React.useState(true);
+
   const { data: activity } = trpc.activities.get.useQuery({ stravaId });
 
-  const data = React.useMemo(() => {
+  const { data: allTimeBests } = trpc.analytics.getPowerCurve.useQuery(
+    {
+      athleteId: athleteId!,
+      activityTypes: ["Ride", "VirtualRide"],
+    },
+    { enabled: athleteId != null && showAllTime },
+  );
+
+  const activityData = React.useMemo(() => {
     const powerBests = activity?.powerBests;
     if (!powerBests) return null;
     return Object.entries(powerBests)
@@ -240,7 +251,62 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
       .sort((a, b) => a.duration - b.duration);
   }, [activity?.powerBests]);
 
-  if (!data || data.length === 0) {
+  const { xData, series, activityMetadata } = React.useMemo(() => {
+    if (!activityData || activityData.length === 0) {
+      return { xData: [] as number[], series: [] as any[], activityMetadata: {} as ActivityMetadataMap };
+    }
+
+    const activityByDuration = new Map(activityData.map((d) => [d.duration, d.watts]));
+
+    const allTimeByDuration = new Map(
+      (allTimeBests ?? []).map((d) => [
+        d.duration,
+        { watts: d.watts, activityStravaId: d.activityStravaId, activityName: d.activityName },
+      ]),
+    );
+
+    const durationSet = new Set<number>();
+    for (const d of activityData) durationSet.add(d.duration);
+    if (showAllTime && allTimeBests) {
+      for (const d of allTimeBests) durationSet.add(d.duration);
+    }
+    const durations = [...durationSet].sort((a, b) => a - b);
+
+    const metadata: ActivityMetadataMap = {};
+
+    const chartSeries: any[] = [
+      {
+        id: "activity",
+        data: durations.map((d) => activityByDuration.get(d) ?? null),
+        label: "This Activity",
+        color: tokens.palette[1],
+        showMark: false,
+        curve: "monotoneX" as const,
+      },
+    ];
+
+    if (showAllTime && allTimeBests) {
+      const allTimeSeriesId = "all-time";
+      metadata[allTimeSeriesId] = durations.map((d) => {
+        const entry = allTimeByDuration.get(d);
+        if (!entry) return null;
+        return { activityStravaId: entry.activityStravaId, activityName: entry.activityName };
+      });
+
+      chartSeries.push({
+        id: allTimeSeriesId,
+        data: durations.map((d) => allTimeByDuration.get(d)?.watts ?? null),
+        label: "All-Time Best",
+        color: tokens.palette[0],
+        showMark: false,
+        curve: "monotoneX" as const,
+      });
+    }
+
+    return { xData: durations, series: chartSeries, activityMetadata: metadata };
+  }, [activityData, allTimeBests, showAllTime, tokens.palette]);
+
+  if (xData.length === 0) {
     return <EmptyChart />;
   }
 
@@ -249,39 +315,44 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
       <div className="bg-card flex h-96 w-full flex-col rounded-md">
         <div className="border-border flex items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
           <h3 className="shrink-0 text-xs font-medium sm:text-sm">Power Curve</h3>
+          <div className="bg-border mx-1 h-4 w-px" />
+          <label className="text-muted-foreground flex items-center gap-1.5 text-xs">
+            <input
+              type="checkbox"
+              checked={showAllTime}
+              onChange={(e) => setShowAllTime(e.target.checked)}
+              className="accent-primary size-3.5"
+            />
+            vs All-Time
+          </label>
         </div>
         <div className="min-h-0 flex-1">
-          <LineChart
-            xAxis={[
-              {
-                scaleType: "log",
-                data: data.map((d) => d.duration),
-                valueFormatter: (value: number) => formatDuration(value),
-                label: isMobile ? undefined : "Duration",
-                height: isMobile ? AXIS_SIZE.mobile.height : AXIS_SIZE.desktop.height,
-              },
-            ]}
-            yAxis={[
-              {
-                label: isMobile ? undefined : "Watts",
-                valueFormatter: (value: number) =>
-                  isMobile ? formatCompact(value) : `${Math.round(value)} W`,
-                width: isMobile ? AXIS_SIZE.mobile.width : AXIS_SIZE.desktop.width,
-              },
-            ]}
-            series={[
-              {
-                data: data.map((d) => d.watts),
-                showMark: false,
-                color: tokens.palette[1],
-                curve: "monotoneX",
-                label: "Max Average Power",
-              },
-            ]}
-            grid={{ horizontal: true }}
-            margin={isMobile ? CHART_MARGINS.standardMobile : CHART_MARGINS.standard}
-            hideLegend={isMobile}
-          />
+          <ActivityMetadataContext.Provider value={activityMetadata}>
+            <LineChart
+              xAxis={[
+                {
+                  scaleType: "log",
+                  data: xData,
+                  valueFormatter: (value: number) => formatDuration(value),
+                  label: isMobile ? undefined : "Duration",
+                  height: isMobile ? AXIS_SIZE.mobile.height : AXIS_SIZE.desktop.height,
+                },
+              ]}
+              yAxis={[
+                {
+                  label: isMobile ? undefined : "Watts",
+                  valueFormatter: (value: number) =>
+                    isMobile ? formatCompact(value) : `${Math.round(value)} W`,
+                  width: isMobile ? AXIS_SIZE.mobile.width : AXIS_SIZE.desktop.width,
+                },
+              ]}
+              series={series}
+              grid={{ horizontal: true }}
+              margin={isMobile ? CHART_MARGINS.standardMobile : CHART_MARGINS.standard}
+              hideLegend={isMobile}
+              slots={{ tooltip: PowerCurveTooltip }}
+            />
+          </ActivityMetadataContext.Provider>
         </div>
       </div>
     </ChartThemeProvider>

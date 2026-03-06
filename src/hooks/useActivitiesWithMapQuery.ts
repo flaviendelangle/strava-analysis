@@ -6,7 +6,7 @@ import { useActivityFilter } from "./useActivityFilter";
 import { useAthleteId } from "./useAthleteId";
 
 export function useActivitiesWithMapQuery() {
-  const { activityTypes, workoutTypes, dateFrom, dateTo } = useActivityFilter();
+  const { activityTypes, workoutTypes, timePeriodId } = useActivityFilter();
   const athleteId = useAthleteId();
 
   const result = trpc.activities.list.useQuery(
@@ -14,8 +14,7 @@ export function useActivitiesWithMapQuery() {
       athleteId: athleteId!,
       activityTypes,
       workoutTypes,
-      dateFrom,
-      dateTo,
+      timePeriodId,
       includeMap: true,
     },
     { enabled: athleteId != null, placeholderData: keepPreviousData },

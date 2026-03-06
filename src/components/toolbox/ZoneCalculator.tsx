@@ -17,11 +17,11 @@ import { useRiderSettings } from "~/hooks/useRiderSettings";
 import { POWER_ZONES } from "~/sensors/types";
 
 const HR_ZONES = [
-  { name: "Zone 1", label: "Recovery", minPct: 0.5, maxPct: 0.6 },
-  { name: "Zone 2", label: "Aerobic", minPct: 0.6, maxPct: 0.7 },
-  { name: "Zone 3", label: "Tempo", minPct: 0.7, maxPct: 0.8 },
-  { name: "Zone 4", label: "Threshold", minPct: 0.8, maxPct: 0.9 },
-  { name: "Zone 5", label: "VO2max", minPct: 0.9, maxPct: 1.0 },
+  { name: "Recovery", minPct: 0.5, maxPct: 0.6, color: "#808080" },
+  { name: "Aerobic", minPct: 0.6, maxPct: 0.7, color: "#3B82F6" },
+  { name: "Tempo", minPct: 0.7, maxPct: 0.8, color: "#22C55E" },
+  { name: "Threshold", minPct: 0.8, maxPct: 0.9, color: "#EAB308" },
+  { name: "VO2max", minPct: 0.9, maxPct: 1.0, color: "#EF4444" },
 ] as const;
 
 type Tab = "power" | "heart-rate";
@@ -324,7 +324,7 @@ function HrZonesTable({
           </ToolboxTableHeaderRow>
         </ToolboxTableHeader>
         <ToolboxTableBody>
-          {HR_ZONES.map((zone) => {
+          {HR_ZONES.map((zone, i) => {
             const minBpm = Math.round(restingHr + hrReserve * zone.minPct);
             const maxBpm = Math.round(restingHr + hrReserve * zone.maxPct);
             const minPctLabel = Math.round(zone.minPct * 100);
@@ -332,8 +332,16 @@ function HrZonesTable({
 
             return (
               <ToolboxTableRow key={zone.name}>
-                <ToolboxTableCell first>{zone.name}</ToolboxTableCell>
-                <ToolboxTableCell>{zone.label}</ToolboxTableCell>
+                <ToolboxTableCell first>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="inline-block size-3 rounded-sm"
+                      style={{ backgroundColor: zone.color }}
+                    />
+                    <span>Z{i + 1}</span>
+                  </div>
+                </ToolboxTableCell>
+                <ToolboxTableCell>{zone.name}</ToolboxTableCell>
                 <ToolboxTableCell className="text-muted-foreground tabular-nums">
                   {minPctLabel}–{maxPctLabel}%
                 </ToolboxTableCell>

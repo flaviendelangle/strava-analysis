@@ -1,10 +1,20 @@
-import { XIcon } from "lucide-react";
-
+import { Button } from "~/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
 import { useActivityFilter } from "~/hooks/useActivityFilter";
+import { useAthleteId } from "~/hooks/useAthleteId";
 import { cn } from "~/lib/utils";
 import { formatActivityType } from "~/utils/format";
 import { getSportConfig } from "~/utils/sportConfig";
+import { trpc } from "~/utils/trpc";
+
+const NONE_VALUE = "__none__";
 
 const WORKOUT_TYPE_GROUPS: { label: string; types: number[] }[] = [
   { label: "Default", types: [0, 10] },
@@ -17,9 +27,47 @@ const WORKOUT_TYPE_GROUPS: { label: string; types: number[] }[] = [
 export function ActivityFilterPanel() {
   const { allTypes: activityTypes, allWorkoutTypes: workoutTypes } = useActivitiesQuery();
   const filter = useActivityFilter();
+  const athleteId = useAthleteId();
+  const { data: periods } = trpc.timePeriods.list.useQuery(
+    { athleteId: athleteId! },
+    { enabled: !!athleteId },
+  );
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Time period */}
+      {periods && periods.length > 0 && (
+        <div>
+          <div className="text-muted-foreground mb-2 text-xs font-medium">
+            Time Period
+          </div>
+          <Select
+            value={filter.timePeriodId ? String(filter.timePeriodId) : NONE_VALUE}
+            onValueChange={(val) => {
+              filter.setTimePeriodId(
+                val === NONE_VALUE ? undefined : Number(val),
+              );
+            }}
+          >
+            <SelectTrigger size="sm" className="w-full">
+              <SelectValue>
+                {filter.timePeriodId
+                  ? periods.find((p) => p.id === filter.timePeriodId)?.name ?? "All time"
+                  : "All time"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE_VALUE}>All time</SelectItem>
+              {periods.map((period) => (
+                <SelectItem key={period.id} value={String(period.id)}>
+                  {period.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {/* Sport types */}
       <div>
         <div className="text-muted-foreground mb-2 flex items-center justify-between text-xs font-medium">
@@ -104,63 +152,12 @@ export function ActivityFilterPanel() {
         </div>
       )}
 
-      {/* Date range */}
-      <div>
-        <div className="text-muted-foreground mb-2 flex items-center justify-between text-xs font-medium">
-          <span>Date Range</span>
-          {(filter.dateFrom || filter.dateTo) && (
-            <button
-              onClick={() => {
-                filter.setDateFrom(undefined);
-                filter.setDateTo(undefined);
-              }}
-              className="text-muted-foreground hover:text-foreground text-[10px]"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <label className="text-muted-foreground w-10 text-xs">From</label>
-            <div className="relative flex-1">
-              <input
-                type="date"
-                value={filter.dateFrom ?? ""}
-                onChange={(e) => filter.setDateFrom(e.target.value || undefined)}
-                className="border-border bg-background h-8 w-full rounded-md border px-2 text-xs"
-              />
-              {filter.dateFrom && (
-                <button
-                  onClick={() => filter.setDateFrom(undefined)}
-                  className="text-muted-foreground hover:text-foreground absolute right-6 top-1/2 -translate-y-1/2"
-                >
-                  <XIcon className="size-3" />
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-muted-foreground w-10 text-xs">To</label>
-            <div className="relative flex-1">
-              <input
-                type="date"
-                value={filter.dateTo ?? ""}
-                onChange={(e) => filter.setDateTo(e.target.value || undefined)}
-                className="border-border bg-background h-8 w-full rounded-md border px-2 text-xs"
-              />
-              {filter.dateTo && (
-                <button
-                  onClick={() => filter.setDateTo(undefined)}
-                  className="text-muted-foreground hover:text-foreground absolute right-6 top-1/2 -translate-y-1/2"
-                >
-                  <XIcon className="size-3" />
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Clear all */}
+      {filter.activeFilterCount > 0 && (
+        <Button variant="outline" size="sm" onClick={filter.clearAll}>
+          Clear all filters
+        </Button>
+      )}
     </div>
   );
 }

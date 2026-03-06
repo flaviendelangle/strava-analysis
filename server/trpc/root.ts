@@ -5,6 +5,7 @@ import { activityStreamsRouter } from "./routers/activityStreams";
 import { analyticsRouter } from "./routers/analytics";
 import { riderSettingsRouter } from "./routers/riderSettings";
 import { syncRouter } from "./routers/sync";
+import { timePeriodsRouter } from "./routers/timePeriods";
 import { uploadRouter } from "./routers/upload";
 
 export const appRouter = router({
@@ -14,6 +15,7 @@ export const appRouter = router({
   analytics: analyticsRouter,
   riderSettings: riderSettingsRouter,
   sync: syncRouter,
+  timePeriods: timePeriodsRouter,
   upload: uploadRouter,
 });
 

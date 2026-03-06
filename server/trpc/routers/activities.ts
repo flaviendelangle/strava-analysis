@@ -1,7 +1,7 @@
 import { and, eq, getTableColumns, gte, inArray, isNotNull, lte } from "drizzle-orm";
 import { z } from "zod";
 
-import { activities } from "../../db/schema";
+import { activities, timePeriods } from "../../db/schema";
 import { protectedProcedure, router, validateAthleteOwnership } from "../index";
 
 export const activitiesRouter = router({
@@ -12,25 +12,47 @@ export const activitiesRouter = router({
         activityTypes: z.array(z.string()).optional(),
         workoutTypes: z.array(z.number()).optional(),
         includeMap: z.boolean().optional(),
-        dateFrom: z.string().optional(),
-        dateTo: z.string().optional(),
+        timePeriodId: z.number().optional(),
       }),
     )
     .use(validateAthleteOwnership)
     .query(async ({ ctx, input }) => {
+      // Resolve time period constraints if selected
+      let periodDateFrom: string | undefined;
+      let periodDateTo: string | undefined;
+      let periodSportTypes: string[] | undefined;
+      if (input.timePeriodId) {
+        const period = await ctx.db.query.timePeriods.findFirst({
+          where: and(
+            eq(timePeriods.id, input.timePeriodId),
+            eq(timePeriods.athlete, input.athleteId),
+          ),
+        });
+        if (period) {
+          periodDateFrom = period.startDate;
+          periodDateTo = period.endDate;
+          if (period.sportTypes && period.sportTypes.length > 0) {
+            periodSportTypes = period.sportTypes;
+          }
+        }
+      }
+
       // Build filter conditions
       const conditions = [eq(activities.athlete, input.athleteId)];
       if (input.activityTypes && input.activityTypes.length > 0) {
         conditions.push(inArray(activities.type, input.activityTypes));
       }
+      if (periodSportTypes) {
+        conditions.push(inArray(activities.type, periodSportTypes));
+      }
       if (input.workoutTypes && input.workoutTypes.length > 0) {
         conditions.push(inArray(activities.workoutType, input.workoutTypes));
       }
-      if (input.dateFrom) {
-        conditions.push(gte(activities.startDate, input.dateFrom));
+      if (periodDateFrom) {
+        conditions.push(gte(activities.startDate, periodDateFrom));
       }
-      if (input.dateTo) {
-        conditions.push(lte(activities.startDate, input.dateTo));
+      if (periodDateTo) {
+        conditions.push(lte(activities.startDate, periodDateTo + "T23:59:59Z"));
       }
 
       // Run both queries in parallel
