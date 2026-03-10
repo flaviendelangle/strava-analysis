@@ -197,6 +197,8 @@ export function useChartTokens(): ChartTokens {
         cardBg: "#000",
       };
     }
+    // resolvedTheme is used as a dep to re-resolve CSS vars on theme change
+    void resolvedTheme;
     return resolveTokens();
   }, [resolvedTheme]);
 }

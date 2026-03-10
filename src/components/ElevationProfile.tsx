@@ -8,7 +8,8 @@ const CHART_HEIGHT = TOTAL_HEIGHT - X_AXIS_HEIGHT;
 const PADDING_TOP = 4;
 const LABEL_MARGIN = 40;
 
-const d3Bisector = bisector<number, number>((d) => d).left;
+const d3BisectorObj = bisector<number, number>((d: number) => d);
+const d3Bisector = (arr: ArrayLike<number>, x: number) => d3BisectorObj.left(arr, x);
 
 interface ElevationProfileProps {
   altitudeData: number[];
@@ -159,7 +160,7 @@ export function ElevationProfile({
     }
 
     return { paths: { linePath, areaPath }, yLabels: yLbls, xLabels: xLbls, hoverPoint: hp };
-  }, [altitudeData, distanceData, chartWidth, width, n, xMin, xRange, drawHeight, hoverIndex]);
+  }, [altitudeData, distanceData, chartWidth, width, n, xMin, xMax, xRange, drawHeight, hoverIndex]);
 
   return (
     <div

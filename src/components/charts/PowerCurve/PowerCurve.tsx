@@ -456,7 +456,7 @@ function AggregatedPowerCurve({ activityTypes, workoutTypes: workoutTypesProp }:
       series: chartSeries,
       activityMetadata: metadata,
     };
-  }, [queries, ranges]);
+  }, [queries, ranges, tokens.palette]);
 
   if (xData.length === 0) {
     return (

@@ -1,7 +1,7 @@
 import { and, asc, count, eq, gt, inArray, sql } from "drizzle-orm";
 import strava from "strava-v3";
 
-import { POWER_BEST_ACTIVITY_TYPES } from "../../src/utils/constants";
+import { POWER_BEST_ACTIVITY_TYPES } from "../../utils/constants";
 import type { Database } from "../db";
 import {
   activities,
@@ -88,7 +88,7 @@ async function syncActivitiesPhase(
     const job = await db.query.syncJobs.findFirst({
       where: eq(syncJobs.id, syncJobId),
     });
-    if (!job || job.status !== "fetching_activities") return;
+    if (job?.status !== "fetching_activities") return;
 
     const pageActivities = await strava.athlete.listActivities({
       access_token: accessToken,
@@ -192,7 +192,7 @@ async function syncStreamsPhase(
     const job = await db.query.syncJobs.findFirst({
       where: eq(syncJobs.id, syncJobId),
     });
-    if (!job || job.status !== "fetching_streams") return;
+    if (job?.status !== "fetching_streams") return;
 
     const accessToken = await getAccessToken(db, athleteId);
 
@@ -261,7 +261,7 @@ async function computeScoresPhase(
   const job = await db.query.syncJobs.findFirst({
     where: eq(syncJobs.id, syncJobId),
   });
-  if (!job || job.status !== "computing_scores") return;
+  if (job?.status !== "computing_scores") return;
 
   const settingsDoc = await db.query.riderSettings.findFirst({
     where: eq(riderSettings.athlete, athleteId),

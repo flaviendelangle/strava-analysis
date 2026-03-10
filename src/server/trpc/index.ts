@@ -5,7 +5,7 @@ import superjson from "superjson";
 
 import { TRPCError, initTRPC } from "@trpc/server";
 
-import { authOptions } from "../../src/pages/api/auth/[...nextauth]";
+import { authOptions } from "../../pages/api/auth/[...nextauth]";
 import { type Database, db } from "../db";
 
 export async function createContext(opts: {

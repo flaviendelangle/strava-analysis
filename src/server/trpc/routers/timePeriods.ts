@@ -136,7 +136,7 @@ export const timePeriodsRouter = router({
               ${sportFilter}
           `);
 
-          const row = rows[0]!;
+          const row = rows[0];
           return {
             period,
             activityCount: Number(row.activity_count),

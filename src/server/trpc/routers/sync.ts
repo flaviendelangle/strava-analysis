@@ -2,7 +2,7 @@ import { desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { activities, syncJobs } from "../../db/schema";
-import { type SyncMode, runSyncInBackground } from "../../lib/sync";
+import { runSyncInBackground } from "../../lib/sync";
 import {
   protectedProcedure,
   rateLimited,

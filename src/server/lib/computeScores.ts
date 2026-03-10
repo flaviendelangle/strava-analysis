@@ -2,7 +2,7 @@
  * Server-side score computation utilities.
  * Pure functions — no runtime dependencies.
  */
-import { resolveTimeline } from "../../src/utils/resolveTimeline";
+import { resolveTimeline } from "../../utils/resolveTimeline";
 
 /**
  * TRIMP gender-specific weighting constants (Banister, 1991).
@@ -169,7 +169,7 @@ export function computePowerBests(
 ): Record<number, number> {
   // Expand to per-second if time stream available, also filters out NaN
   const watts =
-    timeStream && timeStream.length === wattsStream.length
+    timeStream?.length === wattsStream.length
       ? expandToPerSecond(wattsStream, timeStream)
       : wattsStream.map((v) => (Number.isFinite(v) ? v : 0));
 

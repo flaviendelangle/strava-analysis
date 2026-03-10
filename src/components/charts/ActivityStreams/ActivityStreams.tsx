@@ -172,7 +172,7 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
     );
 
     return { streams: preparedStreams, distanceData: parsedStreams.distanceData };
-  }, [parsedStreams, activity, tokens.palette]);
+  }, [parsedStreams, activity, tokens.palette, tokens.paletteOklch.length]);
 
   const sportConfig = activity ? getSportConfig(activity.type) : null;
   const distanceAvailable = distanceData != null;

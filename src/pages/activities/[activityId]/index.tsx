@@ -3,8 +3,6 @@ import * as React from "react";
 import { ArrowLeftIcon, Maximize2, Minimize2 } from "lucide-react";
 import Link from "next/link";
 
-import type { Activity } from "@server/db/types";
-
 import { ActivityActionsMenu } from "~/components/ActivityActionsMenu";
 import { ActivityMap } from "~/components/ActivityMap";
 import { ActivityStats } from "~/components/ActivityStats";
@@ -13,7 +11,6 @@ import { ActivityStreams } from "~/components/charts/ActivityStreams";
 import { PowerCurve } from "~/components/charts/PowerCurve";
 import { Toolbar } from "~/components/settings/SettingsToolbar";
 import { useTypedParams } from "~/hooks/useTypedParams";
-import { cn } from "~/lib/utils";
 import { NextPageWithLayout } from "~/pages/_app";
 import { formatActivityType } from "~/utils/format";
 import { getSportConfig } from "~/utils/sportConfig";
@@ -80,6 +77,14 @@ function ActivityPageContent({ stravaId }: { stravaId: number }) {
     }
   }, [streamsData]);
 
+  const hiddenStreams = React.useMemo(() => {
+    if (!activity) return [];
+    const hidden: string[] = [];
+    if (activity.distance === 0) hidden.push("velocity_smooth");
+    if (activity.totalElevationGain === 0) hidden.push("altitude");
+    return hidden;
+  }, [activity]);
+
   if (!activity) {
     return (
       <div className="flex h-full w-full items-center justify-center">
@@ -92,13 +97,6 @@ function ActivityPageContent({ stravaId }: { stravaId: number }) {
   const hasPower =
     activity.averageWatts != null &&
     (activity.type === "Ride" || activity.type === "VirtualRide");
-
-  const hiddenStreams = React.useMemo(() => {
-    const hidden: string[] = [];
-    if (activity.distance === 0) hidden.push("velocity_smooth");
-    if (activity.totalElevationGain === 0) hidden.push("altitude");
-    return hidden;
-  }, [activity.distance, activity.totalElevationGain]);
 
   return (
     <>

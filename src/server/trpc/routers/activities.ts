@@ -66,7 +66,7 @@ export const activitiesRouter = router({
         .selectDistinct({ workoutType: activities.workoutType })
         .from(activities)
         .where(and(eq(activities.athlete, input.athleteId), isNotNull(activities.workoutType)))
-        .then((rows) => rows.map((r) => r.workoutType as number).sort((a, b) => a - b));
+        .then((rows) => rows.map((r) => r.workoutType!).sort((a, b) => a - b));
 
       if (input.includeMap) {
         const [filtered, allTypes, allWorkoutTypes] = await Promise.all([

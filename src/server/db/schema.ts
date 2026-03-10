@@ -126,7 +126,7 @@ export const riderSettings = pgTable(
       lthr: number;
     }>(),
     changes: jsonb("changes").notNull().$type<
-      Array<{
+      {
         id: string;
         date: string;
         ftp?: number;
@@ -134,7 +134,7 @@ export const riderSettings = pgTable(
         restingHr?: number;
         maxHr?: number;
         lthr?: number;
-      }>
+      }[]
     >(),
   },
   (t) => [uniqueIndex("rider_settings_athlete_idx").on(t.athlete)],

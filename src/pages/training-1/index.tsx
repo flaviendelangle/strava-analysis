@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import * as React from "react";
+import { useEffect, useRef } from "react";
 
 import { BrowserCompatibilityBanner } from "~/components/liveTraining/BrowserCompatibilityBanner";
 import { HudConnectionWizard } from "~/components/liveTraining/hud/HudConnectionWizard";
@@ -25,25 +26,41 @@ export default function Training1Page() {
 
 
   // Track paused duration
-  const [pausedSeconds, setPausedSeconds] = useState(0);
-  const pauseTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pauseStartRef = useRef<number | null>(null);
+  const pauseListenersRef = useRef(new Set<() => void>());
+  const pauseIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (ctrl.session.state === "paused") {
-      setPausedSeconds(0);
-      pauseTimerRef.current = setInterval(() => {
-        setPausedSeconds((prev) => prev + 1);
+      pauseStartRef.current = Date.now();
+      pauseIntervalRef.current = setInterval(() => {
+        for (const cb of pauseListenersRef.current) cb();
       }, 1000);
     } else {
-      if (pauseTimerRef.current) {
-        clearInterval(pauseTimerRef.current);
-        pauseTimerRef.current = null;
+      pauseStartRef.current = null;
+      if (pauseIntervalRef.current) {
+        clearInterval(pauseIntervalRef.current);
+        pauseIntervalRef.current = null;
       }
+      // Notify subscribers so they re-read 0
+      for (const cb of pauseListenersRef.current) cb();
     }
     return () => {
-      if (pauseTimerRef.current) clearInterval(pauseTimerRef.current);
+      if (pauseIntervalRef.current) clearInterval(pauseIntervalRef.current);
     };
   }, [ctrl.session.state]);
+
+  const pausedSeconds = React.useSyncExternalStore(
+    (cb) => {
+      pauseListenersRef.current.add(cb);
+      return () => pauseListenersRef.current.delete(cb);
+    },
+    () =>
+      pauseStartRef.current != null
+        ? Math.floor((Date.now() - pauseStartRef.current) / 1000)
+        : 0,
+    () => 0,
+  );
 
   return (
     <div className="relative h-full overflow-hidden">

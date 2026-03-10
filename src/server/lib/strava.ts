@@ -139,7 +139,7 @@ export function getModelFromStravaActivity(activity: StravaActivity) {
 }
 
 export function normalizeStreams(
-  streams: StravaStream[] | Record<string, StravaStream> | unknown,
+  streams: unknown,
 ): {
   type: string;
   seriesType: string;

@@ -24,7 +24,8 @@ const Y_AXIS_TICKS = 4;
 const X_AXIS_TICKS = 8;
 const LINE_HALF_WIDTH = 0.75; // 1.5px total line width
 
-const d3Bisector = bisector<number, number>((d) => d).left;
+const d3BisectorObj = bisector<number, number>((d: number) => d);
+const d3Bisector = (arr: ArrayLike<number>, x: number) => d3BisectorObj.left(arr, x);
 
 export function MultiPanelChart(props: MultiPanelChartProps) {
   const {

@@ -37,7 +37,7 @@ export class WebGLChartRenderer {
   private solidProgram: SolidProgram | null = null;
   private gradientProgram: GradientProgram | null = null;
   private canvas: HTMLCanvasElement;
-  private panelBuffers: Map<number, PanelBuffers> = new Map();
+  private panelBuffers = new Map<number, PanelBuffers>();
   private dpr = 1;
   private cssHeight = 0;
   private gridColor: Float32Array = new Float32Array([
@@ -94,8 +94,9 @@ export class WebGLChartRenderer {
     // Clean up existing buffers for this panel
     this.deletePanelBuffers(panelIndex);
 
-    const lineVAO = gl.createVertexArray()!;
-    const lineBuffer = gl.createBuffer()!;
+    const lineVAO = gl.createVertexArray();
+    const lineBuffer = gl.createBuffer();
+    if (!lineVAO || !lineBuffer) return;
     const lineVertexCount = data.lineMesh.length / 2;
     this.setupVAO(
       gl,
@@ -109,20 +110,23 @@ export class WebGLChartRenderer {
     let areaBuffer: WebGLBuffer | null = null;
     let areaVertexCount = 0;
     if (data.areaMesh) {
-      areaVAO = gl.createVertexArray()!;
-      areaBuffer = gl.createBuffer()!;
-      areaVertexCount = data.areaMesh.length / 2;
-      this.setupVAO(
-        gl,
-        areaVAO,
-        areaBuffer,
-        data.areaMesh,
-        this.gradientProgram!.aPosition,
-      );
+      areaVAO = gl.createVertexArray();
+      areaBuffer = gl.createBuffer();
+      if (areaVAO && areaBuffer) {
+        areaVertexCount = data.areaMesh.length / 2;
+        this.setupVAO(
+          gl,
+          areaVAO,
+          areaBuffer,
+          data.areaMesh,
+          this.gradientProgram!.aPosition,
+        );
+      }
     }
 
-    const gridVAO = gl.createVertexArray()!;
-    const gridBuffer = gl.createBuffer()!;
+    const gridVAO = gl.createVertexArray();
+    const gridBuffer = gl.createBuffer();
+    if (!gridVAO || !gridBuffer) return;
     this.setupVAO(
       gl,
       gridVAO,
@@ -131,8 +135,9 @@ export class WebGLChartRenderer {
       this.solidProgram!.aPosition,
     );
 
-    const separatorVAO = gl.createVertexArray()!;
-    const separatorBuffer = gl.createBuffer()!;
+    const separatorVAO = gl.createVertexArray();
+    const separatorBuffer = gl.createBuffer();
+    if (!separatorVAO || !separatorBuffer) return;
     this.setupVAO(
       gl,
       separatorVAO,
