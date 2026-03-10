@@ -81,11 +81,13 @@ export const analyticsRouter = router({
         watts: string;
         activity_strava_id: string;
         activity_name: string;
+        activity_start_date: string;
       }>(sql`
         WITH unnested AS (
           SELECT
             a.strava_id,
             a.name,
+            a.start_date,
             (kv.key)::int AS duration,
             (kv.value)::int AS watts
           FROM activities a,
@@ -102,6 +104,7 @@ export const analyticsRouter = router({
           SELECT
             strava_id,
             name,
+            start_date,
             duration,
             watts,
             ROW_NUMBER() OVER (PARTITION BY duration ORDER BY watts DESC) AS rn
@@ -111,7 +114,8 @@ export const analyticsRouter = router({
           duration,
           watts,
           strava_id AS activity_strava_id,
-          name AS activity_name
+          name AS activity_name,
+          start_date AS activity_start_date
         FROM ranked
         WHERE rn = 1
         ORDER BY duration
@@ -122,6 +126,7 @@ export const analyticsRouter = router({
         watts: Number(row.watts),
         activityStravaId: Number(row.activity_strava_id),
         activityName: String(row.activity_name),
+        activityStartDate: String(row.activity_start_date),
       }));
     }),
 

@@ -102,7 +102,8 @@ export function calculateTSS(
 /**
  * Generates power curve duration points (in seconds) up to maxDuration.
  *
- * - Every 10s from 10s to 300s (5 min)
+ * - Every second from 1s to 30s
+ * - Every 5s from 35s to 300s (5 min)
  * - Every 30s from 330s to 1200s (20 min)
  * - Every 120s from 1320s to 3600s (1 h)
  * - Every 300s from 3900s onwards
@@ -110,7 +111,10 @@ export function calculateTSS(
 export function generatePowerCurveDurations(maxDuration: number): number[] {
   const durations: number[] = [];
 
-  for (let d = 10; d <= Math.min(300, maxDuration); d += 10) {
+  for (let d = 1; d <= Math.min(30, maxDuration); d += 1) {
+    durations.push(d);
+  }
+  for (let d = 35; d <= Math.min(300, maxDuration); d += 5) {
     durations.push(d);
   }
   for (let d = 330; d <= Math.min(1200, maxDuration); d += 30) {

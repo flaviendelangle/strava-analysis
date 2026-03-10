@@ -2,18 +2,10 @@ import * as React from "react";
 
 import { format, subDays } from "date-fns";
 import { X } from "lucide-react";
-import Link from "next/link";
-
-import {
-  LineChart,
-  useAxesTooltip,
-  useDrawingArea,
-  useMouseTracker,
-  useSvgRef,
-} from "@mui/x-charts-pro";
 
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
+import { SegmentedToggle } from "~/components/ui/segmented-toggle";
 import {
   Popover,
   PopoverContent,
@@ -28,11 +20,15 @@ import {
 } from "~/components/ui/select";
 import { useActivityFilter } from "~/hooks/useActivityFilter";
 import { useAthleteId } from "~/hooks/useAthleteId";
-import { useIsMobile } from "~/hooks/useIsMobile";
-import { CHART_MARGINS, AXIS_SIZE, formatCompact, useChartTokens } from "~/lib/chartTokens";
+import { useRiderSettingsTimeline } from "~/hooks/useRiderSettings";
+import { useChartTokens } from "~/lib/chartTokens";
 import { trpc } from "~/utils/trpc";
 
-import { ChartThemeProvider } from "../ChartThemeProvider";
+import {
+  PowerCurveWebGLChart,
+  type PowerCurveMode,
+} from "./PowerCurveWebGLChart";
+import type { ActivityInfo, PowerCurveSeriesData } from "./types";
 
 // --- Types & constants ---
 
@@ -43,7 +39,8 @@ interface DateRange {
   dateTo?: string;
 }
 
-// Colors resolved from tokens at render time — see SingleActivityPowerCurve / AggregatedPowerCurve
+// seriesId → (ActivityInfo | null)[] indexed by dataIndex
+type ActivityMetadataMap = Record<string, (ActivityInfo | null)[]>;
 
 function makeRollingRange(days: number, label: string): DateRange {
   const now = new Date();
@@ -96,116 +93,6 @@ interface PowerCurveProps {
   stravaId?: number;
 }
 
-// --- Helpers ---
-
-function formatDuration(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`;
-  const hours = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  if (hours > 0) {
-    return mins === 0
-      ? `${hours}h`
-      : `${hours}h${mins.toString().padStart(2, "0")}`;
-  }
-  return secs === 0
-    ? `${mins}min`
-    : `${mins}m${secs.toString().padStart(2, "0")}s`;
-}
-
-interface ActivityInfo {
-  activityStravaId: number;
-  activityName: string;
-}
-
-// seriesId → (ActivityInfo | null)[] indexed by dataIndex
-type ActivityMetadataMap = Record<string, (ActivityInfo | null)[]>;
-
-const ActivityMetadataContext = React.createContext<ActivityMetadataMap>({});
-
-function PowerCurveTooltip() {
-  const tooltipData = useAxesTooltip();
-  const activityMetadata = React.useContext(ActivityMetadataContext);
-  const mousePosition = useMouseTracker();
-  const drawingArea = useDrawingArea();
-  const svgRef = useSvgRef();
-
-  const [svgTop, setSvgTop] = React.useState(0);
-  React.useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg) return;
-    setSvgTop(svg.getBoundingClientRect().top);
-  }, [svgRef, mousePosition]);
-
-  if (!tooltipData || !mousePosition) return null;
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        left: mousePosition.x,
-        top: svgTop + drawingArea.top,
-        transform: "translateX(-50%)",
-        pointerEvents: "none",
-        zIndex: 1,
-      }}
-    >
-      <div
-        className="bg-popover text-popover-foreground border-border rounded-md border px-3 py-2 shadow-md"
-        style={{ pointerEvents: "auto" }}
-      >
-        {tooltipData.map(
-          ({
-            axisId,
-            axisFormattedValue,
-            dataIndex,
-            seriesItems,
-            mainAxis,
-          }) => (
-            <div key={axisId}>
-              {!mainAxis.hideTooltip && (
-                <p className="text-muted-foreground mb-1 text-xs">
-                  {axisFormattedValue}
-                </p>
-              )}
-              <div className="flex flex-col gap-1">
-                {seriesItems.map(
-                  ({ seriesId, color, formattedValue, formattedLabel }) => {
-                    if (formattedValue == null) return null;
-                    const activity =
-                      activityMetadata[seriesId]?.[dataIndex] ?? null;
-                    return (
-                      <div
-                        key={seriesId}
-                        className="flex items-center gap-2 text-sm whitespace-nowrap"
-                      >
-                        <span
-                          className="inline-block size-2 shrink-0 rounded-full"
-                          style={{ backgroundColor: color }}
-                        />
-                        <span>{formattedLabel}</span>
-                        <span className="font-medium">{formattedValue}</span>
-                        {activity && (
-                          <Link
-                            href={`/activities/${activity.activityStravaId}`}
-                            className="text-muted-foreground hover:text-foreground text-xs underline"
-                          >
-                            {activity.activityName}
-                          </Link>
-                        )}
-                      </div>
-                    );
-                  },
-                )}
-              </div>
-            </div>
-          ),
-        )}
-      </div>
-    </div>
-  );
-}
-
 // --- Component ---
 
 const PowerCurve = React.memo(function PowerCurve({
@@ -222,13 +109,14 @@ const PowerCurve = React.memo(function PowerCurve({
 
 export default PowerCurve;
 
-// --- Single activity mode (unchanged logic) ---
+// --- Single activity mode ---
 
 function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
   const tokens = useChartTokens();
-  const isMobile = useIsMobile();
   const athleteId = useAthleteId();
   const [showAllTime, setShowAllTime] = React.useState(true);
+  const [mode, setMode] = React.useState<PowerCurveMode>("watts");
+  const { resolveForDate } = useRiderSettingsTimeline();
 
   const { data: activity } = trpc.activities.get.useQuery({ stravaId });
 
@@ -253,7 +141,7 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
 
   const { xData, series, activityMetadata } = React.useMemo(() => {
     if (!activityData || activityData.length === 0) {
-      return { xData: [] as number[], series: [] as any[], activityMetadata: {} as ActivityMetadataMap };
+      return { xData: [] as number[], series: [] as PowerCurveSeriesData[], activityMetadata: {} as ActivityMetadataMap };
     }
 
     const activityByDuration = new Map(activityData.map((d) => [d.duration, d.watts]));
@@ -261,7 +149,7 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
     const allTimeByDuration = new Map(
       (allTimeBests ?? []).map((d) => [
         d.duration,
-        { watts: d.watts, activityStravaId: d.activityStravaId, activityName: d.activityName },
+        { watts: d.watts, activityStravaId: d.activityStravaId, activityName: d.activityName, activityStartDate: d.activityStartDate },
       ]),
     );
 
@@ -274,14 +162,19 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
 
     const metadata: ActivityMetadataMap = {};
 
-    const chartSeries: any[] = [
+    // Activity weight (single date)
+    const activityStartDate = activity?.startDate;
+    const activityWeight = activityStartDate
+      ? resolveForDate(activityStartDate).weightKg
+      : null;
+
+    const chartSeries: PowerCurveSeriesData[] = [
       {
         id: "activity",
-        data: durations.map((d) => activityByDuration.get(d) ?? null),
+        yData: durations.map((d) => activityByDuration.get(d) ?? null),
         label: "This Activity",
         color: tokens.palette[1],
-        showMark: false,
-        curve: "monotoneX" as const,
+        weights: durations.map(() => activityWeight),
       },
     ];
 
@@ -290,72 +183,50 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
       metadata[allTimeSeriesId] = durations.map((d) => {
         const entry = allTimeByDuration.get(d);
         if (!entry) return null;
-        return { activityStravaId: entry.activityStravaId, activityName: entry.activityName };
+        return { activityStravaId: entry.activityStravaId, activityName: entry.activityName, activityStartDate: entry.activityStartDate };
       });
 
       chartSeries.push({
         id: allTimeSeriesId,
-        data: durations.map((d) => allTimeByDuration.get(d)?.watts ?? null),
+        yData: durations.map((d) => allTimeByDuration.get(d)?.watts ?? null),
         label: "All-Time Best",
         color: tokens.palette[0],
-        showMark: false,
-        curve: "monotoneX" as const,
+        weights: durations.map((d) => {
+          const entry = allTimeByDuration.get(d);
+          if (!entry?.activityStartDate) return null;
+          return resolveForDate(entry.activityStartDate).weightKg;
+        }),
       });
     }
 
     return { xData: durations, series: chartSeries, activityMetadata: metadata };
-  }, [activityData, allTimeBests, showAllTime, tokens.palette]);
+  }, [activityData, allTimeBests, showAllTime, tokens.palette, activity?.startDate, resolveForDate]);
 
   if (xData.length === 0) {
     return <EmptyChart />;
   }
 
   return (
-    <ChartThemeProvider>
-      <div className="bg-card flex h-96 w-full flex-col rounded-md">
-        <div className="border-border flex items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
-          <h3 className="shrink-0 text-xs font-medium sm:text-sm">Power Curve</h3>
-          <div className="bg-border mx-1 h-4 w-px" />
-          <label className="text-muted-foreground flex items-center gap-1.5 text-xs">
-            <input
-              type="checkbox"
-              checked={showAllTime}
-              onChange={(e) => setShowAllTime(e.target.checked)}
-              className="accent-primary size-3.5"
-            />
-            vs All-Time
-          </label>
-        </div>
-        <div className="min-h-0 flex-1">
-          <ActivityMetadataContext.Provider value={activityMetadata}>
-            <LineChart
-              xAxis={[
-                {
-                  scaleType: "log",
-                  data: xData,
-                  valueFormatter: (value: number) => formatDuration(value),
-                  label: isMobile ? undefined : "Duration",
-                  height: isMobile ? AXIS_SIZE.mobile.height : AXIS_SIZE.desktop.height,
-                },
-              ]}
-              yAxis={[
-                {
-                  label: isMobile ? undefined : "Watts",
-                  valueFormatter: (value: number) =>
-                    isMobile ? formatCompact(value) : `${Math.round(value)} W`,
-                  width: isMobile ? AXIS_SIZE.mobile.width : AXIS_SIZE.desktop.width,
-                },
-              ]}
-              series={series}
-              grid={{ horizontal: true }}
-              margin={isMobile ? CHART_MARGINS.standardMobile : CHART_MARGINS.standard}
-              hideLegend={isMobile}
-              slots={{ tooltip: PowerCurveTooltip }}
-            />
-          </ActivityMetadataContext.Provider>
-        </div>
+    <div className="bg-card flex h-96 w-full flex-col rounded-md">
+      <div className="border-border flex items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
+        <h3 className="shrink-0 text-xs font-medium sm:text-sm">Power Curve</h3>
+        <div className="bg-border mx-1 h-4 w-px" />
+        <label className="text-muted-foreground flex items-center gap-1.5 text-xs">
+          <input
+            type="checkbox"
+            checked={showAllTime}
+            onChange={(e) => setShowAllTime(e.target.checked)}
+            className="accent-primary size-3.5"
+          />
+          vs All-Time
+        </label>
+        <div className="flex-1" />
+        <ModeToggle mode={mode} onModeChange={setMode} />
       </div>
-    </ChartThemeProvider>
+      <div className="min-h-0 flex-1">
+        <PowerCurveWebGLChart xData={xData} series={series} activityMetadata={activityMetadata} mode={mode} />
+      </div>
+    </div>
   );
 }
 
@@ -363,11 +234,12 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
 
 function AggregatedPowerCurve({ activityTypes, workoutTypes: workoutTypesProp }: { activityTypes?: string[]; workoutTypes?: number[] }) {
   const tokens = useChartTokens();
-  const isMobile = useIsMobile();
   const athleteId = useAthleteId();
   const filter = useActivityFilter();
   const workoutTypes = workoutTypesProp ?? (filter.workoutTypes.length > 0 ? filter.workoutTypes : undefined);
   const [ranges, setRanges] = React.useState<DateRange[]>(DEFAULT_RANGES);
+  const [mode, setMode] = React.useState<PowerCurveMode>("watts");
+  const { resolveForDate } = useRiderSettingsTimeline();
 
   const addRange = (range: DateRange) => {
     setRanges((prev) => {
@@ -412,14 +284,14 @@ function AggregatedPowerCurve({ activityTypes, workoutTypes: workoutTypesProp }:
     if (durations.length === 0) {
       return {
         xData: [] as number[],
-        series: [] as any[],
+        series: [] as PowerCurveSeriesData[],
         activityMetadata: {} as ActivityMetadataMap,
       };
     }
 
     const metadata: ActivityMetadataMap = {};
 
-    const chartSeries = allResults.map((data, i) => {
+    const chartSeries: PowerCurveSeriesData[] = allResults.map((data, i) => {
       const seriesId = `range-${i}`;
       const byDuration = new Map(
         data.map((d) => [
@@ -428,6 +300,7 @@ function AggregatedPowerCurve({ activityTypes, workoutTypes: workoutTypesProp }:
             watts: d.watts,
             activityStravaId: d.activityStravaId,
             activityName: d.activityName,
+            activityStartDate: d.activityStartDate,
           },
         ]),
       );
@@ -438,16 +311,20 @@ function AggregatedPowerCurve({ activityTypes, workoutTypes: workoutTypesProp }:
         return {
           activityStravaId: entry.activityStravaId,
           activityName: entry.activityName,
+          activityStartDate: entry.activityStartDate,
         };
       });
 
       return {
         id: seriesId,
-        data: durations.map((d) => byDuration.get(d)?.watts ?? null),
+        yData: durations.map((d) => byDuration.get(d)?.watts ?? null),
         label: ranges[i]?.label ?? `Range ${i + 1}`,
         color: tokens.palette[i % tokens.palette.length],
-        showMark: false,
-        curve: "monotoneX" as const,
+        weights: durations.map((d) => {
+          const entry = byDuration.get(d);
+          if (!entry?.activityStartDate) return null;
+          return resolveForDate(entry.activityStartDate).weightKg;
+        }),
       };
     });
 
@@ -456,31 +333,10 @@ function AggregatedPowerCurve({ activityTypes, workoutTypes: workoutTypesProp }:
       series: chartSeries,
       activityMetadata: metadata,
     };
-  }, [queries, ranges, tokens.palette]);
+  }, [queries, ranges, tokens.palette, resolveForDate]);
 
   if (xData.length === 0) {
     return (
-      <ChartThemeProvider>
-        <div className="bg-card flex h-96 w-full flex-col rounded-md">
-          <Toolbar
-            ranges={ranges}
-            onAddPreset={addRange}
-            onAddCustom={addRange}
-            onRemove={removeRange}
-            athleteId={athleteId}
-            activityTypes={activityTypes}
-            workoutTypes={workoutTypes}
-          />
-          <div className="text-muted-foreground flex flex-1 items-center justify-center">
-            No power data available
-          </div>
-        </div>
-      </ChartThemeProvider>
-    );
-  }
-
-  return (
-    <ChartThemeProvider>
       <div className="bg-card flex h-96 w-full flex-col rounded-md">
         <Toolbar
           ranges={ranges}
@@ -490,38 +346,51 @@ function AggregatedPowerCurve({ activityTypes, workoutTypes: workoutTypesProp }:
           athleteId={athleteId}
           activityTypes={activityTypes}
           workoutTypes={workoutTypes}
+          mode={mode}
+          onModeChange={setMode}
         />
-        <div className="min-h-0 flex-1">
-          <ActivityMetadataContext.Provider value={activityMetadata}>
-            <LineChart
-              xAxis={[
-                {
-                  scaleType: "log",
-                  data: xData,
-                  valueFormatter: (value: number) => formatDuration(value),
-                  label: isMobile ? undefined : "Duration",
-                  height: isMobile ? AXIS_SIZE.mobile.height : AXIS_SIZE.desktop.height,
-                },
-              ]}
-              yAxis={[
-                {
-                  label: isMobile ? undefined : "Watts",
-                  valueFormatter: (value: number) =>
-                    isMobile ? formatCompact(value) : `${Math.round(value)} W`,
-                  width: isMobile ? AXIS_SIZE.mobile.width : AXIS_SIZE.desktop.width,
-                },
-              ]}
-              series={series}
-              grid={{ horizontal: true }}
-              margin={isMobile ? CHART_MARGINS.standardMobile : CHART_MARGINS.standard}
-              hideLegend={isMobile}
-              slots={{ tooltip: PowerCurveTooltip }}
-            />
-          </ActivityMetadataContext.Provider>
+        <div className="text-muted-foreground flex flex-1 items-center justify-center">
+          No power data available
         </div>
       </div>
-    </ChartThemeProvider>
+    );
+  }
+
+  return (
+    <div className="bg-card flex h-96 w-full flex-col rounded-md">
+      <Toolbar
+        ranges={ranges}
+        onAddPreset={addRange}
+        onAddCustom={addRange}
+        onRemove={removeRange}
+        athleteId={athleteId}
+        activityTypes={activityTypes}
+        workoutTypes={workoutTypes}
+        mode={mode}
+        onModeChange={setMode}
+      />
+      <div className="min-h-0 flex-1">
+        <PowerCurveWebGLChart xData={xData} series={series} activityMetadata={activityMetadata} mode={mode} />
+      </div>
+    </div>
   );
+}
+
+// --- Mode Toggle ---
+
+const MODE_OPTIONS: { value: PowerCurveMode; label: string }[] = [
+  { value: "watts", label: "W" },
+  { value: "wattsPerKg", label: "W/kg" },
+];
+
+function ModeToggle({
+  mode,
+  onModeChange,
+}: {
+  mode: PowerCurveMode;
+  onModeChange: (mode: PowerCurveMode) => void;
+}) {
+  return <SegmentedToggle value={mode} onChange={onModeChange} options={MODE_OPTIONS} />;
 }
 
 // --- Toolbar ---
@@ -534,6 +403,8 @@ function Toolbar({
   athleteId,
   activityTypes,
   workoutTypes,
+  mode,
+  onModeChange,
 }: {
   ranges: DateRange[];
   onAddPreset: (range: DateRange) => void;
@@ -542,6 +413,8 @@ function Toolbar({
   athleteId: number | null | undefined;
   activityTypes?: string[];
   workoutTypes?: number[];
+  mode: PowerCurveMode;
+  onModeChange: (mode: PowerCurveMode) => void;
 }) {
   const tokens = useChartTokens();
   return (
@@ -563,6 +436,8 @@ function Toolbar({
         workoutTypes={workoutTypes}
       />
       <CustomRangePopover onAdd={onAddCustom} />
+      <div className="flex-1" />
+      <ModeToggle mode={mode} onModeChange={onModeChange} />
     </div>
   );
 }
@@ -712,15 +587,13 @@ function CustomRangePopover({ onAdd }: { onAdd: (range: DateRange) => void }) {
 
 function EmptyChart() {
   return (
-    <ChartThemeProvider>
-      <div className="bg-card flex h-96 w-full flex-col rounded-md">
-        <div className="border-border flex items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
-          <h3 className="shrink-0 text-xs font-medium sm:text-sm">Power Curve</h3>
-        </div>
-        <div className="text-muted-foreground flex flex-1 items-center justify-center">
-          No power data available
-        </div>
+    <div className="bg-card flex h-96 w-full flex-col rounded-md">
+      <div className="border-border flex items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
+        <h3 className="shrink-0 text-xs font-medium sm:text-sm">Power Curve</h3>
       </div>
-    </ChartThemeProvider>
+      <div className="text-muted-foreground flex flex-1 items-center justify-center">
+        No power data available
+      </div>
+    </div>
   );
 }

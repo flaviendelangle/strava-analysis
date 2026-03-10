@@ -127,11 +127,13 @@ const StatisticsPage: NextPageWithLayout = () => {
       </Toolbar>
 
       {activeTab === "charts" ? (
-        <div className="flex flex-1 flex-col items-start gap-4 overflow-y-auto p-3 sm:p-4">
-          <ActivitiesTimeline />
-          <ActivitiesCumulativeTimeline />
-          <PowerCurve activityTypes={POWER_BEST_ACTIVITY_TYPES} />
-          <EddingtonChart />
+        <div className="flex flex-1 flex-col items-center gap-4 overflow-y-auto p-3 sm:p-4">
+          <div className="flex w-full max-w-5xl flex-col gap-4">
+            <ActivitiesTimeline />
+            <ActivitiesCumulativeTimeline />
+            <PowerCurve activityTypes={POWER_BEST_ACTIVITY_TYPES} />
+            <EddingtonChart />
+          </div>
         </div>
       ) : (
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-3 sm:p-4">

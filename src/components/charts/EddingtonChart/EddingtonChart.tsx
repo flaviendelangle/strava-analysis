@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { BarChartPro } from "@mui/x-charts-pro";
 
-import { Button } from "~/components/ui/button";
+import { SegmentedToggle } from "~/components/ui/segmented-toggle";
 import { useAthleteId } from "~/hooks/useAthleteId";
 import { useEddingtonData } from "~/hooks/useEddingtonData";
 import { useIsMobile } from "~/hooks/useIsMobile";
@@ -12,16 +12,23 @@ import { trpc } from "~/utils/trpc";
 import { ChartThemeProvider } from "../ChartThemeProvider";
 import { ChartTooltip } from "../ChartTooltip";
 
-const TABS = [
-  { label: "Riding", activityTypes: ["Ride", "VirtualRide"] },
-  { label: "Running", activityTypes: ["Run"] },
-] as const;
+const TABS = {
+  riding: { label: "Riding", activityTypes: ["Ride", "VirtualRide"] },
+  running: { label: "Running", activityTypes: ["Run"] },
+} as const;
+
+type TabKey = keyof typeof TABS;
+
+const TAB_OPTIONS: { value: TabKey; label: string }[] = [
+  { value: "riding", label: "Riding" },
+  { value: "running", label: "Running" },
+];
 
 const DISTANCE_DIVISOR = 1000;
 const UNIT_LABEL = "km";
 
 export default function EddingtonChart() {
-  const [activeTab, setActiveTab] = React.useState(0);
+  const [activeTab, setActiveTab] = React.useState<TabKey>("riding");
   const tokens = useChartTokens();
   const isMobile = useIsMobile();
   const athleteId = useAthleteId();
@@ -43,17 +50,8 @@ export default function EddingtonChart() {
           E = {eddington.eddingtonNumber}
         </span>
       )}
-      <div className="ml-auto flex gap-1">
-        {TABS.map((t, i) => (
-          <Button
-            key={t.label}
-            variant={i === activeTab ? "default" : "ghost"}
-            size="xs"
-            onClick={() => setActiveTab(i)}
-          >
-            {t.label}
-          </Button>
-        ))}
+      <div className="ml-auto">
+        <SegmentedToggle value={activeTab} onChange={setActiveTab} options={TAB_OPTIONS} />
       </div>
     </div>
   );
@@ -79,12 +77,31 @@ export default function EddingtonChart() {
     d.n === eddington.eddingtonNumber ? tokens.palette[5] : tokens.palette[3],
   );
 
+  const totalBars = trimmedData.length;
+  const eddingtonIndex = trimmedData.findIndex(
+    (d) => d.n === eddington.eddingtonNumber,
+  );
+  const zoomStart = Math.max(0, eddingtonIndex - 10);
+  const zoomEnd = Math.min(totalBars, eddingtonIndex + 11);
+  const initialZoom =
+    totalBars > 0
+      ? [
+          {
+            axisId: "distance" as const,
+            start: (zoomStart / totalBars) * 100,
+            end: (zoomEnd / totalBars) * 100,
+          },
+        ]
+      : undefined;
+
   return (
     <ChartThemeProvider>
       <div className="bg-card flex h-96 w-full flex-col rounded-md">
         {header}
         <div className="min-h-0 flex-1">
           <BarChartPro
+            key={activeTab}
+            initialZoom={initialZoom}
             xAxis={[
               {
                 id: "distance",
@@ -93,6 +110,7 @@ export default function EddingtonChart() {
                 label: isMobile ? undefined : UNIT_LABEL,
                 height: isMobile ? AXIS_SIZE.mobile.height : AXIS_SIZE.desktop.height,
                 valueFormatter: (value: number) => `${value}`,
+                zoom: { filterMode: "discard" },
                 colorMap: {
                   type: "ordinal",
                   values: xAxisData,
@@ -118,7 +136,7 @@ export default function EddingtonChart() {
             ]}
             grid={{ horizontal: true }}
             margin={isMobile ? CHART_MARGINS.standardMobile : CHART_MARGINS.standard}
-            hideLegend={isMobile}
+            hideLegend
             slots={{ tooltip: ChartTooltip }}
           />
         </div>

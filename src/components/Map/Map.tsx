@@ -2,11 +2,13 @@ import * as React from "react";
 
 import "leaflet/dist/leaflet.css";
 import {
+  AttributionControl,
   CircleMarker,
   MapContainer,
   Polyline,
   TileLayer,
   useMap,
+  useMapEvents,
 } from "react-leaflet";
 
 import type { Activity } from "@server/db/types";
@@ -17,6 +19,7 @@ import { decode } from "~/utils/polyline";
 
 import { ExplorerTilesLayer } from "./ExplorerTilesLayer";
 import { ExplorerTilesStats } from "./ExplorerTilesStats";
+import { HeatmapActivityTooltip } from "./HeatmapActivityTooltip";
 
 // List available here: https://wiki.openstreetmap.org/wiki/Raster_tile_providers
 const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -26,6 +29,14 @@ const TILE_ATTRIBUTION =
 
 interface FitBoundsProps {
   polylines: { id: string; polyline: [number, number][] }[];
+}
+
+function DismissOnMapMove({ onDismiss }: { onDismiss: () => void }) {
+  useMapEvents({
+    movestart: onDismiss,
+    zoomstart: onDismiss,
+  });
+  return null;
 }
 
 function FitBounds(props: FitBoundsProps) {
@@ -54,15 +65,25 @@ export default function Map(props: MapProps) {
   } = props;
   const { showExplorerTiles } = useExplorerTilesToggle();
 
+  const [selectedActivity, setSelectedActivity] = React.useState<{
+    activity: Activity;
+    position: { x: number; y: number };
+  } | null>(null);
+
   // Decode polylines once, reused for both map rendering and explorer tiles
   const decodedActivityPolylines = React.useMemo(() => {
     if (routePositions || !activities) return null;
-    const result: { id: string; polyline: [number, number][] }[] = [];
+    const result: {
+      id: string;
+      polyline: [number, number][];
+      activity: Activity;
+    }[] = [];
     for (const activity of activities) {
       if (activity.mapPolyline) {
         result.push({
           id: String(activity.id),
           polyline: decode(activity.mapPolyline),
+          activity,
         });
       }
     }
@@ -88,7 +109,9 @@ export default function Map(props: MapProps) {
         center={{ lat: 0, lng: 0 }}
         zoom={14}
         className="z-0 h-full w-full"
+        attributionControl={false}
       >
+        <AttributionControl position="bottomleft" prefix="Leaflet" />
         <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
         {enableExplorerTiles && (
           <ExplorerTilesLayer
@@ -96,11 +119,27 @@ export default function Map(props: MapProps) {
             visible={showExplorerTiles}
           />
         )}
-        {polylines?.map((activity) => (
+        {polylines?.map((entry) => (
           <Polyline
-            key={activity.id}
-            positions={activity.polyline}
+            key={entry.id}
+            positions={entry.polyline}
             color="red"
+            pathOptions={{ className: "cursor-pointer" }}
+            eventHandlers={
+              "activity" in entry
+                ? {
+                    click: (e) => {
+                      const { clientX, clientY } = (
+                        e as L.LeafletMouseEvent
+                      ).originalEvent;
+                      setSelectedActivity({
+                        activity: (entry as { activity: Activity }).activity,
+                        position: { x: clientX, y: clientY },
+                      });
+                    },
+                  }
+                : undefined
+            }
           />
         ))}
         {highlightPosition && (
@@ -115,12 +154,24 @@ export default function Map(props: MapProps) {
             }}
           />
         )}
+        {selectedActivity && (
+          <DismissOnMapMove
+            onDismiss={() => setSelectedActivity(null)}
+          />
+        )}
         <FitBounds polylines={polylines} />
       </MapContainer>
       {enableExplorerTiles && (
         <ExplorerTilesStats
           tilesData={explorerTilesData}
           visible={showExplorerTiles}
+        />
+      )}
+      {selectedActivity && (
+        <HeatmapActivityTooltip
+          activity={selectedActivity.activity}
+          position={selectedActivity.position}
+          onClose={() => setSelectedActivity(null)}
         />
       )}
     </div>

@@ -69,51 +69,14 @@ export function oklchToGL(oklchStr: string, alpha = 1.0): Float32Array {
 }
 
 // ---------------------------------------------------------------------------
-// Generic CSS color → RGB conversion (handles any browser-resolved format)
+// Hex → GL conversion
 // ---------------------------------------------------------------------------
 
-let probeCtx: CanvasRenderingContext2D | null = null;
-
-/**
- * Convert any valid CSS color string (oklch, lab, rgb, hsl, etc.)
- * to [r, g, b] in sRGB [0..1] using a canvas 2D context.
- */
-function cssColorToRgb(color: string): [number, number, number] {
-  if (!probeCtx) {
-    const canvas = document.createElement("canvas");
-    canvas.width = 1;
-    canvas.height = 1;
-    probeCtx = canvas.getContext("2d", { willReadFrequently: true })!;
-  }
-  probeCtx.clearRect(0, 0, 1, 1);
-  probeCtx.fillStyle = color;
-  probeCtx.fillRect(0, 0, 1, 1);
-  const [r, g, b] = probeCtx.getImageData(0, 0, 1, 1).data;
-  return [r / 255, g / 255, b / 255];
-}
-
-function cssColorToHex(color: string): string {
-  const [r, g, b] = cssColorToRgb(color);
-  const toHex = (c: number) =>
-    Math.round(c * 255)
-      .toString(16)
-      .padStart(2, "0");
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
-
-function cssColorToGL(color: string, alpha = 1.0): Float32Array {
-  const [r, g, b] = cssColorToRgb(color);
+function hexToGL(hex: string, alpha = 1.0): Float32Array {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
   return new Float32Array([r, g, b, alpha]);
-}
-
-// ---------------------------------------------------------------------------
-// CSS variable resolution
-// ---------------------------------------------------------------------------
-
-function getCSSVar(name: string): string {
-  return getComputedStyle(document.documentElement)
-    .getPropertyValue(name)
-    .trim();
 }
 
 // ---------------------------------------------------------------------------
@@ -139,68 +102,85 @@ export interface ChartTokens {
   cardBg: string;
 }
 
-const PALETTE_KEYS = [
-  "--chart-1",
-  "--chart-2",
-  "--chart-3",
-  "--chart-4",
-  "--chart-5",
-  "--chart-6",
-  "--chart-7",
-  "--chart-8",
-] as const;
+// ---------------------------------------------------------------------------
+// Theme definitions — keep in sync with globals.css
+// ---------------------------------------------------------------------------
 
-function resolveTokens(): ChartTokens {
-  const paletteCss = PALETTE_KEYS.map((key) => getCSSVar(key));
-  const palette = paletteCss.map(cssColorToHex);
-  const paletteOklch = paletteCss;
-  const paletteGL = paletteCss.map((c) => cssColorToGL(c));
+interface ThemeDefinition {
+  paletteOklch: string[];
+  grid: string;
+  gridStrong: string;
+  axisLabel: string;
+  crosshair: string;
+  cardBg: string;
+}
 
-  const gridCss = getCSSVar("--chart-grid");
-  const gridStrongCss = getCSSVar("--chart-grid-strong");
-  const axisLabelCss = getCSSVar("--chart-axis-label");
-  const crosshairCss = getCSSVar("--chart-crosshair");
-  const cardCss = getCSSVar("--card");
+const LIGHT_THEME: ThemeDefinition = {
+  paletteOklch: [
+    "oklch(0.59 0.20 25.331)",
+    "oklch(0.52 0.17 280)",
+    "oklch(0.58 0.20 354.308)",
+    "oklch(0.58 0.16 254.624)",
+    "oklch(0.56 0.14 145)",
+    "oklch(0.60 0.19 41.116)",
+    "oklch(0.55 0.11 184.704)",
+    "oklch(0.60 0.14 84.429)",
+  ],
+  grid: "#e2e3e8",
+  gridStrong: "#c4c5ce",
+  axisLabel: "#81828f",
+  crosshair: "#81828f",
+  cardBg: "#ffffff",
+};
+
+const DARK_THEME: ThemeDefinition = {
+  paletteOklch: [
+    "oklch(0.73 0.22 25.331)",
+    "oklch(0.68 0.18 280)",
+    "oklch(0.72 0.22 354.308)",
+    "oklch(0.74 0.17 254.624)",
+    "oklch(0.73 0.16 145)",
+    "oklch(0.74 0.21 41.116)",
+    "oklch(0.70 0.12 184.704)",
+    "oklch(0.78 0.18 84.429)",
+  ],
+  grid: "#656572",
+  gridStrong: "#81828f",
+  axisLabel: "#b5b6bf",
+  crosshair: "#a5a6b1",
+  cardBg: "#56575f",
+};
+
+function buildTokens(theme: ThemeDefinition): ChartTokens {
+  const palette = theme.paletteOklch.map(oklchToHex);
+  const paletteGL = theme.paletteOklch.map((c) => oklchToGL(c));
 
   return {
     palette,
-    paletteOklch,
+    paletteOklch: theme.paletteOklch,
     paletteGL,
-    grid: { hex: cssColorToHex(gridCss), gl: cssColorToGL(gridCss) },
-    gridStrong: {
-      hex: cssColorToHex(gridStrongCss),
-      gl: cssColorToGL(gridStrongCss),
-    },
-    axisLabel: cssColorToHex(axisLabelCss),
-    crosshair: cssColorToHex(crosshairCss),
-    cardBg: cssColorToHex(cardCss),
+    grid: { hex: theme.grid, gl: hexToGL(theme.grid) },
+    gridStrong: { hex: theme.gridStrong, gl: hexToGL(theme.gridStrong) },
+    axisLabel: theme.axisLabel,
+    crosshair: theme.crosshair,
+    cardBg: theme.cardBg,
   };
 }
 
+// Pre-compute tokens for each theme to avoid recomputing on every render
+const TOKENS_LIGHT = buildTokens(LIGHT_THEME);
+const TOKENS_DARK = buildTokens(DARK_THEME);
+
 /**
- * React hook that returns chart design tokens resolved from CSS variables.
- * Re-resolves when the theme (light/dark) changes.
+ * React hook that returns chart design tokens.
+ * Resolves synchronously based on the current theme — no CSS variable reading.
  */
 export function useChartTokens(): ChartTokens {
   const { resolvedTheme } = useTheme();
-  return useMemo(() => {
-    if (typeof window === "undefined") {
-      // SSR fallback — return empty tokens; they'll be resolved on the client
-      return {
-        palette: [],
-        paletteOklch: [],
-        paletteGL: [],
-        grid: { hex: "#000", gl: new Float32Array([0, 0, 0, 1]) },
-        gridStrong: { hex: "#000", gl: new Float32Array([0, 0, 0, 1]) },
-        axisLabel: "#888",
-        crosshair: "#888",
-        cardBg: "#000",
-      };
-    }
-    // resolvedTheme is used as a dep to re-resolve CSS vars on theme change
-    void resolvedTheme;
-    return resolveTokens();
-  }, [resolvedTheme]);
+  return useMemo(
+    () => (resolvedTheme === "dark" ? TOKENS_DARK : TOKENS_LIGHT),
+    [resolvedTheme],
+  );
 }
 
 // ---------------------------------------------------------------------------
