@@ -312,28 +312,30 @@ export async function storeStreams(
   activityId: number,
   streams: ReturnType<typeof normalizeStreams>,
 ) {
-  // Delete any existing streams for this activity
-  await db
-    .delete(activityStreams)
-    .where(eq(activityStreams.activityId, activityId));
+  await db.transaction(async (tx) => {
+    // Delete any existing streams for this activity
+    await tx
+      .delete(activityStreams)
+      .where(eq(activityStreams.activityId, activityId));
 
-  if (streams.length > 0) {
-    await db.insert(activityStreams).values(
-      streams.map((stream) => ({
-        activityId,
-        type: stream.type,
-        seriesType: stream.seriesType,
-        originalSize: stream.originalSize,
-        resolution: stream.resolution,
-        data: JSON.stringify(stream.data),
-      })),
-    );
-  }
+    if (streams.length > 0) {
+      await tx.insert(activityStreams).values(
+        streams.map((stream) => ({
+          activityId,
+          type: stream.type,
+          seriesType: stream.seriesType,
+          originalSize: stream.originalSize,
+          resolution: stream.resolution,
+          data: JSON.stringify(stream.data),
+        })),
+      );
+    }
 
-  await db
-    .update(activities)
-    .set({ areStreamsLoaded: true })
-    .where(eq(activities.id, activityId));
+    await tx
+      .update(activities)
+      .set({ areStreamsLoaded: true })
+      .where(eq(activities.id, activityId));
+  });
 }
 
 type ActivityForScoring = {
@@ -419,6 +421,26 @@ async function computeActivityScoresBatch(
   );
 }
 
+/** Safely parse and concatenate stream doc chunks. Returns undefined on malformed data. */
+function parseStreamDocs(
+  docs: StreamDoc[],
+  activityId: number,
+): number[] | undefined {
+  try {
+    const result: number[] = [];
+    for (const doc of docs) {
+      result.push(...(JSON.parse(doc.data) as number[]));
+    }
+    return result;
+  } catch (e) {
+    console.warn(
+      `[sync] Skipping corrupted ${docs[0]?.type ?? "unknown"} stream for activity ${activityId}:`,
+      e,
+    );
+    return undefined;
+  }
+}
+
 export async function computeActivityScoresInternal(
   db: Database,
   activity: ActivityForScoring,
@@ -472,10 +494,7 @@ export async function computeActivityScoresInternal(
       .sort((a, b) => (a.chunkIndex ?? 0) - (b.chunkIndex ?? 0));
     let timeData: number[] | undefined;
     if (timeDocs.length > 0) {
-      timeData = [];
-      for (const doc of timeDocs) {
-        timeData.push(...(JSON.parse(doc.data) as number[]));
-      }
+      timeData = parseStreamDocs(timeDocs, activity.id);
     }
 
     if (settings) {
@@ -484,11 +503,10 @@ export async function computeActivityScoresInternal(
         .sort((a, b) => (a.chunkIndex ?? 0) - (b.chunkIndex ?? 0));
 
       if (hrDocs.length > 0) {
-        const hrData: number[] = [];
-        for (const doc of hrDocs) {
-          hrData.push(...(JSON.parse(doc.data) as number[]));
+        const hrData = parseStreamDocs(hrDocs, activity.id);
+        if (hrData) {
+          patch.hrss = Math.round(calculateHRSS(hrData, settings, timeData));
         }
-        patch.hrss = Math.round(calculateHRSS(hrData, settings, timeData));
       }
     }
 
@@ -498,11 +516,10 @@ export async function computeActivityScoresInternal(
         .sort((a, b) => (a.chunkIndex ?? 0) - (b.chunkIndex ?? 0));
 
       if (wattsDocs.length > 0) {
-        const wattsData: number[] = [];
-        for (const doc of wattsDocs) {
-          wattsData.push(...(JSON.parse(doc.data) as number[]));
+        const wattsData = parseStreamDocs(wattsDocs, activity.id);
+        if (wattsData) {
+          patch.powerBests = computePowerBests(wattsData, timeData);
         }
-        patch.powerBests = computePowerBests(wattsData, timeData);
       }
     } else {
       patch.powerBests = null;

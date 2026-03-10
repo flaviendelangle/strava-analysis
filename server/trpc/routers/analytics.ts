@@ -9,9 +9,9 @@ export const analyticsRouter = router({
     .input(
       z.object({
         athleteId: z.number(),
-        activityTypes: z.array(z.string()).optional(),
-        workoutTypes: z.array(z.number()).optional(),
-        timePeriodId: z.number().optional(),
+        activityTypes: z.array(z.string().max(50)).optional(),
+        workoutTypes: z.array(z.number().int()).optional(),
+        timePeriodId: z.number().int().positive().optional(),
         dateFrom: z.string().optional(),
         dateTo: z.string().optional(),
       }),
@@ -129,8 +129,8 @@ export const analyticsRouter = router({
     .input(
       z.object({
         athleteId: z.number(),
-        activityTypes: z.array(z.string()).optional(),
-        workoutTypes: z.array(z.number()).optional(),
+        activityTypes: z.array(z.string().max(50)).optional(),
+        workoutTypes: z.array(z.number().int()).optional(),
       }),
     )
     .use(validateAthleteOwnership)

@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { activities, syncJobs } from "../../db/schema";
@@ -39,10 +39,10 @@ export const syncRouter = router({
     .use(validateAthleteOwnership)
     .use(rateLimited)
     .mutation(async ({ ctx, input }) => {
-      // Check for existing in-progress sync job
-      const existing = await ctx.db.query.syncJobs.findFirst({
-        where: eq(syncJobs.athlete, input.athleteId),
-      });
+      // Use SELECT ... FOR UPDATE to prevent race conditions
+      const [existing] = await ctx.db.execute<typeof syncJobs.$inferSelect>(
+        sql`SELECT * FROM sync_jobs WHERE athlete = ${input.athleteId} LIMIT 1 FOR UPDATE`,
+      );
 
       if (
         existing &&

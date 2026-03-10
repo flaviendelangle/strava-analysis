@@ -100,7 +100,7 @@ export const ActivityStats = React.memo(function ActivityStats({
             },
           ]
         : []),
-    ...(hrss != null
+    ...(isRide && hrss != null
       ? [
           {
             icon: TrendingUp,
@@ -234,7 +234,7 @@ export const ActivityStats = React.memo(function ActivityStats({
               },
             ]
           : []),
-        ...(hrss != null
+        ...(isRide && hrss != null
           ? [
               {
                 label: "HRSS",
@@ -259,14 +259,14 @@ export const ActivityStats = React.memo(function ActivityStats({
                 tooltip:
                   "Configure your rider settings (FTP) to enable this metric.",
               },
+              {
+                label: "HRSS",
+                value: null,
+                tooltip:
+                  "Configure your rider settings (Resting HR, Max HR, LTHR) to enable this metric.",
+              },
             ]
           : []),
-        {
-          label: "HRSS",
-          value: null,
-          tooltip:
-            "Configure your rider settings (Resting HR, Max HR, LTHR) to enable this metric.",
-        },
       ];
 
   return (

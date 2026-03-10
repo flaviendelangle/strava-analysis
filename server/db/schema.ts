@@ -49,7 +49,9 @@ export const activities = pgTable(
   {
     id: serial("id").primaryKey(),
     stravaId: bigint("strava_id", { mode: "number" }).notNull(),
-    athlete: integer("athlete").notNull(),
+    athlete: integer("athlete")
+      .notNull()
+      .references(() => athletes.id, { onDelete: "cascade" }),
     type: text("type").notNull(),
     name: text("name").notNull(),
     startDate: text("start_date").notNull(),
@@ -110,7 +112,9 @@ export const riderSettings = pgTable(
   "rider_settings",
   {
     id: serial("id").primaryKey(),
-    athlete: integer("athlete").notNull(),
+    athlete: integer("athlete")
+      .notNull()
+      .references(() => athletes.id, { onDelete: "cascade" }),
     cdA: real("cd_a").notNull(),
     crr: real("crr").notNull(),
     bikeWeightKg: real("bike_weight_kg"),
@@ -140,7 +144,9 @@ export const timePeriods = pgTable(
   "time_periods",
   {
     id: serial("id").primaryKey(),
-    athlete: integer("athlete").notNull(),
+    athlete: integer("athlete")
+      .notNull()
+      .references(() => athletes.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     startDate: text("start_date").notNull(),
     endDate: text("end_date").notNull(),
@@ -153,7 +159,9 @@ export const syncJobs = pgTable(
   "sync_jobs",
   {
     id: serial("id").primaryKey(),
-    athlete: integer("athlete").notNull(),
+    athlete: integer("athlete")
+      .notNull()
+      .references(() => athletes.id, { onDelete: "cascade" }),
     status: syncJobStatusEnum("status").notNull(),
     activitiesFetched: integer("activities_fetched").notNull().default(0),
     activitiesPagesComplete: boolean("activities_pages_complete")

@@ -51,21 +51,33 @@ function ActivityPageContent({ stravaId }: { stravaId: number }) {
     if (!streamsData) return null;
     const stream = streamsData.find((s) => s.type === "latlng");
     if (!stream) return null;
-    return JSON.parse(stream.data) as [number, number][];
+    try {
+      return JSON.parse(stream.data) as [number, number][];
+    } catch {
+      return null;
+    }
   }, [streamsData]);
 
   const altitudeData = React.useMemo(() => {
     if (!streamsData) return null;
     const stream = streamsData.find((s) => s.type === "altitude");
     if (!stream) return null;
-    return JSON.parse(stream.data) as number[];
+    try {
+      return JSON.parse(stream.data) as number[];
+    } catch {
+      return null;
+    }
   }, [streamsData]);
 
   const distanceData = React.useMemo(() => {
     if (!streamsData) return null;
     const stream = streamsData.find((s) => s.type === "distance");
     if (!stream) return null;
-    return JSON.parse(stream.data) as number[];
+    try {
+      return JSON.parse(stream.data) as number[];
+    } catch {
+      return null;
+    }
   }, [streamsData]);
 
   if (!activity) {

@@ -9,7 +9,7 @@ jobs:
         env:
           POSTGRES_DB: undertrained
           POSTGRES_USER: undertrained
-          POSTGRES_PASSWORD: undertrained
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD || 'undertrained' }}
         ports:
           - 5432:5432
         options: >-
@@ -19,23 +19,21 @@ jobs:
           --health-retries 5
     env:
       NODE_ENV: test
-      NEXTAUTH_SECRET: supersecret
-      DATABASE_URL: postgresql://undertrained:undertrained@localhost:5432/undertrained
+      NEXTAUTH_SECRET: ${{ secrets.CI_NEXTAUTH_SECRET || 'ci-test-secret-not-for-production' }}
+      DATABASE_URL: postgresql://undertrained:${{ secrets.CI_DB_PASSWORD || 'undertrained' }}@localhost:5432/undertrained
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 8.5.1
+      - uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 22.x
-          cache: "pnpm" # You can active this cache when your repo has a lockfile
+          cache: "pnpm"
 
       - name: Install deps (with cache)
         run: pnpm install
@@ -44,7 +42,7 @@ jobs:
         run: pnpm playwright install chromium
 
       - name: Next.js cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.next/cache
           key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
@@ -60,7 +58,7 @@ jobs:
 
       - name: Upload test results
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: test results
           path: |
@@ -74,7 +72,7 @@ jobs:
         env:
           POSTGRES_DB: undertrained
           POSTGRES_USER: undertrained
-          POSTGRES_PASSWORD: undertrained
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD || 'undertrained' }}
         ports:
           - 5432:5432
         options: >-
@@ -84,29 +82,27 @@ jobs:
           --health-retries 5
     env:
       NODE_ENV: test
-      NEXTAUTH_SECRET: supersecret
-      DATABASE_URL: postgresql://undertrained:undertrained@localhost:5432/undertrained
+      NEXTAUTH_SECRET: ${{ secrets.CI_NEXTAUTH_SECRET || 'ci-test-secret-not-for-production' }}
+      DATABASE_URL: postgresql://undertrained:${{ secrets.CI_DB_PASSWORD || 'undertrained' }}@localhost:5432/undertrained
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 8.5.1
+      - uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 22.x
-          cache: "pnpm" # You can active this cache when your repo has a lockfile
+          cache: "pnpm"
 
       - name: Install deps (with cache)
         run: pnpm install
 
       - name: Next.js cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.next/cache
           key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs

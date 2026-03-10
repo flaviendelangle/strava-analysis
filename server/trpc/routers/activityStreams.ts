@@ -1,12 +1,14 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import strava from "strava-v3";
 import { z } from "zod";
 
+import type { Database } from "../../db";
 import { activities, activityStreams, riderSettings } from "../../db/schema";
 import {
   fetchStreamsFromStrava,
   getAccessToken,
   getModelFromStravaActivity,
+  type normalizeStreams,
 } from "../../lib/strava";
 import { computeActivityScoresInternal, storeStreams } from "../../lib/sync";
 import { protectedProcedure, router, validateAthleteOwnership } from "../index";
@@ -21,9 +23,31 @@ const USABLE_TYPES = new Set([
   "latlng",
 ]);
 
+/** Store streams and recompute scores for an activity. */
+async function storeAndRecomputeScores(
+  db: Database,
+  activityId: number,
+  athleteId: number,
+  streams: ReturnType<typeof normalizeStreams>,
+) {
+  await storeStreams(db, activityId, streams);
+
+  const settingsDoc = await db.query.riderSettings.findFirst({
+    where: eq(riderSettings.athlete, athleteId),
+  });
+  if (settingsDoc) {
+    const updatedActivity = await db.query.activities.findFirst({
+      where: eq(activities.id, activityId),
+    });
+    if (updatedActivity) {
+      await computeActivityScoresInternal(db, updatedActivity, settingsDoc);
+    }
+  }
+}
+
 export const activityStreamsRouter = router({
   getStreams: protectedProcedure
-    .input(z.object({ stravaId: z.number() }))
+    .input(z.object({ stravaId: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       const activity = await ctx.db.query.activities.findFirst({
         where: and(
@@ -33,7 +57,7 @@ export const activityStreamsRouter = router({
       });
 
       if (!activity) {
-        throw new Error(`Activity with stravaId ${input.stravaId} not found`);
+        throw new Error("Activity not found");
       }
 
       if (!activity.areStreamsLoaded) {
@@ -43,12 +67,16 @@ export const activityStreamsRouter = router({
       const streams = await ctx.db
         .select()
         .from(activityStreams)
-        .where(eq(activityStreams.activityId, activity.id));
+        .where(
+          and(
+            eq(activityStreams.activityId, activity.id),
+            inArray(activityStreams.type, [...USABLE_TYPES]),
+          ),
+        );
 
       // Group by type and merge chunks
       const grouped = new Map<string, string[]>();
       for (const s of streams) {
-        if (!USABLE_TYPES.has(s.type)) continue;
         const existing = grouped.get(s.type);
         if (existing) {
           existing.push(s.data);
@@ -73,7 +101,7 @@ export const activityStreamsRouter = router({
   reload: protectedProcedure
     .input(
       z.object({
-        stravaId: z.number(),
+        stravaId: z.number().int().positive(),
         athleteId: z.number(),
       }),
     )
@@ -91,17 +119,18 @@ export const activityStreamsRouter = router({
       ]);
 
       if (!rawActivity) {
-        throw new Error(`Activity ${input.stravaId} not found on Strava`);
+        throw new Error("Activity not found on Strava");
       }
 
       const activity = await ctx.db.query.activities.findFirst({
-        where: eq(activities.stravaId, input.stravaId),
+        where: and(
+          eq(activities.stravaId, input.stravaId),
+          eq(activities.athlete, input.athleteId),
+        ),
       });
 
       if (!activity) {
-        throw new Error(
-          `Activity with stravaId ${input.stravaId} not found locally`,
-        );
+        throw new Error("Activity not found");
       }
 
       // Update activity metadata
@@ -133,31 +162,18 @@ export const activityStreamsRouter = router({
         })
         .where(eq(activities.id, activity.id));
 
-      // Store new streams and re-compute scores
-      await storeStreams(ctx.db, activity.id, normalized);
-
-      const settingsDoc = await ctx.db.query.riderSettings.findFirst({
-        where: eq(riderSettings.athlete, input.athleteId),
-      });
-      if (settingsDoc) {
-        // Re-read the activity after storeStreams marked areStreamsLoaded = true
-        const updatedActivity = await ctx.db.query.activities.findFirst({
-          where: eq(activities.id, activity.id),
-        });
-        if (updatedActivity) {
-          await computeActivityScoresInternal(
-            ctx.db,
-            updatedActivity,
-            settingsDoc,
-          );
-        }
-      }
+      await storeAndRecomputeScores(
+        ctx.db,
+        activity.id,
+        input.athleteId,
+        normalized,
+      );
     }),
 
   fetchStreams: protectedProcedure
     .input(
       z.object({
-        stravaId: z.number(),
+        stravaId: z.number().int().positive(),
         athleteId: z.number(),
       }),
     )
@@ -171,38 +187,25 @@ export const activityStreamsRouter = router({
       );
 
       if (normalized.length === 0) {
-        throw new Error(
-          `Streams for activity ${input.stravaId} not found on Strava`,
-        );
+        throw new Error("Streams not found on Strava");
       }
 
       const activity = await ctx.db.query.activities.findFirst({
-        where: eq(activities.stravaId, input.stravaId),
+        where: and(
+          eq(activities.stravaId, input.stravaId),
+          eq(activities.athlete, input.athleteId),
+        ),
       });
 
       if (!activity) {
-        throw new Error(
-          `Activity with stravaId ${input.stravaId} not found locally`,
-        );
+        throw new Error("Activity not found");
       }
 
-      // Store new streams and re-compute scores
-      await storeStreams(ctx.db, activity.id, normalized);
-
-      const settingsDoc = await ctx.db.query.riderSettings.findFirst({
-        where: eq(riderSettings.athlete, input.athleteId),
-      });
-      if (settingsDoc) {
-        const updatedActivity = await ctx.db.query.activities.findFirst({
-          where: eq(activities.id, activity.id),
-        });
-        if (updatedActivity) {
-          await computeActivityScoresInternal(
-            ctx.db,
-            updatedActivity,
-            settingsDoc,
-          );
-        }
-      }
+      await storeAndRecomputeScores(
+        ctx.db,
+        activity.id,
+        input.athleteId,
+        normalized,
+      );
     }),
 });

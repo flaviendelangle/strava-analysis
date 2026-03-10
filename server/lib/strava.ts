@@ -23,6 +23,10 @@ const STREAM_KEYS = [
 // Refresh 5 minutes before actual expiry to avoid race conditions
 const EXPIRY_BUFFER_SECONDS = 300;
 
+// In-flight token refresh promises keyed by athleteId.
+// Prevents concurrent requests from double-consuming a refresh token.
+const refreshLocks = new Map<number, Promise<string>>();
+
 export async function getAccessToken(
   db: Database,
   athleteId: number,
@@ -32,7 +36,7 @@ export async function getAccessToken(
   });
 
   if (!athlete) {
-    throw new Error(`Athlete ${athleteId} not found`);
+    throw new Error("Athlete not found");
   }
 
   const nowSeconds = Math.floor(Date.now() / 1000);
@@ -50,6 +54,26 @@ export async function getAccessToken(
     });
   }
 
+  // If another request is already refreshing this athlete's token, wait for it
+  const inflight = refreshLocks.get(athleteId);
+  if (inflight) {
+    return inflight;
+  }
+
+  const promise = refreshToken(db, athleteId, athlete.refreshToken);
+  refreshLocks.set(athleteId, promise);
+  try {
+    return await promise;
+  } finally {
+    refreshLocks.delete(athleteId);
+  }
+}
+
+async function refreshToken(
+  db: Database,
+  athleteId: number,
+  refreshToken: string,
+): Promise<string> {
   const response = await fetch("https://www.strava.com/api/v3/oauth/token", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -57,7 +81,7 @@ export async function getAccessToken(
       client_id: env.STRAVA_CLIENT_ID,
       client_secret: env.STRAVA_CLIENT_SECRET,
       grant_type: "refresh_token",
-      refresh_token: athlete.refreshToken,
+      refresh_token: refreshToken,
     }),
   });
 

@@ -8,19 +8,19 @@ import { protectedProcedure, router, validateAthleteOwnership } from "../index";
 const changePointSchema = z.object({
   id: z.string(),
   date: z.string(),
-  ftp: z.number().optional(),
-  weightKg: z.number().optional(),
-  restingHr: z.number().optional(),
-  maxHr: z.number().optional(),
-  lthr: z.number().optional(),
+  ftp: z.number().positive().max(2000).optional(),
+  weightKg: z.number().positive().max(500).optional(),
+  restingHr: z.number().int().positive().max(200).optional(),
+  maxHr: z.number().int().positive().max(250).optional(),
+  lthr: z.number().int().positive().max(250).optional(),
 });
 
 const initialValuesSchema = z.object({
-  ftp: z.number(),
-  weightKg: z.number(),
-  restingHr: z.number(),
-  maxHr: z.number(),
-  lthr: z.number(),
+  ftp: z.number().positive().max(2000),
+  weightKg: z.number().positive().max(500),
+  restingHr: z.number().int().positive().max(200),
+  maxHr: z.number().int().positive().max(250),
+  lthr: z.number().int().positive().max(250),
 });
 
 export const riderSettingsRouter = router({
@@ -39,9 +39,9 @@ export const riderSettingsRouter = router({
     .input(
       z.object({
         athleteId: z.number(),
-        cdA: z.number(),
-        crr: z.number(),
-        bikeWeightKg: z.number(),
+        cdA: z.number().positive().max(2),
+        crr: z.number().positive().max(1),
+        bikeWeightKg: z.number().positive().max(50),
         initialValues: initialValuesSchema,
         changes: z.array(changePointSchema),
       }),

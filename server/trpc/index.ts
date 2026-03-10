@@ -64,7 +64,7 @@ function rateLimit(key: string, maxRequests: number, windowMs: number) {
  * Limits to 5 requests per minute per user.
  */
 export const rateLimited = t.middleware(async ({ ctx, next }) => {
-  const userId = ctx.session?.user?.email ?? "anonymous";
+  const userId = String(ctx.session?.athleteId ?? "anonymous");
   rateLimit(userId, 5, 60_000);
   return next();
 });

@@ -18,13 +18,17 @@ export const timePeriodsRouter = router({
 
   create: protectedProcedure
     .input(
-      z.object({
-        athleteId: z.number(),
-        name: z.string().min(1),
-        startDate: z.string(),
-        endDate: z.string(),
-        sportTypes: z.array(z.string()).nullable().optional(),
-      }),
+      z
+        .object({
+          athleteId: z.number(),
+          name: z.string().min(1),
+          startDate: z.string().date(),
+          endDate: z.string().date(),
+          sportTypes: z.array(z.string()).nullable().optional(),
+        })
+        .refine((d) => d.startDate <= d.endDate, {
+          message: "startDate must be before or equal to endDate",
+        }),
     )
     .use(validateAthleteOwnership)
     .mutation(async ({ ctx, input }) => {
@@ -43,14 +47,18 @@ export const timePeriodsRouter = router({
 
   update: protectedProcedure
     .input(
-      z.object({
-        athleteId: z.number(),
-        id: z.number(),
-        name: z.string().min(1),
-        startDate: z.string(),
-        endDate: z.string(),
-        sportTypes: z.array(z.string()).nullable().optional(),
-      }),
+      z
+        .object({
+          athleteId: z.number(),
+          id: z.number(),
+          name: z.string().min(1),
+          startDate: z.string().date(),
+          endDate: z.string().date(),
+          sportTypes: z.array(z.string()).nullable().optional(),
+        })
+        .refine((d) => d.startDate <= d.endDate, {
+          message: "startDate must be before or equal to endDate",
+        }),
     )
     .use(validateAthleteOwnership)
     .mutation(async ({ ctx, input }) => {

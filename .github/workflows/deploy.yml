@@ -15,8 +15,21 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            set -e
             cd /opt/strava-analysis
             git pull origin main
-            docker compose build --no-cache app
+            docker compose build app
             docker compose up -d
+            sleep 5
             docker compose exec -T app npx drizzle-kit migrate
+            # Verify the app is healthy
+            for i in 1 2 3 4 5; do
+              if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+                echo "Health check passed"
+                exit 0
+              fi
+              echo "Waiting for app to be ready... ($i/5)"
+              sleep 3
+            done
+            echo "Health check failed after deploy"
+            exit 1

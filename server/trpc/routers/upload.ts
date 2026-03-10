@@ -25,6 +25,11 @@ export const uploadRouter = router({
 
       const fitBuffer = Buffer.from(input.fitFileBase64, "base64");
 
+      // Validate FIT file header: byte 8-11 must be ".FIT"
+      if (fitBuffer.length < 12 || fitBuffer.toString("ascii", 8, 12) !== ".FIT") {
+        throw new Error("Invalid FIT file format");
+      }
+
       const formData = new FormData();
       formData.append(
         "file",
@@ -47,14 +52,15 @@ export const uploadRouter = router({
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Strava upload failed: ${response.status} ${error}`);
+        throw new Error(`Strava upload failed with status ${response.status}`);
       }
 
-      const result = await response.json();
+      const result = z
+        .object({ id: z.number(), status: z.string() })
+        .parse(await response.json());
       return {
-        uploadId: result.id as number,
-        status: result.status as string,
+        uploadId: result.id,
+        status: result.status,
       };
     }),
 
@@ -80,11 +86,17 @@ export const uploadRouter = router({
         throw new Error(`Status check failed: ${response.status}`);
       }
 
-      const result = await response.json();
+      const result = z
+        .object({
+          status: z.string(),
+          activity_id: z.number().nullable(),
+          error: z.string().nullable(),
+        })
+        .parse(await response.json());
       return {
-        status: result.status as string,
-        activityId: (result.activity_id as number) ?? null,
-        error: (result.error as string) ?? null,
+        status: result.status,
+        activityId: result.activity_id,
+        error: result.error,
       };
     }),
 });
