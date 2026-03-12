@@ -36,7 +36,7 @@ export default {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
-          // CSP is set per-request in src/middleware.ts with a dynamic nonce
+          // CSP is set per-request in src/proxy.ts with a dynamic nonce
         ],
       },
     ];
