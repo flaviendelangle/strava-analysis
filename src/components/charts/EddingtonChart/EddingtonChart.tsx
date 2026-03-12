@@ -9,6 +9,7 @@ import { useAthleteId } from "~/hooks/useAthleteId";
 import { useEddingtonData } from "~/hooks/useEddingtonData";
 import { useIsMobile } from "~/hooks/useIsMobile";
 import { CHART_MARGINS, AXIS_SIZE, formatCompact, useChartTokens } from "~/lib/chartTokens";
+import { getSportConfig } from "~/utils/sportConfig";
 import { trpc } from "~/utils/trpc";
 
 import { ChartThemeProvider } from "../ChartThemeProvider";
@@ -21,9 +22,12 @@ const TABS = {
 
 type TabKey = keyof typeof TABS;
 
-const TAB_OPTIONS: { value: TabKey; label: string }[] = [
-  { value: "riding", label: "Riding" },
-  { value: "running", label: "Running" },
+const RideIcon = getSportConfig("Ride").icon;
+const RunIcon = getSportConfig("Run").icon;
+
+const TAB_OPTIONS: { value: TabKey; label: React.ReactNode }[] = [
+  { value: "riding", label: <RideIcon className="size-3.5" /> },
+  { value: "running", label: <RunIcon className="size-3.5" /> },
 ];
 
 const DISTANCE_DIVISOR = 1000;
@@ -45,8 +49,8 @@ export default function EddingtonChart() {
   const eddington = useEddingtonData(data?.activities, DISTANCE_DIVISOR);
 
   const header = (
-    <div className="border-border flex items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
-      <h3 className="shrink-0 text-xs font-medium sm:text-sm">Eddington Number</h3>
+    <div className="border-border flex items-center gap-2 border-b p-4">
+      <h3 className="shrink-0 text-lg font-semibold">Eddington Number</h3>
       <Tooltip label="Your Eddington number E is the largest number such that you have cycled at least E km on E different days. Each bar shows how many days you rode at least that distance.">
         <button className="text-muted-foreground hover:text-foreground">
           <InfoIcon className="size-3.5" />

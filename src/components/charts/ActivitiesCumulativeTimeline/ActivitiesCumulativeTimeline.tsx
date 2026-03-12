@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { FilterIcon } from "lucide-react";
+import { FilterIcon, SlidersHorizontalIcon } from "lucide-react";
 import { format, getMonth, getYear } from "date-fns";
 import { enGB } from "date-fns/locale/en-GB";
 
@@ -109,16 +109,50 @@ export default function ActivitiesCumulativeTimeline() {
   return (
     <ChartThemeProvider>
       <div className="bg-card flex h-96 w-full flex-col rounded-md">
-        <div className="border-border flex items-center gap-1.5 border-b p-2 sm:gap-4 sm:p-4">
-          <h3 className="shrink-0 text-xs font-medium sm:text-sm">Year-over-Year Progress</h3>
-          <MetricSelect value={metric} onValueChange={setMetric} />
+        <div className="border-border flex items-center gap-2 border-b p-4">
+          <h3 className="shrink-0 text-lg font-semibold">Year-over-Year Progress</h3>
+
+          {/* Desktop: inline controls */}
+          <div className="hidden items-center gap-2 sm:flex">
+            <MetricSelect value={metric} onValueChange={setMetric} />
+          </div>
+
+          <div className="flex-1" />
+
+          {/* Mobile: all controls in popover */}
           <Popover>
             <PopoverTrigger
               render={
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-muted-foreground ml-auto gap-1.5"
+                  className="text-muted-foreground sm:hidden"
+                >
+                  <SlidersHorizontalIcon className="size-4" />
+                </Button>
+              }
+            />
+            <PopoverContent align="end" className="flex w-56 flex-col gap-3 sm:hidden">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-muted-foreground text-xs font-medium">Metric</span>
+                <MetricSelect value={metric} onValueChange={setMetric} />
+              </div>
+              <SportTypeFilter
+                allTypes={activitiesQuery.allTypes}
+                selectedTypes={selectedTypes}
+                setSelectedTypes={setSelectedTypes}
+              />
+            </PopoverContent>
+          </Popover>
+
+          {/* Desktop: sport filter */}
+          <Popover>
+            <PopoverTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hidden gap-1.5 sm:inline-flex"
                 >
                   <FilterIcon className="size-3.5" />
                   <span>Sport</span>
@@ -131,42 +165,11 @@ export default function ActivitiesCumulativeTimeline() {
               }
             />
             <PopoverContent align="end" className="w-56 p-3">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-muted-foreground text-xs font-medium">Sport Types</span>
-                {selectedTypes.length > 0 && (
-                  <button
-                    onClick={() => setSelectedTypes([])}
-                    className="text-muted-foreground hover:text-foreground text-[10px]"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                {activitiesQuery.allTypes?.map((type) => {
-                  const Icon = getSportConfig(type).icon;
-                  const active = selectedTypes.includes(type);
-                  return (
-                    <button
-                      key={type}
-                      onClick={() =>
-                        setSelectedTypes((prev) =>
-                          active ? prev.filter((t) => t !== type) : [...prev, type],
-                        )
-                      }
-                      className={cn(
-                        "inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors",
-                        active
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
-                      )}
-                    >
-                      <Icon className="size-3.5 shrink-0" />
-                      <span className="truncate">{formatActivityType(type)}</span>
-                    </button>
-                  );
-                })}
-              </div>
+              <SportTypeFilter
+                allTypes={activitiesQuery.allTypes}
+                selectedTypes={selectedTypes}
+                setSelectedTypes={setSelectedTypes}
+              />
             </PopoverContent>
           </Popover>
         </div>
@@ -201,5 +204,56 @@ export default function ActivitiesCumulativeTimeline() {
         </div>
       </div>
     </ChartThemeProvider>
+  );
+}
+
+function SportTypeFilter({
+  allTypes,
+  selectedTypes,
+  setSelectedTypes,
+}: {
+  allTypes: string[] | undefined;
+  selectedTypes: string[];
+  setSelectedTypes: React.Dispatch<React.SetStateAction<string[]>>;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground text-xs font-medium">Sport Types</span>
+        {selectedTypes.length > 0 && (
+          <button
+            onClick={() => setSelectedTypes([])}
+            className="text-muted-foreground hover:text-foreground text-[10px]"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-1.5">
+        {allTypes?.map((type) => {
+          const Icon = getSportConfig(type).icon;
+          const active = selectedTypes.includes(type);
+          return (
+            <button
+              key={type}
+              onClick={() =>
+                setSelectedTypes((prev) =>
+                  active ? prev.filter((t) => t !== type) : [...prev, type],
+                )
+              }
+              className={cn(
+                "inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors",
+                active
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
+              )}
+            >
+              <Icon className="size-3.5 shrink-0" />
+              <span className="truncate">{formatActivityType(type)}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

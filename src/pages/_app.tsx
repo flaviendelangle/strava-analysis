@@ -3,7 +3,8 @@ import type { ReactElement, ReactNode } from "react";
 import type { NextPage } from "next";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
-import type { AppProps, AppType } from "next/app";
+import type { AppContext, AppProps, AppType } from "next/app";
+import NextApp from "next/app";
 import { CookiesProvider } from "react-cookie";
 
 import { LicenseInfo } from "@mui/x-license";
@@ -25,17 +26,19 @@ export type NextPageWithLayout<
 
 type AppPropsWithLayout = AppProps & {
   Component: NextPageWithLayout;
+  nonce?: string;
 };
 
 const App = (({
   Component,
   pageProps: { session, ...pageProps },
+  nonce,
 }: AppPropsWithLayout) => {
   const getLayout =
     Component.getLayout ?? ((page) => <LoggedInLayout>{page}</LoggedInLayout>);
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem nonce={nonce}>
       <CookiesProvider>
         <SessionProvider session={session}>
           <TooltipProvider>
@@ -48,5 +51,11 @@ const App = (({
     </ThemeProvider>
   );
 }) as AppType;
+
+App.getInitialProps = async (appContext: AppContext) => {
+  const appProps = await NextApp.getInitialProps(appContext);
+  const nonce = appContext.ctx.req?.headers?.["x-nonce"] as string | undefined;
+  return { ...appProps, nonce };
+};
 
 export default trpc.withTRPC(App);

@@ -2,6 +2,7 @@ import * as React from "react";
 
 import { ArrowLeftIcon, Maximize2, Minimize2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/router";
 
 import { ActivityActionsMenu } from "~/components/ActivityActionsMenu";
 import { ActivityMap } from "~/components/ActivityMap";
@@ -34,6 +35,11 @@ const ActivityPage: NextPageWithLayout = () => {
 };
 
 function ActivityPageContent({ stravaId }: { stravaId: number }) {
+  const router = useRouter();
+  const backHref = router.query.from === "period" && router.query.periodId
+    ? `/periods/${router.query.periodId}`
+    : "/activities";
+
   const [hoverPosition, setHoverPosition] = React.useState<
     [number, number] | null
   >(null);
@@ -111,7 +117,7 @@ function ActivityPageContent({ stravaId }: { stravaId: number }) {
     <>
       <Toolbar actions={<ActivityActionsMenu stravaId={activity.stravaId} />}>
         <Link
-          href="/activities"
+          href={backHref}
           className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-8 items-center justify-center rounded-lg transition-colors"
         >
           <ArrowLeftIcon className="size-4" />

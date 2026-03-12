@@ -3,6 +3,7 @@ import * as React from "react";
 import {
   BarChart3Icon,
   BikeIcon,
+  CalendarIcon,
   EllipsisIcon,
   ListIcon,
   LogOutIcon,
@@ -163,6 +164,13 @@ export function NavBar() {
               href="/statistics"
             />
           </TooltipIfMenuCollapsed>
+          <TooltipIfMenuCollapsed label="Periods">
+            <NavBarLink
+              icon={CalendarIcon}
+              label="Periods"
+              href="/periods"
+            />
+          </TooltipIfMenuCollapsed>
           <TooltipIfMenuCollapsed label="Live Training">
             <NavBarLink
               icon={PlayCircleIcon}
@@ -244,6 +252,14 @@ export function MobileBottomBar() {
       )}
       {moreOpen && (
         <div className="bg-popover border-border fixed right-2 bottom-16 z-50 rounded-xl border p-1 shadow-lg md:hidden">
+          <Link
+            href="/periods"
+            className="text-foreground hover:bg-accent flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium"
+            onClick={() => setMoreOpen(false)}
+          >
+            <CalendarIcon className="size-4" />
+            Periods
+          </Link>
           <Link
             href="/settings"
             className="text-foreground hover:bg-accent flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium"

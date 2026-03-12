@@ -222,7 +222,7 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
   return (
     <div className="bg-card flex flex-col rounded-md">
       <div className="border-border flex items-center gap-2 border-b p-4">
-        <h3 className="text-sm font-medium">Time Series</h3>
+        <h3 className="text-lg font-semibold">Time Series</h3>
         <FeatureHint hintId="hint-activity-streams" title="Time Series">
           Heart rate, power, cadence, speed, and altitude plotted over time or
           distance. Hover to see all metrics at a specific point. Toggle the

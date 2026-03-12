@@ -1,8 +1,6 @@
 import * as React from "react";
 
-import { InfoIcon } from "lucide-react";
-
-import { Tooltip } from "~/components/primitives/Tooltip";
+import { CardTitle } from "~/components/primitives/CardTitle";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -55,24 +53,12 @@ export function EquipmentFields({
   return (
     <div className="flex flex-col gap-5">
       {showHeader && (
-        <>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold">
-                Equipment & Aerodynamics
-              </h2>
-              <Tooltip label="Only used on the Live Training page to estimate virtual power from speed data. Bike weight affects climbing calculations, CdA (coefficient of drag times frontal area) models air resistance, and Crr (coefficient of rolling resistance) models tire friction.">
-                <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
-                  <InfoIcon className="size-4" />
-                </button>
-              </Tooltip>
-            </div>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Used on the Live Training page. These values are constant and do
-              not change over time.
-            </p>
-          </div>
-        </>
+        <CardTitle
+          tooltip="Only used on the Live Training page to estimate virtual power from speed data. Bike weight affects climbing calculations, CdA (coefficient of drag times frontal area) models air resistance, and Crr (coefficient of rolling resistance) models tire friction."
+          description="Used on the Live Training page. These values are constant and do not change over time."
+        >
+          Equipment & Aerodynamics
+        </CardTitle>
       )}
       <div className={className ?? "grid grid-cols-1 gap-5 sm:grid-cols-3"}>
       <div className="flex flex-col gap-2">

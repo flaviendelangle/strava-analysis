@@ -16,6 +16,7 @@ import type { ReactNode } from "react";
 
 import type { Activity } from "@server/db/types";
 
+import { CardTitle } from "~/components/primitives/CardTitle";
 import { SettingsCallout } from "~/components/primitives/SettingsCallout";
 import { StatCard } from "~/components/primitives/StatCard";
 import { StatSection } from "~/components/primitives/StatSection";
@@ -296,7 +297,7 @@ export const ActivityStats = React.memo(function ActivityStats({
 
   return (
     <div className="border-border bg-card rounded-xl border p-5">
-      <h3 className="mb-4 text-lg font-semibold">Activity Details</h3>
+      <CardTitle className="mb-4">Activity Details</CardTitle>
 
       {/* Hero Row */}
       <div

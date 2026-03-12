@@ -44,12 +44,14 @@ function FitBounds(props: FitBoundsProps) {
   const map = useMap();
 
   React.useEffect(() => {
-    const positions = polylines[0]?.polyline ?? [];
-    if (positions.length > 0) {
-      const bounds = positions.map(
-        (pos) => [pos[0], pos[1]] as [number, number],
-      );
-      map.fitBounds(bounds);
+    const allPositions: [number, number][] = [];
+    for (const entry of polylines) {
+      for (const pos of entry.polyline) {
+        allPositions.push([pos[0], pos[1]]);
+      }
+    }
+    if (allPositions.length > 0) {
+      map.fitBounds(allPositions);
     }
   }, [polylines, map]);
 

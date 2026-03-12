@@ -3,7 +3,7 @@ import * as React from "react";
 interface SegmentedToggleProps<T extends string> {
   value: T;
   onChange: (value: T) => void;
-  options: { value: T; label: string }[];
+  options: { value: T; label: React.ReactNode }[];
 }
 
 export function SegmentedToggle<T extends string>({

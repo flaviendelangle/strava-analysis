@@ -44,9 +44,12 @@ function ActivityRow(props: {
   row: Row<ActivityWithoutMap>;
   index: number;
   style?: React.CSSProperties;
+  timePeriodId?: number;
 }) {
-  const { row, index, style } = props;
-  const activityHref = `/activities/${row.original.stravaId}`;
+  const { row, index, style, timePeriodId } = props;
+  const activityHref = timePeriodId != null
+    ? `/activities/${row.original.stravaId}?from=period&periodId=${timePeriodId}`
+    : `/activities/${row.original.stravaId}`;
 
   return (
     <TableRow
@@ -159,8 +162,10 @@ const ROW_HEIGHT = 48;
 const VIRTUALIZER_OVERSCAN = 20;
 const SKELETON_ROW_COUNT = 25;
 
-export function ActivitiesTable(props: { nameFilter?: string }) {
-  const activitiesQuery = useActivitiesQuery();
+export function ActivitiesTable(props: { nameFilter?: string; timePeriodId?: number }) {
+  const activitiesQuery = useActivitiesQuery(
+    props.timePeriodId != null ? { timePeriodId: props.timePeriodId } : undefined,
+  );
   const { timeline } = useRiderSettingsTimeline();
   const tableContainerRef = React.useRef<HTMLDivElement>(null);
 
@@ -278,6 +283,7 @@ export function ActivitiesTable(props: { nameFilter?: string }) {
                     key={row.id}
                     row={row}
                     index={virtualRow.index}
+                    timePeriodId={props.timePeriodId}
                     style={{
                       position: "absolute",
                       top: 0,

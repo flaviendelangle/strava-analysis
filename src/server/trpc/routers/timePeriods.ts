@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
@@ -5,6 +6,59 @@ import { activities, timePeriods } from "../../db/schema";
 import { protectedProcedure, router, validateAthleteOwnership } from "../index";
 
 export const timePeriodsRouter = router({
+  getById: protectedProcedure
+    .input(z.object({ athleteId: z.number(), id: z.number() }))
+    .use(validateAthleteOwnership)
+    .query(async ({ ctx, input }) => {
+      const [period] = await ctx.db
+        .select()
+        .from(timePeriods)
+        .where(
+          and(
+            eq(timePeriods.id, input.id),
+            eq(timePeriods.athlete, input.athleteId),
+          ),
+        );
+
+      if (!period) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Time period not found" });
+      }
+
+      const sportTypeCondition =
+        period.sportTypes && period.sportTypes.length > 0
+          ? sql`AND a.type IN (${sql.join(period.sportTypes.map((t) => sql`${t}`), sql`, `)})`
+          : sql``;
+
+      const [stats] = await ctx.db.execute<{
+        activity_count: string;
+        total_moving_time: string;
+        total_elapsed_time: string;
+        total_distance: string;
+        total_elevation: string;
+      }>(sql`
+        SELECT
+          COUNT(a.id)::text AS activity_count,
+          COALESCE(SUM(a.moving_time), 0)::text AS total_moving_time,
+          COALESCE(SUM(a.elapsed_time), 0)::text AS total_elapsed_time,
+          COALESCE(SUM(a.distance), 0)::text AS total_distance,
+          COALESCE(SUM(a.total_elevation_gain), 0)::text AS total_elevation
+        FROM ${activities} a
+        WHERE a.athlete = ${input.athleteId}
+          AND a.start_date >= ${period.startDate}
+          AND a.start_date <= ${period.endDate + "T23:59:59Z"}
+          ${sportTypeCondition}
+      `);
+
+      return {
+        period,
+        activityCount: Number(stats?.activity_count ?? 0),
+        totalMovingTime: Number(stats?.total_moving_time ?? 0),
+        totalElapsedTime: Number(stats?.total_elapsed_time ?? 0),
+        totalDistance: Number(stats?.total_distance ?? 0),
+        totalElevation: Number(stats?.total_elevation ?? 0),
+      };
+    }),
+
   list: protectedProcedure
     .input(z.object({ athleteId: z.number() }))
     .use(validateAthleteOwnership)
@@ -112,7 +166,6 @@ export const timePeriodsRouter = router({
         total_elapsed_time: string;
         total_distance: string;
         total_elevation: string;
-        total_calories: string;
       }>(sql`
         SELECT
           p.id::text AS period_id,
@@ -120,8 +173,7 @@ export const timePeriodsRouter = router({
           COALESCE(SUM(a.moving_time), 0)::text AS total_moving_time,
           COALESCE(SUM(a.elapsed_time), 0)::text AS total_elapsed_time,
           COALESCE(SUM(a.distance), 0)::text AS total_distance,
-          COALESCE(SUM(a.total_elevation_gain), 0)::text AS total_elevation,
-          COALESCE(SUM(a.calories), 0)::text AS total_calories
+          COALESCE(SUM(a.total_elevation_gain), 0)::text AS total_elevation
         FROM ${timePeriods} p
         LEFT JOIN ${activities} a
           ON a.athlete = ${input.athleteId}
@@ -149,7 +201,6 @@ export const timePeriodsRouter = router({
           totalElapsedTime: Number(row?.total_elapsed_time ?? 0),
           totalDistance: Number(row?.total_distance ?? 0),
           totalElevation: Number(row?.total_elevation ?? 0),
-          totalCalories: Number(row?.total_calories ?? 0),
         };
       });
     }),

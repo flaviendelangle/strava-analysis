@@ -7,6 +7,7 @@ import { useAthleteId } from "./useAthleteId";
 
 interface UseActivitiesQueryOptions {
   activityTypes?: string[];
+  timePeriodId?: number;
 }
 
 export function useActivitiesQuery(options?: UseActivitiesQueryOptions) {
@@ -16,7 +17,7 @@ export function useActivitiesQuery(options?: UseActivitiesQueryOptions) {
   const hasLocalOverride = options !== undefined;
   const activityTypes = hasLocalOverride ? (options.activityTypes ?? []) : globalFilter.activityTypes;
   const workoutTypes = hasLocalOverride ? [] : globalFilter.workoutTypes;
-  const timePeriodId = hasLocalOverride ? undefined : globalFilter.timePeriodId;
+  const timePeriodId = hasLocalOverride ? (options.timePeriodId ?? undefined) : globalFilter.timePeriodId;
 
   const result = trpc.activities.list.useQuery(
     { athleteId: athleteId!, activityTypes, workoutTypes, timePeriodId },

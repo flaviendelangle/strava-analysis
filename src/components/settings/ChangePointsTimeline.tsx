@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 
-import { BarChart3Icon, InfoIcon, PlusIcon } from "lucide-react";
+import { BarChart3Icon, PlusIcon } from "lucide-react";
 
-import { Tooltip } from "~/components/primitives/Tooltip";
+import { CardTitle } from "~/components/primitives/CardTitle";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -149,30 +149,27 @@ export function ChangePointsTimeline({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h3 className="text-lg font-medium">Rider Settings</h3>
-          <Tooltip label="Set your baseline fitness values and track how they change over time. These are used to calculate training load and power metrics for your activities. Add a change point when you do an FTP test or your weight changes — past activities will use the settings that were active on their date.">
-            <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
-              <InfoIcon className="size-4" />
-            </button>
-          </Tooltip>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setTimelineDialogOpen(true)}
-          >
-            <BarChart3Icon className="mr-1.5 size-3.5" />
-            Timeline
-          </Button>
-          <Button size="sm" onClick={handleAdd}>
-            <PlusIcon className="mr-1.5 size-3.5" />
-            Add Change
-          </Button>
-        </div>
-      </div>
+      <CardTitle
+        tooltip="Set your baseline fitness values and track how they change over time. These are used to calculate training load and power metrics for your activities. Add a change point when you do an FTP test or your weight changes — past activities will use the settings that were active on their date."
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setTimelineDialogOpen(true)}
+            >
+              <BarChart3Icon className="mr-1.5 size-3.5" />
+              Timeline
+            </Button>
+            <Button size="sm" onClick={handleAdd}>
+              <PlusIcon className="mr-1.5 size-3.5" />
+              Add Change
+            </Button>
+          </div>
+        }
+      >
+        Rider Settings
+      </CardTitle>
 
       <div className="flex flex-col gap-2">
         {resolvedRows.map((row) => {

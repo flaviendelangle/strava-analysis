@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { format, subDays } from "date-fns";
-import { X } from "lucide-react";
+import { SlidersHorizontalIcon, X } from "lucide-react";
 
 import { FeatureHint } from "~/components/primitives/FeatureHint";
 import { Button } from "~/components/ui/button";
@@ -43,13 +43,17 @@ interface DateRange {
 // seriesId → (ActivityInfo | null)[] indexed by dataIndex
 type ActivityMetadataMap = Record<string, (ActivityInfo | null)[]>;
 
+function formatDateOnly(date: Date): string {
+  return format(date, "yyyy-MM-dd");
+}
+
 function makeRollingRange(days: number, label: string): DateRange {
   const now = new Date();
   return {
     id: `preset-${days}d`,
     label,
-    dateFrom: subDays(now, days).toISOString(),
-    dateTo: now.toISOString(),
+    dateFrom: formatDateOnly(subDays(now, days)),
+    dateTo: formatDateOnly(now),
   };
 }
 
@@ -64,8 +68,8 @@ function makeYearRange(year: number): DateRange {
   return {
     id: `year-${year}`,
     label: String(year),
-    dateFrom: new Date(year, 0, 1).toISOString(),
-    dateTo: new Date(year + 1, 0, 1).toISOString(),
+    dateFrom: formatDateOnly(new Date(year, 0, 1)),
+    dateTo: formatDateOnly(new Date(year + 1, 0, 1)),
   };
 }
 
@@ -88,10 +92,18 @@ const DEFAULT_RANGES: DateRange[] = [presetToRange("1y")];
 
 // --- Props ---
 
+export interface PowerCurveDateRange {
+  id: string;
+  label: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
 interface PowerCurveProps {
   activityTypes?: string[];
   workoutTypes?: number[];
   stravaId?: number;
+  defaultRanges?: PowerCurveDateRange[];
 }
 
 // --- Component ---
@@ -100,12 +112,13 @@ const PowerCurve = React.memo(function PowerCurve({
   activityTypes,
   workoutTypes,
   stravaId,
+  defaultRanges,
 }: PowerCurveProps) {
   if (stravaId != null) {
     return <SingleActivityPowerCurve stravaId={stravaId} />;
   }
 
-  return <AggregatedPowerCurve activityTypes={activityTypes} workoutTypes={workoutTypes} />;
+  return <AggregatedPowerCurve activityTypes={activityTypes} workoutTypes={workoutTypes} defaultRanges={defaultRanges} />;
 });
 
 export default PowerCurve;
@@ -209,8 +222,8 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
 
   return (
     <div className="bg-card flex h-96 w-full flex-col rounded-md">
-      <div className="border-border flex items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
-        <h3 className="shrink-0 text-xs font-medium sm:text-sm">Cycling Power Curve</h3>
+      <div className="border-border flex items-center gap-2 border-b p-4">
+        <h3 className="shrink-0 text-lg font-semibold">Cycling Power Curve</h3>
         <FeatureHint hintId="hint-activity-power-curve" title="Power Curve" side="right">
           Your best sustained power efforts at each duration. Toggle &quot;vs All-Time&quot; to compare this activity against your historical bests and spot improvements.
         </FeatureHint>
@@ -236,12 +249,16 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
 
 // --- Aggregated mode with multi-range support ---
 
-function AggregatedPowerCurve({ activityTypes, workoutTypes: workoutTypesProp }: { activityTypes?: string[]; workoutTypes?: number[] }) {
+function AggregatedPowerCurve({ activityTypes, workoutTypes: workoutTypesProp, defaultRanges }: { activityTypes?: string[]; workoutTypes?: number[]; defaultRanges?: PowerCurveDateRange[] }) {
   const tokens = useChartTokens();
   const athleteId = useAthleteId();
   const filter = useActivityFilter();
   const workoutTypes = workoutTypesProp ?? (filter.workoutTypes.length > 0 ? filter.workoutTypes : undefined);
-  const [ranges, setRanges] = React.useState<DateRange[]>(DEFAULT_RANGES);
+  const [ranges, setRanges] = React.useState<DateRange[]>(defaultRanges ?? DEFAULT_RANGES);
+  const lockedRangeIds = React.useMemo(
+    () => defaultRanges ? new Set(defaultRanges.map((r) => r.id)) : undefined,
+    [defaultRanges],
+  );
   const [mode, setMode] = React.useState<PowerCurveMode>("watts");
   const { resolveForDate } = useRiderSettingsTimeline();
 
@@ -347,6 +364,7 @@ function AggregatedPowerCurve({ activityTypes, workoutTypes: workoutTypesProp }:
           onAddPreset={addRange}
           onAddCustom={addRange}
           onRemove={removeRange}
+          lockedRangeIds={lockedRangeIds}
           athleteId={athleteId}
           activityTypes={activityTypes}
           workoutTypes={workoutTypes}
@@ -367,6 +385,7 @@ function AggregatedPowerCurve({ activityTypes, workoutTypes: workoutTypesProp }:
         onAddPreset={addRange}
         onAddCustom={addRange}
         onRemove={removeRange}
+        lockedRangeIds={lockedRangeIds}
         athleteId={athleteId}
         activityTypes={activityTypes}
         workoutTypes={workoutTypes}
@@ -404,6 +423,7 @@ function Toolbar({
   onAddPreset,
   onAddCustom,
   onRemove,
+  lockedRangeIds,
   athleteId,
   activityTypes,
   workoutTypes,
@@ -414,6 +434,7 @@ function Toolbar({
   onAddPreset: (range: DateRange) => void;
   onAddCustom: (range: DateRange) => void;
   onRemove: (id: string) => void;
+  lockedRangeIds?: Set<string>;
   athleteId: number | null | undefined;
   activityTypes?: string[];
   workoutTypes?: number[];
@@ -421,16 +442,16 @@ function Toolbar({
   onModeChange: (mode: PowerCurveMode) => void;
 }) {
   const tokens = useChartTokens();
-  return (
-    <div className="border-border flex flex-wrap items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
-      <h3 className="shrink-0 text-xs font-medium sm:text-sm">Cycling Power Curve</h3>
-      <div className="bg-border mx-1 h-4 w-px" />
+
+  const rangeControls = (
+    <>
       {ranges.map((range, i) => (
         <RangeChip
           key={range.id}
           range={range}
           color={tokens.palette[i % tokens.palette.length]}
           onRemove={() => onRemove(range.id)}
+          removable={!lockedRangeIds?.has(range.id)}
         />
       ))}
       <PresetSelect
@@ -440,7 +461,39 @@ function Toolbar({
         workoutTypes={workoutTypes}
       />
       <CustomRangePopover onAdd={onAddCustom} />
+    </>
+  );
+
+  return (
+    <div className="border-border flex items-center gap-2 border-b p-4">
+      <h3 className="shrink-0 text-lg font-semibold">Cycling Power Curve</h3>
+
+      {/* Desktop: range controls inline */}
+      <div className="hidden items-center gap-2 sm:flex">
+        <div className="bg-border mx-1 h-4 w-px" />
+        {rangeControls}
+      </div>
+
       <div className="flex-1" />
+
+      {/* Mobile: range controls in popover */}
+      <Popover>
+        <PopoverTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground sm:hidden"
+            >
+              <SlidersHorizontalIcon className="size-4" />
+            </Button>
+          }
+        />
+        <PopoverContent align="end" className="flex flex-col gap-2 sm:hidden">
+          {rangeControls}
+        </PopoverContent>
+      </Popover>
+
       <ModeToggle mode={mode} onModeChange={onModeChange} />
     </div>
   );
@@ -450,10 +503,12 @@ function RangeChip({
   range,
   color,
   onRemove,
+  removable = true,
 }: {
   range: DateRange;
   color: string;
   onRemove: () => void;
+  removable?: boolean;
 }) {
   return (
     <span className="bg-muted text-muted-foreground inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs">
@@ -462,13 +517,15 @@ function RangeChip({
         style={{ backgroundColor: color }}
       />
       {range.label}
-      <button
-        type="button"
-        onClick={onRemove}
-        className="hover:bg-foreground/10 rounded-full p-0.5"
-      >
-        <X className="size-3" />
-      </button>
+      {removable && (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="hover:bg-foreground/10 rounded-full p-0.5"
+        >
+          <X className="size-3" />
+        </button>
+      )}
     </span>
   );
 }
@@ -535,8 +592,8 @@ function CustomRangePopover({ onAdd }: { onAdd: (range: DateRange) => void }) {
     onAdd({
       id: `custom-${crypto.randomUUID()}`,
       label,
-      dateFrom: new Date(from).toISOString(),
-      dateTo: new Date(to).toISOString(),
+      dateFrom: formatDateOnly(new Date(from)),
+      dateTo: formatDateOnly(new Date(to)),
     });
     setFrom("");
     setTo("");
@@ -590,8 +647,8 @@ function CustomRangePopover({ onAdd }: { onAdd: (range: DateRange) => void }) {
 function EmptyChart() {
   return (
     <div className="bg-card flex h-96 w-full flex-col rounded-md">
-      <div className="border-border flex items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
-        <h3 className="shrink-0 text-xs font-medium sm:text-sm">Cycling Power Curve</h3>
+      <div className="border-border flex items-center gap-2 border-b p-4">
+        <h3 className="shrink-0 text-lg font-semibold">Cycling Power Curve</h3>
       </div>
       <div className="text-muted-foreground flex flex-1 items-center justify-center">
         No power data available
