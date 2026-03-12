@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import strava from "strava-v3";
+import { z } from "zod";
 
 import { TRPCError } from "@trpc/server";
 
@@ -7,6 +8,12 @@ import type { Database } from "../db";
 import { athletes } from "../db/schema";
 import { env } from "../env";
 import type { StravaActivity, StravaStream } from "./stravaTypes";
+
+const stravaTokenResponseSchema = z.object({
+  access_token: z.string(),
+  refresh_token: z.string(),
+  expires_at: z.number().int(),
+});
 
 const STREAM_KEYS = [
   "time",
@@ -93,11 +100,7 @@ async function refreshToken(
     });
   }
 
-  const data = (await response.json()) as {
-    access_token: string;
-    refresh_token: string;
-    expires_at: number;
-  };
+  const data = stravaTokenResponseSchema.parse(await response.json());
 
   // Persist the new tokens
   await db

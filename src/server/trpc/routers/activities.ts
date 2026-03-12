@@ -1,4 +1,4 @@
-import { and, eq, getTableColumns, gte, inArray, isNotNull, lte } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, gte, inArray, isNotNull, lte } from "drizzle-orm";
 import { z } from "zod";
 
 import { activities } from "../../db/schema";
@@ -56,7 +56,8 @@ export const activitiesRouter = router({
           ctx.db
             .select()
             .from(activities)
-            .where(and(...conditions)),
+            .where(and(...conditions))
+            .orderBy(desc(activities.startDate)),
           allTypesPromise,
           allWorkoutTypesPromise,
         ]);
@@ -71,7 +72,8 @@ export const activitiesRouter = router({
         ctx.db
           .select(columnsWithoutMap)
           .from(activities)
-          .where(and(...conditions)),
+          .where(and(...conditions))
+          .orderBy(desc(activities.startDate)),
         allTypesPromise,
         allWorkoutTypesPromise,
       ]);

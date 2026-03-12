@@ -69,33 +69,34 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
     stravaId,
   });
   const fetchStreams = trpc.activityStreams.fetchStreams.useMutation();
+  const fetchStreamsRef = React.useRef(fetchStreams);
+  fetchStreamsRef.current = fetchStreams;
   const [isFetching, setIsFetching] = React.useState(false);
   const [fetchError, setFetchError] = React.useState<string | null>(null);
   const hasFetched = React.useRef(false);
   const [xAxisMode, setXAxisMode] = React.useState<XAxisMode>("time");
 
   React.useEffect(() => {
-    if (
-      streamsData === null &&
-      athleteId &&
-      !isFetching &&
-      !hasFetched.current
-    ) {
+    if (streamsData === null && athleteId && !hasFetched.current) {
       hasFetched.current = true;
       setIsFetching(true);
       setFetchError(null);
-      fetchStreams
+      fetchStreamsRef.current
         .mutateAsync({ stravaId, athleteId })
-        .catch((err) => setFetchError(String(err)))
+        .catch((err: unknown) => setFetchError(String(err)))
         .finally(() => setIsFetching(false));
     }
-  }, [streamsData, athleteId, stravaId, isFetching, fetchStreams]);
+  }, [streamsData, athleteId, stravaId]);
 
   const latlngData = React.useMemo(() => {
     if (!streamsData) return null;
     const latlngStream = streamsData.find((s) => s.type === "latlng");
     if (!latlngStream) return null;
-    return JSON.parse(latlngStream.data) as [number, number][];
+    try {
+      return JSON.parse(latlngStream.data) as [number, number][];
+    } catch {
+      return null;
+    }
   }, [streamsData]);
 
   const handleHoverIndexChange = React.useCallback(

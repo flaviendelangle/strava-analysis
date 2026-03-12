@@ -8,6 +8,7 @@ import { CookiesProvider } from "react-cookie";
 
 import { LicenseInfo } from "@mui/x-license";
 
+import { ErrorBoundary } from "~/components/ErrorBoundary";
 import { LoggedInLayout } from "~/components/layouts/LoggedInLayout";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import "~/styles/globals.css";
@@ -38,7 +39,9 @@ const App = (({
       <CookiesProvider>
         <SessionProvider session={session}>
           <TooltipProvider>
-            {getLayout(<Component {...pageProps} />)}
+            <ErrorBoundary>
+              {getLayout(<Component {...pageProps} />)}
+            </ErrorBoundary>
           </TooltipProvider>
         </SessionProvider>
       </CookiesProvider>

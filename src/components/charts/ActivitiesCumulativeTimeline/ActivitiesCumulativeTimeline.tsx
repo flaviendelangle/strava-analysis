@@ -104,7 +104,7 @@ export default function ActivitiesCumulativeTimeline() {
         curve: "natural" as const,
       };
     });
-  }, [groupedActivities, metricConfig]);
+  }, [groupedActivities, metricConfig, metricContext]);
 
   return (
     <ChartThemeProvider>

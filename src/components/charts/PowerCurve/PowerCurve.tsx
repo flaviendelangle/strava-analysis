@@ -525,13 +525,11 @@ function CustomRangePopover({ onAdd }: { onAdd: (range: DateRange) => void }) {
   const [open, setOpen] = React.useState(false);
   const [from, setFrom] = React.useState("");
   const [to, setTo] = React.useState("");
-  const counterRef = React.useRef(0);
-
   const handleAdd = () => {
     if (!from || !to) return;
     const label = `${format(new Date(from), "MMM yyyy")} – ${format(new Date(to), "MMM yyyy")}`;
     onAdd({
-      id: `custom-${counterRef.current++}`,
+      id: `custom-${crypto.randomUUID()}`,
       label,
       dateFrom: new Date(from).toISOString(),
       dateTo: new Date(to).toISOString(),

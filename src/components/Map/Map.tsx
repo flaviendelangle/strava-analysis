@@ -129,9 +129,7 @@ export default function Map(props: MapProps) {
               "activity" in entry
                 ? {
                     click: (e) => {
-                      const { clientX, clientY } = (
-                        e as L.LeafletMouseEvent
-                      ).originalEvent;
+                      const { clientX, clientY } = e.originalEvent;
                       setSelectedActivity({
                         activity: (entry as { activity: Activity }).activity,
                         position: { x: clientX, y: clientY },

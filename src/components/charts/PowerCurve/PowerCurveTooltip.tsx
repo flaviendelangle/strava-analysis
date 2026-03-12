@@ -48,13 +48,27 @@ export const PowerCurveTooltip = React.memo(function PowerCurveTooltip({
   entries,
   frozen,
 }: PowerCurveTooltipProps) {
-  const containerTop = containerRef.current?.getBoundingClientRect().top ?? 0;
+  const [containerTop, setContainerTop] = React.useState(0);
+  const tooltipRef = React.useRef<HTMLDivElement>(null);
+  const [clampedLeft, setClampedLeft] = React.useState(clientX);
+
+  React.useLayoutEffect(() => {
+    setContainerTop(
+      containerRef.current?.getBoundingClientRect().top ?? 0,
+    );
+    const tooltipWidth = tooltipRef.current?.offsetWidth ?? 0;
+    const halfWidth = tooltipWidth / 2;
+    const minLeft = halfWidth;
+    const maxLeft = window.innerWidth - halfWidth;
+    setClampedLeft(Math.max(minLeft, Math.min(maxLeft, clientX)));
+  }, [containerRef, clientX]);
 
   return (
     <div
+      ref={tooltipRef}
       className="border-border bg-popover/95 fixed z-50 rounded-md border px-3 py-2 text-xs shadow-lg backdrop-blur-sm"
       style={{
-        left: clientX,
+        left: clampedLeft,
         top: containerTop + 16,
         transform: "translateX(-50%)",
         pointerEvents: frozen ? "auto" : "none",

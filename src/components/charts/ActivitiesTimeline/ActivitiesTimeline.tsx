@@ -87,7 +87,7 @@ export default function ActivitiesTimeline() {
       ),
       stack: "total",
     }));
-  }, [groupedActivities, metricConfig, activitiesQuery.data]);
+  }, [groupedActivities, metricConfig, metricContext, activitiesQuery.data]);
 
   return (
     <ChartThemeProvider>
