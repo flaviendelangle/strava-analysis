@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { z } from "zod";
 
 import { env } from "@server/env";
 import {
@@ -6,6 +7,16 @@ import {
   processWebhookEvent,
 } from "@server/lib/webhook";
 import { getActiveSubscriptionId } from "@server/lib/webhookSubscription";
+
+const webhookEventSchema = z.object({
+  object_type: z.enum(["activity", "athlete"]),
+  object_id: z.number(),
+  aspect_type: z.enum(["create", "update", "delete"]),
+  updates: z.record(z.string(), z.string()).default({}),
+  owner_id: z.number(),
+  subscription_id: z.number(),
+  event_time: z.number(),
+});
 
 export default async function handler(
   req: NextApiRequest,
@@ -36,7 +47,12 @@ function handleValidation(req: NextApiRequest, res: NextApiResponse) {
 }
 
 function handleEvent(req: NextApiRequest, res: NextApiResponse) {
-  const event = req.body as StravaWebhookEvent;
+  const parsed = webhookEventSchema.safeParse(req.body);
+  if (!parsed.success) {
+    console.warn("[webhook] Invalid event body:", parsed.error.message);
+    return res.status(200).end(); // Return 200 to avoid retries
+  }
+  const event: StravaWebhookEvent = parsed.data;
 
   // Lightweight validation: check subscription_id if known
   const activeSubId = getActiveSubscriptionId();

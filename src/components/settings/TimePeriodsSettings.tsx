@@ -1,7 +1,8 @@
 import * as React from "react";
 
-import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { InfoIcon, PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
 
+import { Tooltip } from "~/components/primitives/Tooltip";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -31,10 +32,18 @@ export function TimePeriodsSettings() {
   });
 
   return (
-    <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 sm:gap-6 sm:p-6">
+    <div className="flex flex-1 flex-col items-center overflow-y-auto p-4 sm:p-6">
+      <div className="flex w-full max-w-5xl flex-col gap-4 sm:gap-6">
       <section className="border-border bg-card rounded-xl border p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Time Periods</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold">Time Periods</h3>
+            <Tooltip label="Time periods let you define custom date ranges (e.g. a training block or race season) to quickly filter activities and view aggregated statistics for that period.">
+              <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
+                <InfoIcon className="size-4" />
+              </button>
+            </Tooltip>
+          </div>
           <TimePeriodDialog>
             <DialogTrigger render={<Button size="sm" />}>
               <PlusIcon className="size-4" />
@@ -93,6 +102,7 @@ export function TimePeriodsSettings() {
           </div>
         )}
       </section>
+      </div>
     </div>
   );
 }

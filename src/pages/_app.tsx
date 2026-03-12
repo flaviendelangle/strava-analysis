@@ -9,6 +9,7 @@ import { CookiesProvider } from "react-cookie";
 import { LicenseInfo } from "@mui/x-license";
 
 import { LoggedInLayout } from "~/components/layouts/LoggedInLayout";
+import { TooltipProvider } from "~/components/ui/tooltip";
 import "~/styles/globals.css";
 import { trpc } from "~/utils/trpc";
 
@@ -36,7 +37,9 @@ const App = (({
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <CookiesProvider>
         <SessionProvider session={session}>
-          {getLayout(<Component {...pageProps} />)}
+          <TooltipProvider>
+            {getLayout(<Component {...pageProps} />)}
+          </TooltipProvider>
         </SessionProvider>
       </CookiesProvider>
     </ThemeProvider>

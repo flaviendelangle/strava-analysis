@@ -1,16 +1,15 @@
 import { useMemo, useState } from "react";
 
-import { PlusIcon } from "lucide-react";
+import { BarChart3Icon, InfoIcon, PlusIcon } from "lucide-react";
 
+import { Tooltip } from "~/components/primitives/Tooltip";
 import { Button } from "~/components/ui/button";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { cn } from "~/lib/utils";
 import type {
   RiderSettingsChangePoint,
@@ -19,7 +18,8 @@ import type {
 } from "~/sensors/types";
 
 import { ChangePointDialog } from "./ChangePointDialog";
-import { RIDER_FIELD_CONFIG, TIME_VARYING_FIELDS } from "./fieldConfig";
+import { SettingsStepChart } from "./SettingsStepChart";
+import { RIDER_FIELD_CONFIG, TIME_VARYING_FIELDS, formatPace } from "./fieldConfig";
 
 interface ResolvedRow {
   id: string;
@@ -61,6 +61,16 @@ function buildResolvedRows(timeline: RiderSettingsTimeline): ResolvedRow[] {
   return rows;
 }
 
+function formatFieldValue(
+  field: (typeof RIDER_FIELD_CONFIG)[number],
+  value: number,
+): string {
+  if (field.inputType === "pace" && field.paceUnit) {
+    return formatPace(value, field.paceUnit);
+  }
+  return `${value}${field.unit}`;
+}
+
 interface ChangePointsTimelineProps {
   timeline: RiderSettingsTimeline;
   onTimelineChange: (timeline: RiderSettingsTimeline) => void;
@@ -75,6 +85,7 @@ export function ChangePointsTimeline({
     RiderSettingsChangePoint | undefined
   >();
   const [editingBaseline, setEditingBaseline] = useState(false);
+  const [timelineDialogOpen, setTimelineDialogOpen] = useState(false);
 
   const resolvedRows = useMemo(() => buildResolvedRows(timeline), [timeline]);
 
@@ -136,64 +147,95 @@ export function ChangePointsTimeline({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Rider Settings</h3>
-        <Button size="sm" onClick={handleAdd}>
-          <PlusIcon className="mr-1.5 size-3.5" />
-          Add Change
-        </Button>
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-medium">Rider Settings</h3>
+          <Tooltip label="Set your baseline fitness values and track how they change over time. These are used to calculate training load and power metrics for your activities.">
+            <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
+              <InfoIcon className="size-4" />
+            </button>
+          </Tooltip>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setTimelineDialogOpen(true)}
+          >
+            <BarChart3Icon className="mr-1.5 size-3.5" />
+            Timeline
+          </Button>
+          <Button size="sm" onClick={handleAdd}>
+            <PlusIcon className="mr-1.5 size-3.5" />
+            Add Change
+          </Button>
+        </div>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-32" />
-            {RIDER_FIELD_CONFIG.map(({ field, label, unit }) => (
-              <TableHead key={field}>
-                {label} ({unit})
-              </TableHead>
-            ))}
-            <TableHead className="w-16" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {resolvedRows.map((row) => (
-            <TableRow key={row.id}>
-              <TableCell className="text-muted-foreground font-mono">
+      <div className="flex flex-col gap-2">
+        {resolvedRows.map((row) => (
+          <div
+            key={row.id}
+            className="border-border bg-card rounded-lg border px-4 py-3"
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <span
+                className={cn(
+                  "text-sm font-medium",
+                  row.isBaseline
+                    ? "text-foreground"
+                    : "text-muted-foreground font-mono",
+                )}
+              >
                 {row.label}
-              </TableCell>
-              {RIDER_FIELD_CONFIG.map(({ field }) => (
-                <TableCell
-                  key={field}
-                  className={cn(
-                    "tabular-nums",
-                    row.changed.has(field) && "text-foreground font-semibold",
-                  )}
-                >
-                  {row.values[field]}
-                </TableCell>
-              ))}
-              <TableCell>
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => {
-                    if (row.isBaseline) {
-                      handleEditBaseline();
-                    } else {
-                      const point = timeline.changes.find(
-                        (c) => c.id === row.id,
-                      );
-                      if (point) handleEditChange(point);
-                    }
-                  }}
-                >
-                  Edit
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+              </span>
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={() => {
+                  if (row.isBaseline) {
+                    handleEditBaseline();
+                  } else {
+                    const point = timeline.changes.find(
+                      (c) => c.id === row.id,
+                    );
+                    if (point) handleEditChange(point);
+                  }
+                }}
+              >
+                Edit
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {RIDER_FIELD_CONFIG.map((config) => {
+                const isChanged = row.changed.has(config.field);
+                if (!row.isBaseline && !isChanged) return null;
+                return (
+                  <span
+                    key={config.field}
+                    className={cn(
+                      "rounded-md px-2 py-0.5 text-xs",
+                      isChanged
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {config.label}: {formatFieldValue(config, row.values[config.field])}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Dialog open={timelineDialogOpen} onOpenChange={setTimelineDialogOpen}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Settings Timeline</DialogTitle>
+          </DialogHeader>
+          <SettingsStepChart timeline={timeline} />
+        </DialogContent>
+      </Dialog>
 
       <ChangePointDialog
         key={editingBaseline ? "baseline" : (editingPoint?.id ?? "new")}

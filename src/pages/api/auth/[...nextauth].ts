@@ -70,18 +70,26 @@ export const authOptions: AuthOptions = {
             .update(athletes)
             .set(tokenData)
             .where(eq(athletes.id, existing.id));
+          token.athleteId = existing.id;
         } else {
-          await db.insert(athletes).values({
-            stravaAthleteId,
-            ...tokenData,
-          });
+          const [inserted] = await db
+            .insert(athletes)
+            .values({
+              stravaAthleteId,
+              ...tokenData,
+            })
+            .returning({ id: athletes.id });
+          token.athleteId = inserted.id;
         }
       }
 
       return token;
     },
     async session({ session, token }) {
-      session.athleteId = Number(token.sub);
+      if (typeof token.athleteId !== "number") {
+        throw new Error("Missing athleteId in JWT token");
+      }
+      session.athleteId = token.athleteId;
       return session;
     },
   },

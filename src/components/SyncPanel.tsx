@@ -30,10 +30,10 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { useAthleteId } from "~/hooks/useAthleteId";
+import { cn } from "~/lib/utils";
 import { trpc } from "~/utils/trpc";
 
 type SyncMode = "load_new" | "load_missing" | "reload_all" | "recompute_scores";
@@ -183,24 +183,22 @@ function SyncAction(props: {
         )}
         {props.label}
       </Button>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                aria-label={`Info about: ${props.label}`}
-              />
-            }
-          >
-            <InfoIcon className="text-muted-foreground size-3.5" />
-          </TooltipTrigger>
-          <TooltipContent side="left" className="max-w-52">
-            {props.tooltip}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              aria-label={`Info about: ${props.label}`}
+            />
+          }
+        >
+          <InfoIcon className="text-muted-foreground size-3.5" />
+        </TooltipTrigger>
+        <TooltipContent side="left" className="max-w-52">
+          {props.tooltip}
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 }
@@ -220,8 +218,8 @@ function ReloadAllConfirmDialog(props: {
           <DialogDescription>
             This will delete all your synced activities and streams, then
             re-download everything from Strava. This is a very heavy operation
-            that uses significant API quota and may take a long time depending on
-            your activity history.
+            that uses significant API quota and may take a long time depending
+            on your activity history.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -245,10 +243,7 @@ function ReloadAllConfirmDialog(props: {
 
 // ── First sync view ──────────────────────────────────────────────────
 
-function FirstSyncContent(props: {
-  onSync: () => void;
-  loading: boolean;
-}) {
+function FirstSyncContent(props: { onSync: () => void; loading: boolean }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-muted-foreground text-xs">
@@ -265,7 +260,7 @@ function FirstSyncContent(props: {
         ) : (
           <RefreshCwIcon className="size-3.5" />
         )}
-        Sync your Strava activities
+        Load all activities
       </Button>
     </div>
   );
@@ -379,6 +374,9 @@ export function SyncPanel() {
       wasSyncingRef.current = false;
       utils.activities.list.invalidate();
       utils.activities.get.invalidate();
+      utils.analytics.getPowerCurve.invalidate();
+      utils.analytics.getPowerCurveYears.invalidate();
+      utils.timePeriods.getStats.invalidate();
     }
   }, [syncJob, isInProgress, utils]);
 
@@ -404,27 +402,38 @@ export function SyncPanel() {
 
   return (
     <>
-      <Popover defaultOpen={neverSynced}>
+      <Popover>
         <PopoverTrigger
           render={
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground gap-1.5"
-            >
-              {isInProgress ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <RefreshCwIcon className="size-3.5" />
+            <div className="relative">
+              {neverSynced && (
+                <span className="absolute -top-1 -right-1 flex size-2.5">
+                  <span className="bg-primary absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" />
+                  <span className="bg-primary relative inline-flex size-2.5 rounded-full" />
+                </span>
               )}
-              <span>Sync</span>
-              {isInProgress && (
-                <span className="bg-primary/20 text-primary-foreground size-1.5 rounded-full" />
-              )}
-              {syncJob?.status === "failed" && (
-                <span className="size-1.5 rounded-full bg-red-500" />
-              )}
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "gap-1.5",
+                  neverSynced ? "text-primary/70" : "text-muted-foreground",
+                )}
+              >
+                {isInProgress ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <RefreshCwIcon className="size-3.5" />
+                )}
+                <span>Sync</span>
+                {isInProgress && (
+                  <span className="bg-primary/20 text-primary-foreground size-1.5 rounded-full" />
+                )}
+                {syncJob?.status === "failed" && (
+                  <span className="size-1.5 rounded-full bg-red-500" />
+                )}
+              </Button>
+            </div>
           }
         />
         <PopoverContent align="end" className="w-72 p-3">

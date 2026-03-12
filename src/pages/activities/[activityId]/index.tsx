@@ -39,6 +39,15 @@ function ActivityPageContent({ stravaId }: { stravaId: number }) {
   >(null);
   const [mapExpanded, setMapExpanded] = React.useState(false);
 
+  React.useEffect(() => {
+    if (!mapExpanded) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMapExpanded(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mapExpanded]);
+
   const [activity] = trpc.activities.get.useSuspenseQuery({ stravaId });
   const [streamsData] = trpc.activityStreams.getStreams.useSuspenseQuery({
     stravaId,

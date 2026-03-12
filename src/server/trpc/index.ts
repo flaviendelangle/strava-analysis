@@ -3,22 +3,31 @@ import type { Session } from "next-auth";
 import { getServerSession } from "next-auth";
 import superjson from "superjson";
 
+import { and, eq } from "drizzle-orm";
 import { TRPCError, initTRPC } from "@trpc/server";
 
 import { authOptions } from "../../pages/api/auth/[...nextauth]";
 import { type Database, db } from "../db";
+import { timePeriods } from "../db/schema";
 
 export async function createContext(opts: {
   req: NextApiRequest;
   res: NextApiResponse;
 }) {
   const session = await getServerSession(opts.req, opts.res, authOptions);
-  return { db, session };
+  const ip =
+    (Array.isArray(opts.req.headers["x-forwarded-for"])
+      ? opts.req.headers["x-forwarded-for"][0]
+      : opts.req.headers["x-forwarded-for"]?.split(",")[0]?.trim()) ??
+    opts.req.socket.remoteAddress ??
+    "unknown";
+  return { db, session, ip };
 }
 
 export type Context = {
   db: Database;
   session: Session | null;
+  ip: string;
 };
 
 const t = initTRPC.context<Context>().create({
@@ -35,17 +44,27 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
 });
 
 /**
- * Middleware that validates `input.athleteId` matches the session's athleteId.
- * Chain after `.input()` on routes that accept athleteId.
- */
-/**
  * Simple in-memory rate limiter.
  * Tracks requests per key within a sliding window.
+ * Periodically prunes stale entries to prevent unbounded memory growth.
  */
 const rateLimitStore = new Map<string, number[]>();
+let lastPruneTime = 0;
+const PRUNE_INTERVAL_MS = 5 * 60_000; // 5 minutes
 
 function rateLimit(key: string, maxRequests: number, windowMs: number) {
   const now = Date.now();
+
+  // Periodically prune stale entries
+  if (now - lastPruneTime > PRUNE_INTERVAL_MS) {
+    lastPruneTime = now;
+    for (const [k, timestamps] of rateLimitStore) {
+      const active = timestamps.filter((ts) => now - ts < windowMs);
+      if (active.length === 0) rateLimitStore.delete(k);
+      else rateLimitStore.set(k, active);
+    }
+  }
+
   const timestamps = (rateLimitStore.get(key) ?? []).filter(
     (ts) => now - ts < windowMs,
   );
@@ -64,10 +83,42 @@ function rateLimit(key: string, maxRequests: number, windowMs: number) {
  * Limits to 5 requests per minute per user.
  */
 export const rateLimited = t.middleware(async ({ ctx, next }) => {
-  const userId = String(ctx.session?.athleteId ?? "anonymous");
-  rateLimit(userId, 5, 60_000);
+  const rateLimitKey = ctx.session?.athleteId
+    ? String(ctx.session.athleteId)
+    : `ip:${ctx.ip}`;
+  rateLimit(rateLimitKey, 5, 60_000);
   return next();
 });
+
+export async function resolveTimePeriod(
+  db: Database,
+  timePeriodId: number | undefined,
+  athleteId: number,
+): Promise<{
+  periodDateFrom?: string;
+  periodDateTo?: string;
+  periodSportTypes?: string[];
+}> {
+  if (!timePeriodId) return {};
+
+  const period = await db.query.timePeriods.findFirst({
+    where: and(
+      eq(timePeriods.id, timePeriodId),
+      eq(timePeriods.athlete, athleteId),
+    ),
+  });
+
+  if (!period) return {};
+
+  return {
+    periodDateFrom: period.startDate,
+    periodDateTo: period.endDate,
+    periodSportTypes:
+      period.sportTypes && period.sportTypes.length > 0
+        ? period.sportTypes
+        : undefined,
+  };
+}
 
 export const validateAthleteOwnership = t.middleware(
   async ({ ctx, input, next }) => {

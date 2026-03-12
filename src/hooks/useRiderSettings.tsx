@@ -40,7 +40,17 @@ export function RiderSettingsProvider({
     { athleteId: athleteId! },
     { enabled: athleteId != null },
   );
-  const saveSettings = trpc.riderSettings.save.useMutation();
+  const utils = trpc.useUtils();
+  const saveSettings = trpc.riderSettings.save.useMutation({
+    onSuccess: () => {
+      utils.riderSettings.get.invalidate();
+      // Scores are recomputed in the background — invalidate dependent queries
+      // so they refetch once recomputation finishes.
+      utils.activities.list.invalidate();
+      utils.analytics.getPowerCurve.invalidate();
+      utils.analytics.getPowerCurveYears.invalidate();
+    },
+  });
 
   const timeline: RiderSettingsTimeline = React.useMemo(
     () =>
@@ -51,7 +61,19 @@ export function RiderSettingsProvider({
             bikeWeightKg:
               stored.bikeWeightKg ??
               DEFAULT_RIDER_SETTINGS_TIMELINE.bikeWeightKg,
-            initialValues: stored.initialValues,
+            cyclingLoadAlgorithm:
+              (stored.cyclingLoadAlgorithm as "tss" | "hrss") ??
+              DEFAULT_RIDER_SETTINGS_TIMELINE.cyclingLoadAlgorithm,
+            runningLoadAlgorithm:
+              (stored.runningLoadAlgorithm as "rtss" | "hrss") ??
+              DEFAULT_RIDER_SETTINGS_TIMELINE.runningLoadAlgorithm,
+            swimmingLoadAlgorithm:
+              (stored.swimmingLoadAlgorithm as "stss" | "hrss") ??
+              DEFAULT_RIDER_SETTINGS_TIMELINE.swimmingLoadAlgorithm,
+            initialValues: {
+              ...DEFAULT_RIDER_SETTINGS_TIMELINE.initialValues,
+              ...stored.initialValues,
+            },
             changes: stored.changes,
           }
         : DEFAULT_RIDER_SETTINGS_TIMELINE,
@@ -66,6 +88,9 @@ export function RiderSettingsProvider({
         cdA: newTimeline.cdA,
         crr: newTimeline.crr,
         bikeWeightKg: newTimeline.bikeWeightKg,
+        cyclingLoadAlgorithm: newTimeline.cyclingLoadAlgorithm,
+        runningLoadAlgorithm: newTimeline.runningLoadAlgorithm,
+        swimmingLoadAlgorithm: newTimeline.swimmingLoadAlgorithm,
         initialValues: newTimeline.initialValues,
         changes: newTimeline.changes,
       });

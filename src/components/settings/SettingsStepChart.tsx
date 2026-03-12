@@ -30,6 +30,8 @@ const FIELD_LABELS: Record<TimeVaryingField, string> = {
   restingHr: "Resting HR",
   maxHr: "Max HR",
   lthr: "LTHR",
+  runThresholdPace: "Run Threshold Pace",
+  swimThresholdPace: "Swim Threshold Pace",
 };
 
 interface SettingsStepChartProps {
@@ -80,6 +82,8 @@ export function SettingsStepChart({ timeline }: SettingsStepChartProps) {
       restingHr: [],
       maxHr: [],
       lthr: [],
+      runThresholdPace: [],
+      swimThresholdPace: [],
     };
 
     for (const date of dates) {

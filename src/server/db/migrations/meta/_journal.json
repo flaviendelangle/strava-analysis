@@ -43,6 +43,20 @@
       "when": 1772805606608,
       "tag": "0005_clean_blizzard",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1773302197505,
+      "tag": "0006_demonic_risque",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1773532800000,
+      "tag": "0007_fix_athlete_id_fk",
+      "breakpoints": true
     }
   ]
 }

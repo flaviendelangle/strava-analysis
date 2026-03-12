@@ -26,6 +26,7 @@ export async function ensureWebhookSubscription(): Promise<void> {
     // Check for existing subscriptions
     const viewRes = await fetch(
       `${STRAVA_API}?client_id=${env.STRAVA_CLIENT_ID}&client_secret=${env.STRAVA_CLIENT_SECRET}`,
+      { signal: AbortSignal.timeout(30_000) },
     );
 
     if (!viewRes.ok) {
@@ -75,6 +76,7 @@ async function createSubscription(): Promise<void> {
       callback_url: env.STRAVA_WEBHOOK_CALLBACK_URL!,
       verify_token: env.STRAVA_WEBHOOK_VERIFY_TOKEN,
     }),
+    signal: AbortSignal.timeout(30_000),
   });
 
   if (!res.ok) {
@@ -99,6 +101,7 @@ async function deleteSubscription(id: number): Promise<void> {
       client_id: env.STRAVA_CLIENT_ID,
       client_secret: env.STRAVA_CLIENT_SECRET,
     }),
+    signal: AbortSignal.timeout(30_000),
   });
 
   if (!res.ok) {

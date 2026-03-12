@@ -20,8 +20,13 @@ import { StatCard } from "~/components/primitives/StatCard";
 import { StatSection } from "~/components/primitives/StatSection";
 import { useRiderSettingsTimeline } from "~/hooks/useRiderSettings";
 import { cn } from "~/lib/utils";
-import { POWER_BEST_ACTIVITY_TYPES } from "~/utils/constants";
+import {
+  POWER_BEST_ACTIVITY_TYPES,
+  RUN_ACTIVITY_TYPES,
+  SWIM_ACTIVITY_TYPES,
+} from "~/utils/constants";
 import { formatHumanDuration } from "~/utils/format";
+import { getActivityLoad } from "~/utils/getActivityLoad";
 import { getSportConfig } from "~/utils/sportConfig";
 
 interface Stat {
@@ -39,32 +44,66 @@ export const ActivityStats = React.memo(function ActivityStats({
   activity,
 }: ActivityStatsProps) {
   const sportConfig = getSportConfig(activity.type);
-  const { resolveForDate, hasSettings } = useRiderSettingsTimeline();
+  const { resolveForDate, hasSettings, timeline } = useRiderSettingsTimeline();
   const activityDate = activity.startDateLocal.slice(0, 10);
   const riderSettings = resolveForDate(activityDate);
 
   const isRide = POWER_BEST_ACTIVITY_TYPES.includes(activity.type);
+  const isRun = RUN_ACTIVITY_TYPES.includes(activity.type);
+  const isSwim = SWIM_ACTIVITY_TYPES.includes(activity.type);
+  const hasPaceTSS = isRun || isSwim;
   const np = activity.weightedAverageWatts ?? null;
   const ftp = riderSettings.ftp;
   const intensityFactor = isRide && np != null ? np / ftp : null;
-  const tss = isRide ? (activity.tss ?? null) : null;
+  const tss = isRide || hasPaceTSS ? (activity.tss ?? null) : null;
   const hrss = activity.hrss ?? null;
 
-  const riderSettingsTooltip = (
+  const powerSettingsTooltip = (
     <div className="flex flex-col gap-0.5">
-      <div className="font-medium">Rider settings for {activityDate}</div>
+      <div className="font-medium">Settings for {activityDate}</div>
       <div>FTP: {riderSettings.ftp} W</div>
+      {np != null && <div>IF: {(np / ftp).toFixed(2)}</div>}
+    </div>
+  );
+
+  const runSettingsTooltip = (
+    <div className="flex flex-col gap-0.5">
+      <div className="font-medium">Settings for {activityDate}</div>
+      <div>
+        Threshold Pace:{" "}
+        {riderSettings.runThresholdPace > 0
+          ? sportConfig.formatSpeed(riderSettings.runThresholdPace)
+          : "Not set"}
+      </div>
+    </div>
+  );
+
+  const swimSettingsTooltip = (
+    <div className="flex flex-col gap-0.5">
+      <div className="font-medium">Settings for {activityDate}</div>
+      <div>
+        Threshold Pace:{" "}
+        {riderSettings.swimThresholdPace > 0
+          ? sportConfig.formatSpeed(riderSettings.swimThresholdPace)
+          : "Not set"}
+      </div>
     </div>
   );
 
   const hrSettingsTooltip = (
     <div className="flex flex-col gap-0.5">
-      <div className="font-medium">Rider settings for {activityDate}</div>
+      <div className="font-medium">Settings for {activityDate}</div>
       <div>Resting HR: {riderSettings.restingHr} bpm</div>
       <div>Max HR: {riderSettings.maxHr} bpm</div>
       <div>LTHR: {riderSettings.lthr} bpm</div>
     </div>
   );
+
+  const tssTooltip = isRun
+    ? runSettingsTooltip
+    : isSwim
+      ? swimSettingsTooltip
+      : powerSettingsTooltip;
 
   // ── Hero stats ──
 
@@ -100,17 +139,23 @@ export const ActivityStats = React.memo(function ActivityStats({
             },
           ]
         : []),
-    ...(isRide && hrss != null
-      ? [
-          {
-            icon: TrendingUp,
-            label: "Load",
-            value: Math.round(hrss).toString(),
-            tooltip:
-              "Uses HRSS (Heart Rate Stress Score). Will be configurable per sport in the future.",
-          },
-        ]
-      : []),
+    ...(() => {
+      const loadResult = getActivityLoad(activity, {
+        cyclingLoadAlgorithm: timeline.cyclingLoadAlgorithm,
+        runningLoadAlgorithm: timeline.runningLoadAlgorithm,
+        swimmingLoadAlgorithm: timeline.swimmingLoadAlgorithm,
+      });
+      return loadResult.value != null
+        ? [
+            {
+              icon: TrendingUp,
+              label: "Load",
+              value: Math.round(loadResult.value).toString(),
+              tooltip: loadResult.tooltip,
+            },
+          ]
+        : [];
+    })(),
   ];
 
   // ── Time & Speed ──
@@ -214,6 +259,13 @@ export const ActivityStats = React.memo(function ActivityStats({
 
   // ── Training Load ──
 
+  const tssLabel = isRun ? "rTSS" : isSwim ? "sTSS" : "TSS";
+  const tssSettingsHint = isRun
+    ? "Configure your Run Threshold Pace to enable this metric."
+    : isSwim
+      ? "Configure your Swim Threshold Pace to enable this metric."
+      : "Configure your rider settings (FTP) to enable this metric.";
+
   const trainingLoadStats: Stat[] = hasSettings
     ? [
         ...(intensityFactor != null
@@ -221,20 +273,20 @@ export const ActivityStats = React.memo(function ActivityStats({
               {
                 label: "Intensity Factor",
                 value: intensityFactor.toFixed(2),
-                tooltip: riderSettingsTooltip,
+                tooltip: powerSettingsTooltip,
               },
             ]
           : []),
         ...(tss != null
           ? [
               {
-                label: "TSS",
+                label: tssLabel,
                 value: Math.round(tss).toString(),
-                tooltip: riderSettingsTooltip,
+                tooltip: tssTooltip,
               },
             ]
           : []),
-        ...(isRide && hrss != null
+        ...(hrss != null
           ? [
               {
                 label: "HRSS",
@@ -256,8 +308,7 @@ export const ActivityStats = React.memo(function ActivityStats({
               {
                 label: "TSS",
                 value: null,
-                tooltip:
-                  "Configure your rider settings (FTP) to enable this metric.",
+                tooltip: tssSettingsHint,
               },
               {
                 label: "HRSS",
@@ -266,7 +317,15 @@ export const ActivityStats = React.memo(function ActivityStats({
                   "Configure your rider settings (Resting HR, Max HR, LTHR) to enable this metric.",
               },
             ]
-          : []),
+          : hasPaceTSS
+            ? [
+                {
+                  label: tssLabel,
+                  value: null,
+                  tooltip: tssSettingsHint,
+                },
+              ]
+            : []),
       ];
 
   return (

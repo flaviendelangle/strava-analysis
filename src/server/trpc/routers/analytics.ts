@@ -1,8 +1,7 @@
-import { and, eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { z } from "zod";
 
-import { timePeriods } from "../../db/schema";
-import { protectedProcedure, router, validateAthleteOwnership } from "../index";
+import { protectedProcedure, resolveTimePeriod, router, validateAthleteOwnership } from "../index";
 
 export const analyticsRouter = router({
   getPowerCurve: protectedProcedure
@@ -12,31 +11,14 @@ export const analyticsRouter = router({
         activityTypes: z.array(z.string().max(50)).optional(),
         workoutTypes: z.array(z.number().int()).optional(),
         timePeriodId: z.number().int().positive().optional(),
-        dateFrom: z.string().optional(),
-        dateTo: z.string().optional(),
+        dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD format").optional(),
+        dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD format").optional(),
       }),
     )
     .use(validateAthleteOwnership)
     .query(async ({ ctx, input }) => {
-      // Resolve time period constraints
-      let periodDateFrom: string | undefined;
-      let periodDateTo: string | undefined;
-      let periodSportTypes: string[] | undefined;
-      if (input.timePeriodId) {
-        const period = await ctx.db.query.timePeriods.findFirst({
-          where: and(
-            eq(timePeriods.id, input.timePeriodId),
-            eq(timePeriods.athlete, input.athleteId),
-          ),
-        });
-        if (period) {
-          periodDateFrom = period.startDate;
-          periodDateTo = period.endDate;
-          if (period.sportTypes && period.sportTypes.length > 0) {
-            periodSportTypes = period.sportTypes;
-          }
-        }
-      }
+      const { periodDateFrom, periodDateTo, periodSportTypes } =
+        await resolveTimePeriod(ctx.db, input.timePeriodId, input.athleteId);
 
       const typeFilter =
         input.activityTypes && input.activityTypes.length > 0

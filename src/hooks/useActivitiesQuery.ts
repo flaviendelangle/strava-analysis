@@ -5,9 +5,18 @@ import { trpc } from "~/utils/trpc";
 import { useActivityFilter } from "./useActivityFilter";
 import { useAthleteId } from "./useAthleteId";
 
-export function useActivitiesQuery() {
-  const { activityTypes, workoutTypes, timePeriodId } = useActivityFilter();
+interface UseActivitiesQueryOptions {
+  activityTypes?: string[];
+}
+
+export function useActivitiesQuery(options?: UseActivitiesQueryOptions) {
+  const globalFilter = useActivityFilter();
   const athleteId = useAthleteId();
+
+  const hasLocalOverride = options !== undefined;
+  const activityTypes = hasLocalOverride ? (options.activityTypes ?? []) : globalFilter.activityTypes;
+  const workoutTypes = hasLocalOverride ? [] : globalFilter.workoutTypes;
+  const timePeriodId = hasLocalOverride ? undefined : globalFilter.timePeriodId;
 
   const result = trpc.activities.list.useQuery(
     { athleteId: athleteId!, activityTypes, workoutTypes, timePeriodId },

@@ -100,6 +100,83 @@ export function calculateTSS(
 }
 
 /**
+ * Calculates **rTSS** (Running Training Stress Score) from a velocity stream.
+ *
+ * Uses Normalized Graded Pace (NGP): 4th root of the mean of 4th powers
+ * of 30-second rolling average speeds (analogous to NP for cycling).
+ *
+ * rTSS = (duration × NGP × IF) / (thresholdPace × 3600) × 100
+ * where IF = NGP / thresholdPace
+ */
+export function calculateRunningTSS(
+  velocityStream: number[],
+  timeStream: number[],
+  thresholdPace: number, // m/s
+): number {
+  if (thresholdPace <= 0 || velocityStream.length === 0) return 0;
+
+  // Expand to per-second data
+  const speeds = expandToPerSecond(velocityStream, timeStream);
+  if (speeds.length === 0) return 0;
+
+  const durationSeconds = speeds.length;
+  const WINDOW = 30;
+
+  // Compute 30-second rolling averages
+  const rollingAvg: number[] = [];
+  if (speeds.length < WINDOW) {
+    // If activity is shorter than 30s, use overall average
+    const avg = speeds.reduce((a, b) => a + b, 0) / speeds.length;
+    rollingAvg.push(avg);
+  } else {
+    let windowSum = 0;
+    for (let i = 0; i < WINDOW; i++) {
+      windowSum += speeds[i];
+    }
+    rollingAvg.push(windowSum / WINDOW);
+    for (let i = WINDOW; i < speeds.length; i++) {
+      windowSum += speeds[i] - speeds[i - WINDOW];
+      rollingAvg.push(windowSum / WINDOW);
+    }
+  }
+
+  // NGP = 4th root of mean of 4th powers
+  let sumFourthPowers = 0;
+  for (const v of rollingAvg) {
+    const v2 = v * v;
+    sumFourthPowers += v2 * v2;
+  }
+  const ngp = Math.pow(sumFourthPowers / rollingAvg.length, 0.25);
+
+  const intensityFactor = ngp / thresholdPace;
+  return (
+    ((durationSeconds * ngp * intensityFactor) / (thresholdPace * 3600)) * 100
+  );
+}
+
+/**
+ * Calculates **sTSS** (Swimming Training Stress Score).
+ *
+ * sTSS = IF³ × hours × 100
+ *
+ * Uses IF cubed (not squared) because water resistance grows cubically
+ * with speed. No normalization needed since pool swimming is steady-state.
+ */
+export function calculateSwimmingTSS(
+  distance: number, // meters
+  movingTime: number, // seconds
+  thresholdPace: number, // m/s
+): number {
+  if (thresholdPace <= 0 || movingTime <= 0 || distance <= 0) return 0;
+
+  const averageSpeed = distance / movingTime;
+  const intensityFactor = averageSpeed / thresholdPace;
+  const hours = movingTime / 3600;
+
+  return intensityFactor * intensityFactor * intensityFactor * hours * 100;
+}
+
+/**
  * Generates power curve duration points (in seconds) up to maxDuration.
  *
  * - Every second from 1s to 30s
@@ -208,19 +285,36 @@ interface ResolvedSettings {
   restingHr: number;
   maxHr: number;
   lthr: number;
+  runThresholdPace: number;
+  swimThresholdPace: number;
 }
 
+const DEFAULT_RESOLVED_SETTINGS: ResolvedSettings = {
+  ftp: 200,
+  weightKg: 75,
+  restingHr: 50,
+  maxHr: 185,
+  lthr: 163,
+  runThresholdPace: 0,
+  swimThresholdPace: 0,
+};
+
 interface SettingsTimeline {
-  initialValues: ResolvedSettings;
+  initialValues: Partial<ResolvedSettings>;
   changes: ({ date: string } & Partial<ResolvedSettings>)[];
 }
 
 /**
  * Resolves rider settings for a specific date by walking the change timeline.
+ * Missing initial values are filled with sensible defaults.
  */
 export function resolveRiderSettings(
   timeline: SettingsTimeline,
   targetDate: string,
 ): ResolvedSettings {
-  return resolveTimeline(timeline.initialValues, timeline.changes, targetDate);
+  const fullInitialValues: ResolvedSettings = {
+    ...DEFAULT_RESOLVED_SETTINGS,
+    ...timeline.initialValues,
+  };
+  return resolveTimeline(fullInitialValues, timeline.changes, targetDate);
 }

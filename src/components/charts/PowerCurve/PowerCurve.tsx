@@ -209,7 +209,7 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
   return (
     <div className="bg-card flex h-96 w-full flex-col rounded-md">
       <div className="border-border flex items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
-        <h3 className="shrink-0 text-xs font-medium sm:text-sm">Power Curve</h3>
+        <h3 className="shrink-0 text-xs font-medium sm:text-sm">Cycling Power Curve</h3>
         <div className="bg-border mx-1 h-4 w-px" />
         <label className="text-muted-foreground flex items-center gap-1.5 text-xs">
           <input
@@ -419,7 +419,7 @@ function Toolbar({
   const tokens = useChartTokens();
   return (
     <div className="border-border flex flex-wrap items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
-      <h3 className="shrink-0 text-xs font-medium sm:text-sm">Power Curve</h3>
+      <h3 className="shrink-0 text-xs font-medium sm:text-sm">Cycling Power Curve</h3>
       <div className="bg-border mx-1 h-4 w-px" />
       {ranges.map((range, i) => (
         <RangeChip
@@ -589,7 +589,7 @@ function EmptyChart() {
   return (
     <div className="bg-card flex h-96 w-full flex-col rounded-md">
       <div className="border-border flex items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
-        <h3 className="shrink-0 text-xs font-medium sm:text-sm">Power Curve</h3>
+        <h3 className="shrink-0 text-xs font-medium sm:text-sm">Cycling Power Curve</h3>
       </div>
       <div className="text-muted-foreground flex flex-1 items-center justify-center">
         No power data available

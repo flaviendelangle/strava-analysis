@@ -13,6 +13,8 @@ const changePointSchema = z.object({
   restingHr: z.number().int().positive().max(200).optional(),
   maxHr: z.number().int().positive().max(250).optional(),
   lthr: z.number().int().positive().max(250).optional(),
+  runThresholdPace: z.number().positive().max(20).optional(), // m/s
+  swimThresholdPace: z.number().positive().max(10).optional(), // m/s
 });
 
 const initialValuesSchema = z.object({
@@ -21,6 +23,8 @@ const initialValuesSchema = z.object({
   restingHr: z.number().int().positive().max(200),
   maxHr: z.number().int().positive().max(250),
   lthr: z.number().int().positive().max(250),
+  runThresholdPace: z.number().positive().max(20), // m/s
+  swimThresholdPace: z.number().positive().max(10), // m/s
 });
 
 export const riderSettingsRouter = router({
@@ -42,6 +46,9 @@ export const riderSettingsRouter = router({
         cdA: z.number().positive().max(2),
         crr: z.number().positive().max(1),
         bikeWeightKg: z.number().positive().max(50),
+        cyclingLoadAlgorithm: z.enum(["tss", "hrss"]).default("tss"),
+        runningLoadAlgorithm: z.enum(["rtss", "hrss"]).default("rtss"),
+        swimmingLoadAlgorithm: z.enum(["stss", "hrss"]).default("stss"),
         initialValues: initialValuesSchema,
         changes: z.array(changePointSchema),
       }),

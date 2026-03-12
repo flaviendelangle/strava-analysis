@@ -1,8 +1,8 @@
 import { and, eq, getTableColumns, gte, inArray, isNotNull, lte } from "drizzle-orm";
 import { z } from "zod";
 
-import { activities, timePeriods } from "../../db/schema";
-import { protectedProcedure, router, validateAthleteOwnership } from "../index";
+import { activities } from "../../db/schema";
+import { protectedProcedure, resolveTimePeriod, router, validateAthleteOwnership } from "../index";
 
 export const activitiesRouter = router({
   list: protectedProcedure
@@ -17,25 +17,8 @@ export const activitiesRouter = router({
     )
     .use(validateAthleteOwnership)
     .query(async ({ ctx, input }) => {
-      // Resolve time period constraints if selected
-      let periodDateFrom: string | undefined;
-      let periodDateTo: string | undefined;
-      let periodSportTypes: string[] | undefined;
-      if (input.timePeriodId) {
-        const period = await ctx.db.query.timePeriods.findFirst({
-          where: and(
-            eq(timePeriods.id, input.timePeriodId),
-            eq(timePeriods.athlete, input.athleteId),
-          ),
-        });
-        if (period) {
-          periodDateFrom = period.startDate;
-          periodDateTo = period.endDate;
-          if (period.sportTypes && period.sportTypes.length > 0) {
-            periodSportTypes = period.sportTypes;
-          }
-        }
-      }
+      const { periodDateFrom, periodDateTo, periodSportTypes } =
+        await resolveTimePeriod(ctx.db, input.timePeriodId, input.athleteId);
 
       // Build filter conditions
       const conditions = [eq(activities.athlete, input.athleteId)];

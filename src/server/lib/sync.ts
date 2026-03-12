@@ -1,7 +1,11 @@
-import { and, asc, count, eq, gt, inArray, sql } from "drizzle-orm";
+import { and, asc, count, eq, gt, inArray, lt, or, sql } from "drizzle-orm";
 import strava from "strava-v3";
 
-import { POWER_BEST_ACTIVITY_TYPES } from "../../utils/constants";
+import {
+  POWER_BEST_ACTIVITY_TYPES,
+  RUN_ACTIVITY_TYPES,
+  SWIM_ACTIVITY_TYPES,
+} from "../../utils/constants";
 import type { Database } from "../db";
 import {
   activities,
@@ -11,6 +15,8 @@ import {
 } from "../db/schema";
 import {
   calculateHRSS,
+  calculateRunningTSS,
+  calculateSwimmingTSS,
   calculateTSS,
   computePowerBests,
   resolveRiderSettings,
@@ -25,6 +31,7 @@ import {
 const PAGE_SIZE = 50;
 const BATCH_SIZE = 50;
 const STREAM_FETCH_CONCURRENCY = 3;
+const MAX_STREAM_FETCH_ATTEMPTS = 3;
 
 export type SyncMode = "load_new" | "load_missing" | "reload_all" | "recompute_scores";
 
@@ -100,7 +107,7 @@ async function syncActivitiesPhase(
     if (pageActivities.length === 0) break;
 
     const models = pageActivities.map((raw) => ({
-      ...getModelFromStravaActivity(raw),
+      ...getModelFromStravaActivity(raw, athleteId),
       areStreamsLoaded: false,
     }));
 
@@ -166,6 +173,7 @@ async function syncActivitiesPhase(
       and(
         eq(activities.athlete, athleteId),
         eq(activities.areStreamsLoaded, false),
+        lt(activities.streamFetchAttempts, MAX_STREAM_FETCH_ATTEMPTS),
       ),
     );
 
@@ -203,6 +211,7 @@ async function syncStreamsPhase(
         and(
           eq(activities.athlete, athleteId),
           eq(activities.areStreamsLoaded, false),
+          lt(activities.streamFetchAttempts, MAX_STREAM_FETCH_ATTEMPTS),
         ),
       )
       .limit(10);
@@ -232,10 +241,12 @@ async function syncStreamsPhase(
             `[syncStreamsPhase] Failed for activity ${activity.stravaId}:`,
             e,
           );
-          // Mark as loaded so we don't retry forever
+          // Increment attempt counter; give up after MAX_STREAM_FETCH_ATTEMPTS tries
           await db
             .update(activities)
-            .set({ areStreamsLoaded: true })
+            .set({
+              streamFetchAttempts: sql`${activities.streamFetchAttempts} + 1`,
+            })
             .where(eq(activities.id, activity.id));
           return false;
         }
@@ -274,28 +285,34 @@ async function computeScoresPhase(
     );
   }
 
-  let cursor: string | undefined;
+  let cursorDate: string | undefined;
+  let cursorId: number | undefined;
 
   for (;;) {
     const batch = await db
       .select()
       .from(activities)
       .where(
-        cursor
+        cursorDate != null
           ? and(
               eq(activities.athlete, athleteId),
-              gt(activities.startDate, cursor),
+              or(
+                gt(activities.startDate, cursorDate),
+                and(eq(activities.startDate, cursorDate), gt(activities.id, cursorId!)),
+              ),
             )
           : eq(activities.athlete, athleteId),
       )
-      .orderBy(asc(activities.startDate))
+      .orderBy(asc(activities.startDate), asc(activities.id))
       .limit(BATCH_SIZE);
 
     if (batch.length === 0) break;
 
     await computeActivityScoresBatch(db, batch, settingsDoc ?? null);
 
-    cursor = batch[batch.length - 1].startDate;
+    const last = batch[batch.length - 1];
+    cursorDate = last.startDate;
+    cursorId = last.id;
     if (batch.length < BATCH_SIZE) break;
   }
 
@@ -333,7 +350,7 @@ export async function storeStreams(
 
     await tx
       .update(activities)
-      .set({ areStreamsLoaded: true })
+      .set({ areStreamsLoaded: true, streamFetchAttempts: 0 })
       .where(eq(activities.id, activityId));
   });
 }
@@ -346,15 +363,18 @@ type ActivityForScoring = {
   weightedAverageWatts: number | null;
   areStreamsLoaded: boolean;
   movingTime: number;
+  distance: number;
 };
 
 type SettingsDocForScoring = {
   initialValues: {
-    ftp: number;
-    weightKg: number;
-    restingHr: number;
-    maxHr: number;
-    lthr: number;
+    ftp?: number;
+    weightKg?: number;
+    restingHr?: number;
+    maxHr?: number;
+    lthr?: number;
+    runThresholdPace?: number;
+    swimThresholdPace?: number;
   };
   changes: {
     date: string;
@@ -363,6 +383,8 @@ type SettingsDocForScoring = {
     restingHr?: number;
     maxHr?: number;
     lthr?: number;
+    runThresholdPace?: number;
+    swimThresholdPace?: number;
   }[];
 };
 
@@ -396,7 +418,12 @@ async function computeActivityScoresBatch(
             activityStreams.activityId,
             activitiesWithStreams.map((a) => a.id),
           ),
-          inArray(activityStreams.type, ["time", "heartrate", "watts"]),
+          inArray(activityStreams.type, [
+            "time",
+            "heartrate",
+            "watts",
+            "velocity_smooth",
+          ]),
         ),
       );
 
@@ -474,6 +501,22 @@ export async function computeActivityScoresInternal(
     );
   }
 
+  // Swimming sTSS (no stream needed — uses distance/movingTime)
+  if (
+    settings &&
+    SWIM_ACTIVITY_TYPES.includes(activity.type) &&
+    settings.swimThresholdPace > 0 &&
+    activity.distance > 0
+  ) {
+    patch.tss = Math.round(
+      calculateSwimmingTSS(
+        activity.distance,
+        activity.movingTime,
+        settings.swimThresholdPace,
+      ),
+    );
+  }
+
   if (activity.areStreamsLoaded) {
     // Use pre-loaded streams if available, otherwise query (for standalone calls)
     const streamDocs =
@@ -484,7 +527,12 @@ export async function computeActivityScoresInternal(
         .where(
           and(
             eq(activityStreams.activityId, activity.id),
-            inArray(activityStreams.type, ["time", "heartrate", "watts"]),
+            inArray(activityStreams.type, [
+            "time",
+            "heartrate",
+            "watts",
+            "velocity_smooth",
+          ]),
           ),
         ));
 
@@ -506,6 +554,30 @@ export async function computeActivityScoresInternal(
         const hrData = parseStreamDocs(hrDocs, activity.id);
         if (hrData) {
           patch.hrss = Math.round(calculateHRSS(hrData, settings, timeData));
+        }
+      }
+    }
+
+    // Running rTSS (needs velocity_smooth stream)
+    if (
+      settings &&
+      RUN_ACTIVITY_TYPES.includes(activity.type) &&
+      settings.runThresholdPace > 0
+    ) {
+      const velocityDocs = streamDocs
+        .filter((s) => s.type === "velocity_smooth")
+        .sort((a, b) => (a.chunkIndex ?? 0) - (b.chunkIndex ?? 0));
+
+      if (velocityDocs.length > 0 && timeData) {
+        const velocityData = parseStreamDocs(velocityDocs, activity.id);
+        if (velocityData) {
+          patch.tss = Math.round(
+            calculateRunningTSS(
+              velocityData,
+              timeData,
+              settings.runThresholdPace,
+            ),
+          );
         }
       }
     }
@@ -546,28 +618,34 @@ export async function recomputeAllScores(db: Database, athleteId: number) {
     );
   }
 
-  let cursor: string | undefined;
+  let cursorDate: string | undefined;
+  let cursorId: number | undefined;
 
   for (;;) {
     const batch = await db
       .select()
       .from(activities)
       .where(
-        cursor
+        cursorDate != null
           ? and(
               eq(activities.athlete, athleteId),
-              gt(activities.startDate, cursor),
+              or(
+                gt(activities.startDate, cursorDate),
+                and(eq(activities.startDate, cursorDate), gt(activities.id, cursorId!)),
+              ),
             )
           : eq(activities.athlete, athleteId),
       )
-      .orderBy(asc(activities.startDate))
+      .orderBy(asc(activities.startDate), asc(activities.id))
       .limit(BATCH_SIZE);
 
     if (batch.length === 0) break;
 
     await computeActivityScoresBatch(db, batch, settingsDoc ?? null);
 
-    cursor = batch[batch.length - 1].startDate;
+    const last = batch[batch.length - 1];
+    cursorDate = last.startDate;
+    cursorId = last.id;
     if (batch.length < BATCH_SIZE) break;
   }
 }

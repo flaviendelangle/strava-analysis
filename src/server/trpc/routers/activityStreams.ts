@@ -2,6 +2,8 @@ import { and, eq, inArray } from "drizzle-orm";
 import strava from "strava-v3";
 import { z } from "zod";
 
+import { TRPCError } from "@trpc/server";
+
 import type { Database } from "../../db";
 import { activities, activityStreams, riderSettings } from "../../db/schema";
 import {
@@ -57,7 +59,7 @@ export const activityStreamsRouter = router({
       });
 
       if (!activity) {
-        throw new Error("Activity not found");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Activity not found" });
       }
 
       if (!activity.areStreamsLoaded) {
@@ -74,14 +76,15 @@ export const activityStreamsRouter = router({
           ),
         );
 
-      // Group by type and merge chunks
-      const grouped = new Map<string, string[]>();
+      // Group by type and merge chunks (sorted by chunkIndex)
+      const grouped = new Map<string, { chunkIndex: number | null; data: string }[]>();
       for (const s of streams) {
         const existing = grouped.get(s.type);
+        const entry = { chunkIndex: s.chunkIndex, data: s.data };
         if (existing) {
-          existing.push(s.data);
+          existing.push(entry);
         } else {
-          grouped.set(s.type, [s.data]);
+          grouped.set(s.type, [entry]);
         }
       }
 
@@ -93,8 +96,12 @@ export const activityStreamsRouter = router({
         type,
         data:
           chunks.length === 1
-            ? chunks[0]
-            : JSON.stringify(chunks.flatMap((c) => JSON.parse(c) as number[])),
+            ? chunks[0].data
+            : JSON.stringify(
+                chunks
+                  .sort((a, b) => (a.chunkIndex ?? 0) - (b.chunkIndex ?? 0))
+                  .flatMap((c) => JSON.parse(c.data) as number[]),
+              ),
       }));
     }),
 
@@ -119,7 +126,7 @@ export const activityStreamsRouter = router({
       ]);
 
       if (!rawActivity) {
-        throw new Error("Activity not found on Strava");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Activity not found on Strava" });
       }
 
       const activity = await ctx.db.query.activities.findFirst({
@@ -130,11 +137,11 @@ export const activityStreamsRouter = router({
       });
 
       if (!activity) {
-        throw new Error("Activity not found");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Activity not found" });
       }
 
       // Update activity metadata
-      const model = getModelFromStravaActivity(rawActivity);
+      const model = getModelFromStravaActivity(rawActivity, input.athleteId);
       await ctx.db
         .update(activities)
         .set({
@@ -187,7 +194,7 @@ export const activityStreamsRouter = router({
       );
 
       if (normalized.length === 0) {
-        throw new Error("Streams not found on Strava");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Streams not found on Strava" });
       }
 
       const activity = await ctx.db.query.activities.findFirst({
@@ -198,7 +205,7 @@ export const activityStreamsRouter = router({
       });
 
       if (!activity) {
-        throw new Error("Activity not found");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Activity not found" });
       }
 
       await storeAndRecomputeScores(

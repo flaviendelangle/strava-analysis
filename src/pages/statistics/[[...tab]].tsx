@@ -1,11 +1,10 @@
 import * as React from "react";
 
-import { BarChart3Icon, CalendarIcon } from "lucide-react";
+import { BarChart3Icon, CalendarIcon, SettingsIcon } from "lucide-react";
 import nextDynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/router";
 
-import { ActivityFilterPopover } from "~/components/settings/ActivityFilterPopover";
 import { Toolbar } from "~/components/settings/SettingsToolbar";
 import { PeriodStatsTable } from "~/components/statistics/PeriodStatsTable";
 import { Button } from "~/components/ui/button";
@@ -45,7 +44,7 @@ const EddingtonChart = nextDynamic(
 
 const TABS = [
   { id: "charts", label: "Charts", icon: BarChart3Icon },
-  { id: "periods", label: "Periods", icon: CalendarIcon },
+  { id: "periods", label: "Time Periods", icon: CalendarIcon },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -65,9 +64,7 @@ const StatisticsPage: NextPageWithLayout = () => {
 
   return (
     <>
-      <Toolbar
-        actions={activeTab === "charts" ? <ActivityFilterPopover /> : undefined}
-      >
+      <Toolbar>
         {/* Mobile: select dropdown */}
         <div className="md:hidden">
           <Select
@@ -137,6 +134,12 @@ const StatisticsPage: NextPageWithLayout = () => {
         </div>
       ) : (
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-3 sm:p-4">
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" render={<Link href="/settings/periods" />}>
+              <SettingsIcon className="size-4" />
+              Manage Periods
+            </Button>
+          </div>
           <PeriodStatsTable />
         </div>
       )}

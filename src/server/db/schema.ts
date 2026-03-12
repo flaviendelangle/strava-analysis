@@ -72,6 +72,7 @@ export const activities = pgTable(
     elapsedTime: integer("elapsed_time").notNull(),
     mapPolyline: text("map_polyline"),
     areStreamsLoaded: boolean("are_streams_loaded").notNull().default(false),
+    streamFetchAttempts: integer("stream_fetch_attempts").notNull().default(0),
     hrss: real("hrss"),
     tss: real("tss"),
     workoutType: integer("workout_type"),
@@ -118,12 +119,17 @@ export const riderSettings = pgTable(
     cdA: real("cd_a").notNull(),
     crr: real("crr").notNull(),
     bikeWeightKg: real("bike_weight_kg"),
+    cyclingLoadAlgorithm: text("cycling_load_algorithm").notNull().default("tss"),
+    runningLoadAlgorithm: text("running_load_algorithm").notNull().default("rtss"),
+    swimmingLoadAlgorithm: text("swimming_load_algorithm").notNull().default("stss"),
     initialValues: jsonb("initial_values").notNull().$type<{
-      ftp: number;
-      weightKg: number;
-      restingHr: number;
-      maxHr: number;
-      lthr: number;
+      ftp?: number;
+      weightKg?: number;
+      restingHr?: number;
+      maxHr?: number;
+      lthr?: number;
+      runThresholdPace?: number;
+      swimThresholdPace?: number;
     }>(),
     changes: jsonb("changes").notNull().$type<
       {
@@ -134,6 +140,8 @@ export const riderSettings = pgTable(
         restingHr?: number;
         maxHr?: number;
         lthr?: number;
+        runThresholdPace?: number;
+        swimThresholdPace?: number;
       }[]
     >(),
   },
@@ -171,7 +179,7 @@ export const syncJobs = pgTable(
     streamsFetched: integer("streams_fetched").notNull().default(0),
     lastError: text("last_error"),
     mode: syncJobModeEnum("mode"),
-    startedAt: real("started_at").notNull(),
+    startedAt: bigint("started_at", { mode: "number" }).notNull(),
   },
   (t) => [uniqueIndex("sync_jobs_athlete_idx").on(t.athlete)],
 );

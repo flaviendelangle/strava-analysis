@@ -49,6 +49,7 @@ export const uploadRouter = router({
           Authorization: `Bearer ${accessToken}`,
         },
         body: formData,
+        signal: AbortSignal.timeout(60_000),
       });
 
       if (!response.ok) {
@@ -79,6 +80,7 @@ export const uploadRouter = router({
         `https://www.strava.com/api/v3/uploads/${input.uploadId}`,
         {
           headers: { Authorization: `Bearer ${accessToken}` },
+          signal: AbortSignal.timeout(30_000),
         },
       );
 

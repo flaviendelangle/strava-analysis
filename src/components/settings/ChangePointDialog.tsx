@@ -18,7 +18,56 @@ import type {
   TimeVaryingField,
 } from "~/sensors/types";
 
-import { RIDER_FIELD_CONFIG } from "./fieldConfig";
+import {
+  RIDER_FIELD_CONFIG,
+  type RiderFieldConfig,
+  paceToSpeed,
+  speedToPace,
+} from "./fieldConfig";
+
+function PaceInput({
+  value,
+  paceUnit,
+  onChange,
+}: {
+  value: number;
+  paceUnit: "/km" | "/100m";
+  onChange: (speed: number) => void;
+}) {
+  const { minutes, seconds } = speedToPace(value, paceUnit);
+
+  const handleMinutesChange = (m: number | null) => {
+    onChange(paceToSpeed(m ?? 0, seconds, paceUnit));
+  };
+
+  const handleSecondsChange = (s: number | null) => {
+    onChange(paceToSpeed(minutes, s ?? 0, paceUnit));
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <NumberField
+        className="w-20"
+        value={minutes}
+        onValueChange={handleMinutesChange}
+        min={0}
+        step={1}
+      />
+      <span className="text-muted-foreground">:</span>
+      <NumberField
+        className="w-20"
+        value={seconds}
+        onValueChange={handleSecondsChange}
+        min={0}
+        max={59}
+        step={1}
+      />
+      <span className="text-muted-foreground text-sm whitespace-nowrap">
+        {paceUnit}
+      </span>
+    </div>
+  );
+}
 
 interface ChangePointDialogProps {
   open: boolean;
@@ -64,6 +113,8 @@ export function ChangePointDialog({
       restingHr: existingPoint?.restingHr ?? 50,
       maxHr: existingPoint?.maxHr ?? 185,
       lthr: existingPoint?.lthr ?? 163,
+      runThresholdPace: existingPoint?.runThresholdPace ?? 3.33,
+      swimThresholdPace: existingPoint?.swimThresholdPace ?? 1.33,
     };
   });
 
@@ -99,6 +150,32 @@ export function ChangePointDialog({
     });
   };
 
+  const renderFieldInput = (config: RiderFieldConfig) => {
+    if (config.inputType === "pace" && config.paceUnit) {
+      return (
+        <PaceInput
+          value={values[config.field]}
+          paceUnit={config.paceUnit}
+          onChange={(speed) =>
+            setValues((prev) => ({ ...prev, [config.field]: speed }))
+          }
+        />
+      );
+    }
+
+    return (
+      <NumberField
+        value={values[config.field]}
+        onValueChange={(value) =>
+          setValues((prev) => ({ ...prev, [config.field]: value ?? 0 }))
+        }
+        min={config.min}
+        step={config.step}
+        smallStep={config.smallStep}
+      />
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -111,7 +188,7 @@ export function ChangePointDialog({
                 : "Add Change Point"}
           </DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col gap-4">
+        <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto">
           {!isBaseline && (
             <div className="flex flex-col gap-1.5">
               <Label>Date</Label>
@@ -123,38 +200,29 @@ export function ChangePointDialog({
               />
             </div>
           )}
-          {RIDER_FIELD_CONFIG.map(
-            ({ field, label, unit, min, step, smallStep }) => (
-              <div key={field} className="flex flex-col gap-1.5">
-                {isBaseline ? (
-                  <Label>
-                    {label} ({unit})
-                  </Label>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={enabledFields.has(field)}
-                      onCheckedChange={() => toggleField(field)}
-                    />
-                    <Label>
-                      {label} ({unit})
-                    </Label>
-                  </div>
-                )}
-                {(isBaseline || enabledFields.has(field)) && (
-                  <NumberField
-                    value={values[field]}
-                    onValueChange={(value) =>
-                      setValues((prev) => ({ ...prev, [field]: value ?? 0 }))
-                    }
-                    min={min}
-                    step={step}
-                    smallStep={smallStep}
+          {RIDER_FIELD_CONFIG.map((config) => (
+            <div key={config.field} className="flex flex-col gap-1.5">
+              {isBaseline ? (
+                <Label>
+                  {config.label}{" "}
+                  ({config.inputType === "pace" ? `min:sec ${config.paceUnit}` : config.unit})
+                </Label>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={enabledFields.has(config.field)}
+                    onCheckedChange={() => toggleField(config.field)}
                   />
-                )}
-              </div>
-            ),
-          )}
+                  <Label>
+                    {config.label}{" "}
+                    ({config.inputType === "pace" ? `min:sec ${config.paceUnit}` : config.unit})
+                  </Label>
+                </div>
+              )}
+              {(isBaseline || enabledFields.has(config.field)) &&
+                renderFieldInput(config)}
+            </div>
+          ))}
         </div>
         <DialogFooter>
           {!isBaseline && existingPoint && onDelete && (

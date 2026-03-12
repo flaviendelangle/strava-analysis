@@ -32,7 +32,7 @@ export async function getAccessToken(
   athleteId: number,
 ): Promise<string> {
   const athlete = await db.query.athletes.findFirst({
-    where: eq(athletes.stravaAthleteId, athleteId),
+    where: eq(athletes.id, athleteId),
   });
 
   if (!athlete) {
@@ -83,6 +83,7 @@ async function refreshToken(
       grant_type: "refresh_token",
       refresh_token: refreshToken,
     }),
+    signal: AbortSignal.timeout(30_000),
   });
 
   if (!response.ok) {
@@ -106,15 +107,18 @@ async function refreshToken(
       refreshToken: data.refresh_token,
       tokenExpiresAt: data.expires_at,
     })
-    .where(eq(athletes.stravaAthleteId, athleteId));
+    .where(eq(athletes.id, athleteId));
 
   return data.access_token;
 }
 
-export function getModelFromStravaActivity(activity: StravaActivity) {
+export function getModelFromStravaActivity(
+  activity: StravaActivity,
+  athleteId: number,
+) {
   return {
     stravaId: activity.id,
-    athlete: activity.athlete.id,
+    athlete: athleteId,
     type: activity.type,
     name: activity.name,
     startDate: activity.start_date,

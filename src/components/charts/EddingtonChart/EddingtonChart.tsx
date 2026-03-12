@@ -1,7 +1,9 @@
 import * as React from "react";
 
 import { BarChartPro } from "@mui/x-charts-pro";
+import { InfoIcon } from "lucide-react";
 
+import { Tooltip } from "~/components/primitives/Tooltip";
 import { SegmentedToggle } from "~/components/ui/segmented-toggle";
 import { useAthleteId } from "~/hooks/useAthleteId";
 import { useEddingtonData } from "~/hooks/useEddingtonData";
@@ -45,6 +47,11 @@ export default function EddingtonChart() {
   const header = (
     <div className="border-border flex items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
       <h3 className="shrink-0 text-xs font-medium sm:text-sm">Eddington Number</h3>
+      <Tooltip label="Your Eddington number E is the largest number such that you have cycled at least E km on E different days. Each bar shows how many days you rode at least that distance.">
+        <button className="text-muted-foreground hover:text-foreground">
+          <InfoIcon className="size-3.5" />
+        </button>
+      </Tooltip>
       {eddington && eddington.eddingtonNumber > 0 && (
         <span className="rounded bg-orange-500/20 px-2 py-0.5 text-xs font-semibold text-orange-400">
           E = {eddington.eddingtonNumber}

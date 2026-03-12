@@ -6,7 +6,8 @@ import Link from "next/link";
 
 import type { Activity } from "@server/db/types";
 import {
-  Row,
+  type Row,
+  type RowData,
   createColumnHelper,
   flexRender,
   getCoreRowModel,
@@ -25,10 +26,23 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
+import { useRiderSettingsTimeline } from "~/hooks/useRiderSettings";
 import { formatActivityType, formatDuration } from "~/utils/format";
+import { getActivityLoad, type LoadAlgorithmPreferences } from "~/utils/getActivityLoad";
 import { getSportConfig } from "~/utils/sportConfig";
 
 type ActivityWithoutMap = Omit<Activity, "mapPolyline">;
+
+declare module "@tanstack/react-table" {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface TableMeta<TData extends RowData> {
+    loadPreferences?: LoadAlgorithmPreferences;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface ColumnMeta<TData extends RowData, TValue> {
+    minWidth?: number;
+  }
+}
 
 function ActivityRow(props: {
   row: Row<ActivityWithoutMap>;
@@ -45,7 +59,7 @@ function ActivityRow(props: {
       style={style}
     >
       {row.getVisibleCells().map((cell, cellIndex) => {
-        const minWidth = (cell.column.columnDef.meta as any)?.minWidth;
+        const minWidth = cell.column.columnDef.meta?.minWidth;
         return (
         <TableCell
           className="flex min-w-0 items-center px-3 md:px-6"
@@ -134,13 +148,16 @@ const columns = [
     sortingFn: "basic",
     size: 1,
   }),
-  columnHelper.accessor("hrss", {
+  columnHelper.display({
+    id: "load",
     cell: (info) => {
-      const value = info.getValue();
-      return value == null ? "" : Math.round(value);
+      const activity = info.row.original;
+      const prefs = info.table.options.meta?.loadPreferences;
+      if (!prefs) return "";
+      const result = getActivityLoad(activity, prefs);
+      return result.value != null ? Math.round(result.value) : "";
     },
-    header: () => <span>HRSS</span>,
-    sortingFn: "basic",
+    header: () => <span>Load</span>,
     size: 1,
   }),
 ];
@@ -151,6 +168,7 @@ const SKELETON_ROW_COUNT = 25;
 
 export function ActivitiesTable(props: { nameFilter?: string }) {
   const activitiesQuery = useActivitiesQuery();
+  const { timeline } = useRiderSettingsTimeline();
   const tableContainerRef = React.useRef<HTMLDivElement>(null);
 
   const data = React.useMemo(
@@ -163,10 +181,22 @@ export function ActivitiesTable(props: { nameFilter?: string }) {
     [props.nameFilter],
   );
 
+  const meta = React.useMemo(
+    () => ({
+      loadPreferences: {
+        cyclingLoadAlgorithm: timeline.cyclingLoadAlgorithm,
+        runningLoadAlgorithm: timeline.runningLoadAlgorithm,
+        swimmingLoadAlgorithm: timeline.swimmingLoadAlgorithm,
+      },
+    }),
+    [timeline.cyclingLoadAlgorithm, timeline.runningLoadAlgorithm, timeline.swimmingLoadAlgorithm],
+  );
+
   const table = useReactTable({
     data,
     columns,
     state: { columnFilters },
+    meta,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -208,7 +238,7 @@ export function ActivitiesTable(props: { nameFilter?: string }) {
                       : undefined
                   }
                   className="flex min-w-0 items-center px-3 py-3 md:px-6"
-                  style={{ flex: header.column.getSize(), minWidth: (header.column.columnDef.meta as any)?.minWidth }}
+                  style={{ flex: header.column.getSize(), minWidth: header.column.columnDef.meta?.minWidth }}
                 >
                   {header.isPlaceholder ? null : (
                     <div
@@ -241,7 +271,7 @@ export function ActivitiesTable(props: { nameFilter?: string }) {
                     <TableCell
                       key={col.id}
                       className="flex min-w-0 items-center px-3 md:px-6"
-                      style={{ flex: col.getSize(), minWidth: (col.columnDef.meta as any)?.minWidth }}
+                      style={{ flex: col.getSize(), minWidth: col.columnDef.meta?.minWidth }}
                     >
                       <div className="bg-border h-4 w-32 animate-pulse" />
                     </TableCell>
