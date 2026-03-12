@@ -24,7 +24,7 @@ export function PeriodStatsTable() {
       <div className="border-border bg-card rounded-xl border p-8 text-center">
         <p className="text-muted-foreground text-sm">
           No time periods defined.{" "}
-          <Link href="/settings" className="text-primary underline">
+          <Link href="/settings/periods" className="text-primary underline">
             Create one in Settings
           </Link>{" "}
           to see aggregated statistics.

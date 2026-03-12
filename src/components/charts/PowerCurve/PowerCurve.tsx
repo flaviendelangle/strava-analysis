@@ -3,6 +3,7 @@ import * as React from "react";
 import { format, subDays } from "date-fns";
 import { X } from "lucide-react";
 
+import { FeatureHint } from "~/components/primitives/FeatureHint";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { SegmentedToggle } from "~/components/ui/segmented-toggle";
@@ -210,6 +211,9 @@ function SingleActivityPowerCurve({ stravaId }: { stravaId: number }) {
     <div className="bg-card flex h-96 w-full flex-col rounded-md">
       <div className="border-border flex items-center gap-1.5 border-b p-2 sm:gap-2 sm:p-4">
         <h3 className="shrink-0 text-xs font-medium sm:text-sm">Cycling Power Curve</h3>
+        <FeatureHint hintId="hint-activity-power-curve" title="Power Curve" side="right">
+          Your best sustained power efforts at each duration. Toggle &quot;vs All-Time&quot; to compare this activity against your historical bests and spot improvements.
+        </FeatureHint>
         <div className="bg-border mx-1 h-4 w-px" />
         <label className="text-muted-foreground flex items-center gap-1.5 text-xs">
           <input

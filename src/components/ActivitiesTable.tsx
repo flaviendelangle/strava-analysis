@@ -28,16 +28,12 @@ import {
 import { useActivitiesQuery } from "~/hooks/useActivitiesQuery";
 import { useRiderSettingsTimeline } from "~/hooks/useRiderSettings";
 import { formatActivityType, formatDuration } from "~/utils/format";
-import { getActivityLoad, type LoadAlgorithmPreferences } from "~/utils/getActivityLoad";
+import { getActivityLoad } from "~/utils/getActivityLoad";
 import { getSportConfig } from "~/utils/sportConfig";
 
-type ActivityWithoutMap = Omit<Activity, "mapPolyline">;
+type ActivityWithoutMap = Omit<Activity, "mapPolyline"> & { load: number | null };
 
 declare module "@tanstack/react-table" {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  interface TableMeta<TData extends RowData> {
-    loadPreferences?: LoadAlgorithmPreferences;
-  }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> {
     minWidth?: number;
@@ -148,16 +144,13 @@ const columns = [
     sortingFn: "basic",
     size: 1,
   }),
-  columnHelper.display({
-    id: "load",
+  columnHelper.accessor("load", {
     cell: (info) => {
-      const activity = info.row.original;
-      const prefs = info.table.options.meta?.loadPreferences;
-      if (!prefs) return "";
-      const result = getActivityLoad(activity, prefs);
-      return result.value != null ? Math.round(result.value) : "";
+      const value = info.getValue();
+      return value != null ? Math.round(value) : "";
     },
     header: () => <span>Load</span>,
+    sortingFn: "basic",
     size: 1,
   }),
 ];
@@ -171,9 +164,21 @@ export function ActivitiesTable(props: { nameFilter?: string }) {
   const { timeline } = useRiderSettingsTimeline();
   const tableContainerRef = React.useRef<HTMLDivElement>(null);
 
+  const loadPreferences = React.useMemo(
+    () => ({
+      cyclingLoadAlgorithm: timeline.cyclingLoadAlgorithm,
+      runningLoadAlgorithm: timeline.runningLoadAlgorithm,
+      swimmingLoadAlgorithm: timeline.swimmingLoadAlgorithm,
+    }),
+    [timeline.cyclingLoadAlgorithm, timeline.runningLoadAlgorithm, timeline.swimmingLoadAlgorithm],
+  );
+
   const data = React.useMemo(
-    () => activitiesQuery.data ?? [],
-    [activitiesQuery.data],
+    () => (activitiesQuery.data ?? []).map((activity) => ({
+      ...activity,
+      load: getActivityLoad(activity, loadPreferences).value,
+    })),
+    [activitiesQuery.data, loadPreferences],
   );
 
   const columnFilters = React.useMemo(
@@ -181,22 +186,10 @@ export function ActivitiesTable(props: { nameFilter?: string }) {
     [props.nameFilter],
   );
 
-  const meta = React.useMemo(
-    () => ({
-      loadPreferences: {
-        cyclingLoadAlgorithm: timeline.cyclingLoadAlgorithm,
-        runningLoadAlgorithm: timeline.runningLoadAlgorithm,
-        swimmingLoadAlgorithm: timeline.swimmingLoadAlgorithm,
-      },
-    }),
-    [timeline.cyclingLoadAlgorithm, timeline.runningLoadAlgorithm, timeline.swimmingLoadAlgorithm],
-  );
-
   const table = useReactTable({
     data,
     columns,
     state: { columnFilters },
-    meta,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),

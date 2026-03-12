@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import type { RiderSettingsTimeline } from "~/sensors/types";
+import { getLoadAlgorithmConfigs } from "~/utils/sportConfig";
 
 export interface SettingsLayoutProps {
   timeline: RiderSettingsTimeline;
@@ -109,20 +110,7 @@ export function EquipmentFields({
   );
 }
 
-const CYCLING_OPTIONS = [
-  { value: "tss", label: "TSS (Power-based)" },
-  { value: "hrss", label: "HRSS (Heart Rate-based)" },
-] as const;
-
-const RUNNING_OPTIONS = [
-  { value: "rtss", label: "rTSS (Pace-based)" },
-  { value: "hrss", label: "HRSS (Heart Rate-based)" },
-] as const;
-
-const SWIMMING_OPTIONS = [
-  { value: "stss", label: "sTSS (Pace-based)" },
-  { value: "hrss", label: "HRSS (Heart Rate-based)" },
-] as const;
+const LOAD_ALGORITHM_CONFIGS = getLoadAlgorithmConfigs();
 
 function renderLabel(
   options: readonly { value: string; label: string }[],
@@ -141,76 +129,36 @@ export function LoadAlgorithmFields({
   className?: string;
 }) {
   return (
-    <div className={className ?? "grid grid-cols-1 gap-5 sm:grid-cols-3"}>
-      <div className="flex flex-col gap-2">
-        <Label>Cycling</Label>
-        <Select
-          value={timeline.cyclingLoadAlgorithm}
-          onValueChange={(v) =>
-            setTimeline({
-              ...timeline,
-              cyclingLoadAlgorithm: v as "tss" | "hrss",
-            })
-          }
-        >
-          <SelectTrigger>
-            <SelectValue>{renderLabel(CYCLING_OPTIONS)}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {CYCLING_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="flex flex-col gap-2">
-        <Label>Running</Label>
-        <Select
-          value={timeline.runningLoadAlgorithm}
-          onValueChange={(v) =>
-            setTimeline({
-              ...timeline,
-              runningLoadAlgorithm: v as "rtss" | "hrss",
-            })
-          }
-        >
-          <SelectTrigger>
-            <SelectValue>{renderLabel(RUNNING_OPTIONS)}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {RUNNING_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="flex flex-col gap-2">
-        <Label>Swimming</Label>
-        <Select
-          value={timeline.swimmingLoadAlgorithm}
-          onValueChange={(v) =>
-            setTimeline({
-              ...timeline,
-              swimmingLoadAlgorithm: v as "stss" | "hrss",
-            })
-          }
-        >
-          <SelectTrigger>
-            <SelectValue>{renderLabel(SWIMMING_OPTIONS)}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {SWIMMING_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+    <div
+      className={
+        className ?? `grid grid-cols-1 gap-5 sm:grid-cols-${LOAD_ALGORITHM_CONFIGS.length}`
+      }
+    >
+      {LOAD_ALGORITHM_CONFIGS.map((config) => {
+        const currentValue = (timeline as unknown as Record<string, string>)[config.key];
+        return (
+          <div key={config.key} className="flex flex-col gap-2">
+            <Label>{config.label}</Label>
+            <Select
+              value={currentValue}
+              onValueChange={(v) =>
+                setTimeline({ ...timeline, [config.key]: v })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue>{renderLabel(config.options)}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {config.options.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        );
+      })}
     </div>
   );
 }

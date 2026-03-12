@@ -18,13 +18,13 @@ const changePointSchema = z.object({
 });
 
 const initialValuesSchema = z.object({
-  ftp: z.number().positive().max(2000),
-  weightKg: z.number().positive().max(500),
-  restingHr: z.number().int().positive().max(200),
-  maxHr: z.number().int().positive().max(250),
-  lthr: z.number().int().positive().max(250),
-  runThresholdPace: z.number().positive().max(20), // m/s
-  swimThresholdPace: z.number().positive().max(10), // m/s
+  ftp: z.number().positive().max(2000).nullable(),
+  weightKg: z.number().positive().max(500).nullable(),
+  restingHr: z.number().int().positive().max(200).nullable(),
+  maxHr: z.number().int().positive().max(250).nullable(),
+  lthr: z.number().int().positive().max(250).nullable(),
+  runThresholdPace: z.number().positive().max(20).nullable(), // m/s
+  swimThresholdPace: z.number().positive().max(10).nullable(), // m/s
 });
 
 export const riderSettingsRouter = router({

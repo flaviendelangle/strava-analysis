@@ -1,10 +1,12 @@
 import * as React from "react";
 
-import { CalendarIcon, SlidersHorizontalIcon } from "lucide-react";
+import { CalendarIcon, InfoIcon, SlidersHorizontalIcon } from "lucide-react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 
+import { Tooltip } from "~/components/primitives/Tooltip";
+import { ResetHintsButton } from "~/components/settings/ResetHintsButton";
 import { ChangePointsTimeline } from "~/components/settings/ChangePointsTimeline";
 import {
   DangerZone,
@@ -37,7 +39,7 @@ const SettingsPage: NextPageWithLayout = () => {
   const router = useRouter();
   const rawTab = Array.isArray(router.query.tab) ? router.query.tab[0] : undefined;
   const activeTab = TABS.some((t) => t.id === rawTab) ? (rawTab as TabId) : undefined;
-  const { timeline, setTimeline } = useRiderSettingsTimeline();
+  const { timeline, setTimeline, hasSettings } = useRiderSettingsTimeline();
   const athleteId = useAthleteId();
   const deleteAllData = trpc.account.deleteAllData.useMutation();
   const [deleting, setDeleting] = React.useState(false);
@@ -132,6 +134,7 @@ const SettingsPage: NextPageWithLayout = () => {
               <ChangePointsTimeline
                 timeline={timeline}
                 onTimelineChange={setTimeline}
+                hasSettings={hasSettings}
               />
             </section>
 
@@ -143,7 +146,14 @@ const SettingsPage: NextPageWithLayout = () => {
             </section>
 
             <section className="border-border bg-card rounded-xl border p-5">
-              <h2 className="mb-2 text-lg font-semibold">Load Algorithm</h2>
+              <div className="mb-2 flex items-center gap-2">
+                <h2 className="text-lg font-semibold">Load Algorithm</h2>
+                <Tooltip label="TSS uses power data (most accurate for cycling with a power meter). HRSS uses heart rate (works for any sport with an HR monitor). rTSS/sTSS use pace (good for running/swimming without power).">
+                  <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
+                    <InfoIcon className="size-4" />
+                  </button>
+                </Tooltip>
+              </div>
               <p className="text-muted-foreground mb-5 text-sm">
                 Choose which training load metric to display for each sport
                 category.
@@ -152,6 +162,14 @@ const SettingsPage: NextPageWithLayout = () => {
                 timeline={timeline}
                 setTimeline={setTimeline}
               />
+            </section>
+
+            <section className="border-border bg-card rounded-xl border p-5">
+              <h2 className="mb-2 text-lg font-semibold">Preferences</h2>
+              <p className="text-muted-foreground mb-4 text-sm">
+                Manage app preferences and onboarding hints.
+              </p>
+              <ResetHintsButton />
             </section>
 
             <DangerZone

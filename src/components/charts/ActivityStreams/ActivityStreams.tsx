@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { FeatureHint } from "~/components/primitives/FeatureHint";
 import { Select } from "~/components/primitives/Select";
 import { useAthleteId } from "~/hooks/useAthleteId";
 import { useChartTokens } from "~/lib/chartTokens";
@@ -151,6 +152,8 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
     return { parsed, distanceData };
   }, [streamsData, hiddenStreams]);
 
+  const sportConfig = activity ? getSportConfig(activity.type) : null;
+
   // Assemble final streams with color tokens — cheap, re-runs on theme change
   const { streams, distanceData } = React.useMemo(() => {
     if (!activity || !parsedStreams || tokens.paletteOklch.length === 0) {
@@ -161,8 +164,14 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
       ({ def, yData, yMin, yMax }) => ({
         config: {
           type: def.type,
-          title: def.title,
-          unit: def.unit,
+          title:
+            def.type === "velocity_smooth" && sportConfig
+              ? sportConfig.speedLabel
+              : def.title,
+          unit:
+            def.type === "cadence" && sportConfig
+              ? sportConfig.cadenceUnit
+              : def.unit,
           color: tokens.palette[def.colorIndex] ?? tokens.palette[0],
           area: def.area,
         },
@@ -173,9 +182,7 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
     );
 
     return { streams: preparedStreams, distanceData: parsedStreams.distanceData };
-  }, [parsedStreams, activity, tokens.palette, tokens.paletteOklch.length]);
-
-  const sportConfig = activity ? getSportConfig(activity.type) : null;
+  }, [parsedStreams, activity, sportConfig, tokens.palette, tokens.paletteOklch.length]);
   const distanceAvailable = distanceData != null;
 
   const xAxisOptions = distanceAvailable
@@ -214,15 +221,22 @@ export default function ActivityStreams(props: ActivityStreamsProps) {
 
   return (
     <div className="bg-card flex flex-col rounded-md">
-      {xAxisOptions.length > 1 && (
-        <div className="border-border flex gap-4 border-b p-4">
+      <div className="border-border flex items-center gap-2 border-b p-4">
+        <h3 className="text-sm font-medium">Time Series</h3>
+        <FeatureHint hintId="hint-activity-streams" title="Time Series">
+          Heart rate, power, cadence, speed, and altitude plotted over time or
+          distance. Hover to see all metrics at a specific point. Toggle the
+          X-axis between time and distance using the dropdown.
+        </FeatureHint>
+        <div className="flex-1" />
+        {xAxisOptions.length > 1 && (
           <Select
             value={xAxisMode}
             onValueChange={setXAxisMode}
             options={xAxisOptions}
           />
-        </div>
-      )}
+        )}
+      </div>
       <MultiPanelChart
         streams={streams}
         xData={xData}

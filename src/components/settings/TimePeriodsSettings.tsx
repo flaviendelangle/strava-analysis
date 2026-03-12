@@ -200,92 +200,99 @@ function TimePeriodDialog({
             {period ? "Edit Time Period" : "New Time Period"}
           </DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label>Name</Label>
-            <input
-              type="text"
-              value={form.name}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, name: e.target.value }))
-              }
-              placeholder="e.g. 2024 Season"
-              className="border-border bg-background h-9 rounded-md border px-3 text-sm"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+        >
+          <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <Label>Start Date</Label>
+              <Label>Name</Label>
               <input
-                type="date"
-                value={form.startDate}
+                type="text"
+                value={form.name}
                 onChange={(e) =>
-                  setForm((prev) => ({ ...prev, startDate: e.target.value }))
+                  setForm((prev) => ({ ...prev, name: e.target.value }))
                 }
+                placeholder="e.g. 2024 Season"
                 className="border-border bg-background h-9 rounded-md border px-3 text-sm"
               />
             </div>
-            <div className="flex flex-col gap-2">
-              <Label>End Date</Label>
-              <input
-                type="date"
-                value={form.endDate}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, endDate: e.target.value }))
-                }
-                className="border-border bg-background h-9 rounded-md border px-3 text-sm"
-              />
-            </div>
-          </div>
-          {activityTypes && activityTypes.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <Label>
-                Sport Types{" "}
-                <span className="text-muted-foreground font-normal">
-                  (optional, empty = all)
-                </span>
-              </Label>
-              <div className="grid grid-cols-2 gap-1.5">
-                {activityTypes.map((type) => {
-                  const Icon = getSportConfig(type).icon;
-                  const active = form.sportTypes.includes(type);
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => toggleSportType(type)}
-                      className={cn(
-                        "inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors",
-                        active
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
-                      )}
-                    >
-                      <Icon className="size-3.5 shrink-0" />
-                      <span className="truncate">
-                        {formatActivityType(type)}
-                      </span>
-                    </button>
-                  );
-                })}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <Label>Start Date</Label>
+                <input
+                  type="date"
+                  value={form.startDate}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, startDate: e.target.value }))
+                  }
+                  className="border-border bg-background h-9 rounded-md border px-3 text-sm"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label>End Date</Label>
+                <input
+                  type="date"
+                  value={form.endDate}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, endDate: e.target.value }))
+                  }
+                  className="border-border bg-background h-9 rounded-md border px-3 text-sm"
+                />
               </div>
             </div>
-          )}
-        </div>
-        <DialogFooter>
-          <Button
-            onClick={handleSubmit}
-            disabled={
-              isSubmitting || !form.name || !form.startDate || !form.endDate
-            }
-          >
-            {isSubmitting
-              ? "Saving..."
-              : period
-                ? "Update"
-                : "Create"}
-          </Button>
-        </DialogFooter>
+            {activityTypes && activityTypes.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <Label>
+                  Sport Types{" "}
+                  <span className="text-muted-foreground font-normal">
+                    (optional, empty = all)
+                  </span>
+                </Label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {activityTypes.map((type) => {
+                    const Icon = getSportConfig(type).icon;
+                    const active = form.sportTypes.includes(type);
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => toggleSportType(type)}
+                        className={cn(
+                          "inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors",
+                          active
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
+                        )}
+                      >
+                        <Icon className="size-3.5 shrink-0" />
+                        <span className="truncate">
+                          {formatActivityType(type)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting || !form.name || !form.startDate || !form.endDate
+              }
+            >
+              {isSubmitting
+                ? "Saving..."
+                : period
+                  ? "Update"
+                  : "Create"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

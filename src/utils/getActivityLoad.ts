@@ -1,8 +1,4 @@
-import {
-  POWER_BEST_ACTIVITY_TYPES,
-  RUN_ACTIVITY_TYPES,
-  SWIM_ACTIVITY_TYPES,
-} from "./constants";
+import { getSportConfig } from "./sportConfig";
 
 interface ActivityLike {
   type: string;
@@ -47,18 +43,15 @@ export function getActivityLoad(
   activity: ActivityLike,
   preferences: LoadAlgorithmPreferences,
 ): LoadResult {
+  const sportConfig = getSportConfig(activity.type);
+
   let preferred: Algorithm;
   let sportSpecific: Algorithm;
 
-  if (POWER_BEST_ACTIVITY_TYPES.includes(activity.type)) {
-    preferred = preferences.cyclingLoadAlgorithm;
-    sportSpecific = "tss";
-  } else if (RUN_ACTIVITY_TYPES.includes(activity.type)) {
-    preferred = preferences.runningLoadAlgorithm;
-    sportSpecific = "rtss";
-  } else if (SWIM_ACTIVITY_TYPES.includes(activity.type)) {
-    preferred = preferences.swimmingLoadAlgorithm;
-    sportSpecific = "stss";
+  const key = sportConfig.loadAlgorithmKey;
+  if (key != null && key in preferences) {
+    preferred = (preferences as unknown as Record<string, Algorithm>)[key];
+    sportSpecific = sportConfig.defaultLoadAlgorithm as Algorithm;
   } else {
     preferred = "hrss";
     sportSpecific = "hrss";

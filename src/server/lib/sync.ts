@@ -1,11 +1,7 @@
 import { and, asc, count, eq, gt, inArray, lt, or, sql } from "drizzle-orm";
 import strava from "strava-v3";
 
-import {
-  POWER_BEST_ACTIVITY_TYPES,
-  RUN_ACTIVITY_TYPES,
-  SWIM_ACTIVITY_TYPES,
-} from "../../utils/constants";
+import { getSportConfig } from "../../utils/sportConfig";
 import type { Database } from "../db";
 import {
   activities,
@@ -368,13 +364,13 @@ type ActivityForScoring = {
 
 type SettingsDocForScoring = {
   initialValues: {
-    ftp?: number;
-    weightKg?: number;
-    restingHr?: number;
-    maxHr?: number;
-    lthr?: number;
-    runThresholdPace?: number;
-    swimThresholdPace?: number;
+    ftp?: number | null;
+    weightKg?: number | null;
+    restingHr?: number | null;
+    maxHr?: number | null;
+    lthr?: number | null;
+    runThresholdPace?: number | null;
+    swimThresholdPace?: number | null;
   };
   changes: {
     date: string;
@@ -487,10 +483,12 @@ export async function computeActivityScoresInternal(
     powerBests?: Record<number, number> | null;
   } = {};
 
+  const sc = getSportConfig(activity.type);
+
   if (
     settings &&
     activity.weightedAverageWatts != null &&
-    POWER_BEST_ACTIVITY_TYPES.includes(activity.type)
+    sc.hasPowerMetrics
   ) {
     patch.tss = Math.round(
       calculateTSS(
@@ -504,7 +502,7 @@ export async function computeActivityScoresInternal(
   // Swimming sTSS (no stream needed — uses distance/movingTime)
   if (
     settings &&
-    SWIM_ACTIVITY_TYPES.includes(activity.type) &&
+    sc.category === "swimming" &&
     settings.swimThresholdPace > 0 &&
     activity.distance > 0
   ) {
@@ -561,7 +559,7 @@ export async function computeActivityScoresInternal(
     // Running rTSS (needs velocity_smooth stream)
     if (
       settings &&
-      RUN_ACTIVITY_TYPES.includes(activity.type) &&
+      sc.category === "running" &&
       settings.runThresholdPace > 0
     ) {
       const velocityDocs = streamDocs
@@ -582,7 +580,7 @@ export async function computeActivityScoresInternal(
       }
     }
 
-    if (POWER_BEST_ACTIVITY_TYPES.includes(activity.type)) {
+    if (sc.hasPowerMetrics) {
       const wattsDocs = streamDocs
         .filter((s) => s.type === "watts")
         .sort((a, b) => (a.chunkIndex ?? 0) - (b.chunkIndex ?? 0));

@@ -16,15 +16,11 @@ import type { ReactNode } from "react";
 
 import type { Activity } from "@server/db/types";
 
+import { SettingsCallout } from "~/components/primitives/SettingsCallout";
 import { StatCard } from "~/components/primitives/StatCard";
 import { StatSection } from "~/components/primitives/StatSection";
 import { useRiderSettingsTimeline } from "~/hooks/useRiderSettings";
 import { cn } from "~/lib/utils";
-import {
-  POWER_BEST_ACTIVITY_TYPES,
-  RUN_ACTIVITY_TYPES,
-  SWIM_ACTIVITY_TYPES,
-} from "~/utils/constants";
 import { formatHumanDuration } from "~/utils/format";
 import { getActivityLoad } from "~/utils/getActivityLoad";
 import { getSportConfig } from "~/utils/sportConfig";
@@ -48,45 +44,25 @@ export const ActivityStats = React.memo(function ActivityStats({
   const activityDate = activity.startDateLocal.slice(0, 10);
   const riderSettings = resolveForDate(activityDate);
 
-  const isRide = POWER_BEST_ACTIVITY_TYPES.includes(activity.type);
-  const isRun = RUN_ACTIVITY_TYPES.includes(activity.type);
-  const isSwim = SWIM_ACTIVITY_TYPES.includes(activity.type);
-  const hasPaceTSS = isRun || isSwim;
   const np = activity.weightedAverageWatts ?? null;
   const ftp = riderSettings.ftp;
-  const intensityFactor = isRide && np != null ? np / ftp : null;
-  const tss = isRide || hasPaceTSS ? (activity.tss ?? null) : null;
+  const intensityFactor =
+    sportConfig.hasPowerMetrics && np != null ? np / ftp : null;
+  const tss =
+    sportConfig.hasPowerMetrics || sportConfig.hasPaceTSS
+      ? (activity.tss ?? null)
+      : null;
   const hrss = activity.hrss ?? null;
 
-  const powerSettingsTooltip = (
+  const tssTooltipLines = sportConfig.getTssTooltipLines(riderSettings, np);
+  const tssTooltip = (
     <div className="flex flex-col gap-0.5">
       <div className="font-medium">Settings for {activityDate}</div>
-      <div>FTP: {riderSettings.ftp} W</div>
-      {np != null && <div>IF: {(np / ftp).toFixed(2)}</div>}
-    </div>
-  );
-
-  const runSettingsTooltip = (
-    <div className="flex flex-col gap-0.5">
-      <div className="font-medium">Settings for {activityDate}</div>
-      <div>
-        Threshold Pace:{" "}
-        {riderSettings.runThresholdPace > 0
-          ? sportConfig.formatSpeed(riderSettings.runThresholdPace)
-          : "Not set"}
-      </div>
-    </div>
-  );
-
-  const swimSettingsTooltip = (
-    <div className="flex flex-col gap-0.5">
-      <div className="font-medium">Settings for {activityDate}</div>
-      <div>
-        Threshold Pace:{" "}
-        {riderSettings.swimThresholdPace > 0
-          ? sportConfig.formatSpeed(riderSettings.swimThresholdPace)
-          : "Not set"}
-      </div>
+      {tssTooltipLines.map((line) => (
+        <div key={line.label}>
+          {line.label}: {line.value}
+        </div>
+      ))}
     </div>
   );
 
@@ -98,12 +74,6 @@ export const ActivityStats = React.memo(function ActivityStats({
       <div>LTHR: {riderSettings.lthr} bpm</div>
     </div>
   );
-
-  const tssTooltip = isRun
-    ? runSettingsTooltip
-    : isSwim
-      ? swimSettingsTooltip
-      : powerSettingsTooltip;
 
   // ── Hero stats ──
 
@@ -259,12 +229,8 @@ export const ActivityStats = React.memo(function ActivityStats({
 
   // ── Training Load ──
 
-  const tssLabel = isRun ? "rTSS" : isSwim ? "sTSS" : "TSS";
-  const tssSettingsHint = isRun
-    ? "Configure your Run Threshold Pace to enable this metric."
-    : isSwim
-      ? "Configure your Swim Threshold Pace to enable this metric."
-      : "Configure your rider settings (FTP) to enable this metric.";
+  const tssLabel = sportConfig.tssLabel;
+  const tssSettingsHint = sportConfig.tssSettingsHint;
 
   const trainingLoadStats: Stat[] = hasSettings
     ? [
@@ -273,7 +239,7 @@ export const ActivityStats = React.memo(function ActivityStats({
               {
                 label: "Intensity Factor",
                 value: intensityFactor.toFixed(2),
-                tooltip: powerSettingsTooltip,
+                tooltip: tssTooltip,
               },
             ]
           : []),
@@ -297,7 +263,7 @@ export const ActivityStats = React.memo(function ActivityStats({
           : []),
       ]
     : [
-        ...(isRide
+        ...(sportConfig.hasPowerMetrics
           ? [
               {
                 label: "Intensity Factor",
@@ -317,7 +283,7 @@ export const ActivityStats = React.memo(function ActivityStats({
                   "Configure your rider settings (Resting HR, Max HR, LTHR) to enable this metric.",
               },
             ]
-          : hasPaceTSS
+          : sportConfig.hasPaceTSS
             ? [
                 {
                   label: tssLabel,
@@ -386,11 +352,20 @@ export const ActivityStats = React.memo(function ActivityStats({
           <StatSection
             icon={TrendingUp}
             title="Training Load Details"
-            collapsible
-            defaultCollapsed
           >
+            {!hasSettings && (
+              <SettingsCallout
+                hintId="callout-activity-load"
+                message={sportConfig.settingsCalloutMessage}
+                className="mb-2"
+              />
+            )}
             {trainingLoadStats.map((stat) => (
-              <StatCard key={stat.label} {...stat} />
+              <StatCard
+                key={stat.label}
+                {...stat}
+                settingsLink={!hasSettings ? "/settings/rider" : undefined}
+              />
             ))}
           </StatSection>
         )}

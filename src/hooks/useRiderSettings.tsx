@@ -71,8 +71,13 @@ export function RiderSettingsProvider({
               (stored.swimmingLoadAlgorithm as "stss" | "hrss") ??
               DEFAULT_RIDER_SETTINGS_TIMELINE.swimmingLoadAlgorithm,
             initialValues: {
-              ...DEFAULT_RIDER_SETTINGS_TIMELINE.initialValues,
-              ...stored.initialValues,
+              ftp: stored.initialValues.ftp ?? null,
+              weightKg: stored.initialValues.weightKg ?? null,
+              restingHr: stored.initialValues.restingHr ?? null,
+              maxHr: stored.initialValues.maxHr ?? null,
+              lthr: stored.initialValues.lthr ?? null,
+              runThresholdPace: stored.initialValues.runThresholdPace ?? null,
+              swimThresholdPace: stored.initialValues.swimThresholdPace ?? null,
             },
             changes: stored.changes,
           }

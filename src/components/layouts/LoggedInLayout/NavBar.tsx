@@ -21,6 +21,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { Tooltip, TooltipProps } from "~/components/primitives/Tooltip";
+import { useRiderSettingsTimeline } from "~/hooks/useRiderSettings";
 import { useTheme } from "~/hooks/useTheme";
 import { cn } from "~/lib/utils";
 
@@ -30,9 +31,10 @@ interface NavBarLinkProps {
   icon: React.ElementType;
   label: string;
   href: string;
+  badge?: React.ReactNode;
 }
 
-function NavBarLink({ icon: Icon, label, href }: NavBarLinkProps) {
+function NavBarLink({ icon: Icon, label, href, badge }: NavBarLinkProps) {
   const { isMenuExpanded } = React.useContext(NavBarContext);
   const pathname = usePathname();
   const isActive = (pathname ?? "").startsWith(href);
@@ -51,7 +53,10 @@ function NavBarLink({ icon: Icon, label, href }: NavBarLinkProps) {
       {isActive && (
         <span className="bg-primary absolute top-1.5 bottom-1.5 left-0 w-0.75 rounded-r-full" />
       )}
-      <Icon className="size-4.5 shrink-0" />
+      <span className="relative">
+        <Icon className="size-4.5 shrink-0" />
+        {badge}
+      </span>
       {isMenuExpanded && <span>{label}</span>}
     </Link>
   );
@@ -100,6 +105,17 @@ function ThemeToggleNavButton() {
         onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
       />
     </TooltipIfMenuCollapsed>
+  );
+}
+
+function SettingsSetupDot() {
+  const { hasSettings } = useRiderSettingsTimeline();
+  if (hasSettings) return null;
+  return (
+    <span className="absolute -top-1 -right-1 flex size-2.5">
+      <span className="bg-primary absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" />
+      <span className="bg-primary relative inline-flex size-2.5 rounded-full" />
+    </span>
   );
 }
 
@@ -162,7 +178,7 @@ export function NavBar() {
         <div className="flex flex-col gap-0.5">
           <div className="border-sidebar-border mx-3 mb-1 border-t" />
           <TooltipIfMenuCollapsed label="Settings">
-            <NavBarLink icon={SettingsIcon} label="Settings" href="/settings" />
+            <NavBarLink icon={SettingsIcon} label="Settings" href="/settings" badge={<SettingsSetupDot />} />
           </TooltipIfMenuCollapsed>
           <TooltipIfMenuCollapsed label="Privacy Policy">
             <NavBarLink
@@ -233,7 +249,10 @@ export function MobileBottomBar() {
             className="text-foreground hover:bg-accent flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium"
             onClick={() => setMoreOpen(false)}
           >
-            <SettingsIcon className="size-4" />
+            <span className="relative">
+              <SettingsIcon className="size-4" />
+              <SettingsSetupDot />
+            </span>
             Settings
           </Link>
           <Link

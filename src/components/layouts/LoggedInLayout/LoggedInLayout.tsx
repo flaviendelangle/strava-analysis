@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
+import { DismissedHintsProvider } from "~/hooks/useDismissedHints";
 import { ErgModeProvider } from "~/hooks/useErgMode";
 import { ExplorerTilesProvider } from "~/hooks/useExplorerTilesToggle";
 import { RiderSettingsProvider } from "~/hooks/useRiderSettings";
@@ -40,6 +41,7 @@ export const LoggedInLayout = (props: LoggedInLayoutProps) => {
     <SharedLayout>
       <ExplorerTilesProvider>
         <RiderSettingsProvider>
+          <DismissedHintsProvider>
           <ErgModeProvider>
             <div className="flex h-screen">
               <NavBar />
@@ -49,6 +51,7 @@ export const LoggedInLayout = (props: LoggedInLayoutProps) => {
               <MobileBottomBar />
             </div>
           </ErgModeProvider>
+          </DismissedHintsProvider>
         </RiderSettingsProvider>
       </ExplorerTilesProvider>
     </SharedLayout>

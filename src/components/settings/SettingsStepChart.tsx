@@ -5,7 +5,11 @@ import { format } from "date-fns";
 import { LineChart } from "@mui/x-charts-pro";
 
 import { CHART_MARGINS, useChartTokens } from "~/lib/chartTokens";
-import type { RiderSettingsTimeline, TimeVaryingField } from "~/sensors/types";
+import {
+  DEFAULT_RIDER_SETTINGS_TIMELINE,
+  type RiderSettingsTimeline,
+  type TimeVaryingField,
+} from "~/sensors/types";
 
 import { ChartThemeProvider } from "../charts/ChartThemeProvider";
 import { ChartTooltip } from "../charts/ChartTooltip";
@@ -87,10 +91,12 @@ export function SettingsStepChart({ timeline }: SettingsStepChartProps) {
     };
 
     for (const date of dates) {
-      // Resolve each field's value at this date
-      const resolved: Record<TimeVaryingField, number> = {
-        ...timeline.initialValues,
-      };
+      // Resolve each field's value at this date (fall back to defaults for nulls)
+      const defaults = DEFAULT_RIDER_SETTINGS_TIMELINE.initialValues;
+      const resolved: Record<TimeVaryingField, number> = {} as Record<TimeVaryingField, number>;
+      for (const f of fields) {
+        resolved[f] = timeline.initialValues[f] ?? defaults[f]!;
+      }
       for (const change of timeline.changes) {
         if (change.date > date) break;
         for (const f of fields) {

@@ -13,54 +13,72 @@ import {
 } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
 import { NumberField } from "~/components/ui/number-field";
-import type {
-  RiderSettingsChangePoint,
-  TimeVaryingField,
+import {
+  DEFAULT_RIDER_SETTINGS_TIMELINE,
+  type RiderSettingsChangePoint,
+  type TimeVaryingField,
 } from "~/sensors/types";
 
 import {
   RIDER_FIELD_CONFIG,
   type RiderFieldConfig,
+  formatPace,
   paceToSpeed,
   speedToPace,
 } from "./fieldConfig";
 
+const DEFAULTS = DEFAULT_RIDER_SETTINGS_TIMELINE.initialValues;
+
 function PaceInput({
   value,
   paceUnit,
+  placeholderMinutes,
+  placeholderSeconds,
   onChange,
 }: {
-  value: number;
+  value: number | null;
   paceUnit: "/km" | "/100m";
-  onChange: (speed: number) => void;
+  placeholderMinutes?: string;
+  placeholderSeconds?: string;
+  onChange: (speed: number | null) => void;
 }) {
-  const { minutes, seconds } = speedToPace(value, paceUnit);
+  const pace = value != null ? speedToPace(value, paceUnit) : null;
 
   const handleMinutesChange = (m: number | null) => {
-    onChange(paceToSpeed(m ?? 0, seconds, paceUnit));
+    if (m == null) {
+      onChange(null);
+      return;
+    }
+    onChange(paceToSpeed(m, pace?.seconds ?? 0, paceUnit));
   };
 
   const handleSecondsChange = (s: number | null) => {
-    onChange(paceToSpeed(minutes, s ?? 0, paceUnit));
+    if (s == null) {
+      onChange(null);
+      return;
+    }
+    onChange(paceToSpeed(pace?.minutes ?? 0, s, paceUnit));
   };
 
   return (
     <div className="flex items-center gap-2">
       <NumberField
         className="w-20"
-        value={minutes}
+        value={pace?.minutes ?? null}
         onValueChange={handleMinutesChange}
         min={0}
         step={1}
+        placeholder={placeholderMinutes}
       />
       <span className="text-muted-foreground">:</span>
       <NumberField
         className="w-20"
-        value={seconds}
+        value={pace?.seconds ?? null}
         onValueChange={handleSecondsChange}
         min={0}
         max={59}
         step={1}
+        placeholder={placeholderSeconds ?? (value == null ? "00" : undefined)}
       />
       <span className="text-muted-foreground text-sm whitespace-nowrap">
         {paceUnit}
@@ -69,14 +87,17 @@ function PaceInput({
   );
 }
 
+type NullableValues = Record<TimeVaryingField, number | null>;
+
 interface ChangePointDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode: "baseline" | "change";
   existingPoint?: RiderSettingsChangePoint;
-  baselineValues?: Record<TimeVaryingField, number>;
+  baselineValues?: Record<TimeVaryingField, number | null>;
+  isDefaults?: boolean;
   onSave: (point: RiderSettingsChangePoint) => void;
-  onSaveBaseline: (values: Record<TimeVaryingField, number>) => void;
+  onSaveBaseline: (values: Record<TimeVaryingField, number | null>) => void;
   onDelete?: () => void;
 }
 
@@ -86,6 +107,7 @@ export function ChangePointDialog({
   mode,
   existingPoint,
   baselineValues,
+  isDefaults,
   onSave,
   onSaveBaseline,
   onDelete,
@@ -105,22 +127,30 @@ export function ChangePointDialog({
       return fields;
     },
   );
-  const [values, setValues] = useState<Record<TimeVaryingField, number>>(() => {
+  const [values, setValues] = useState<NullableValues>(() => {
+    if (isBaseline && isDefaults) {
+      // Show empty fields with placeholders when editing defaults
+      return {
+        ftp: null,
+        weightKg: null,
+        restingHr: null,
+        maxHr: null,
+        lthr: null,
+        runThresholdPace: null,
+        swimThresholdPace: null,
+      };
+    }
     if (baselineValues) return { ...baselineValues };
-    return {
-      ftp: existingPoint?.ftp ?? 200,
-      weightKg: existingPoint?.weightKg ?? 75,
-      restingHr: existingPoint?.restingHr ?? 50,
-      maxHr: existingPoint?.maxHr ?? 185,
-      lthr: existingPoint?.lthr ?? 163,
-      runThresholdPace: existingPoint?.runThresholdPace ?? 3.33,
-      swimThresholdPace: existingPoint?.swimThresholdPace ?? 1.33,
-    };
+    const result: NullableValues = {} as NullableValues;
+    for (const { field } of RIDER_FIELD_CONFIG) {
+      result[field] = existingPoint?.[field] ?? DEFAULTS[field];
+    }
+    return result;
   });
 
   const handleSave = () => {
     if (isBaseline) {
-      onSaveBaseline(values);
+      onSaveBaseline({ ...values });
       onOpenChange(false);
       return;
     }
@@ -131,7 +161,7 @@ export function ChangePointDialog({
     };
     for (const { field } of RIDER_FIELD_CONFIG) {
       if (enabledFields.has(field)) {
-        point[field] = values[field];
+        point[field] = values[field] ?? DEFAULTS[field] ?? undefined;
       }
     }
     onSave(point);
@@ -150,12 +180,27 @@ export function ChangePointDialog({
     });
   };
 
-  const renderFieldInput = (config: RiderFieldConfig) => {
+  const getPlaceholder = (config: RiderFieldConfig): string | undefined => {
+    if (!isBaseline) return undefined;
+    const defaultVal = DEFAULTS[config.field]!;
     if (config.inputType === "pace" && config.paceUnit) {
+      return formatPace(defaultVal, config.paceUnit);
+    }
+    return `${defaultVal}`;
+  };
+
+  const renderFieldInput = (config: RiderFieldConfig) => {
+    const placeholder = getPlaceholder(config);
+
+    if (config.inputType === "pace" && config.paceUnit) {
+      const placeholderPace = DEFAULTS[config.field]!;
+      const { minutes: pMin, seconds: pSec } = speedToPace(placeholderPace, config.paceUnit);
       return (
         <PaceInput
           value={values[config.field]}
           paceUnit={config.paceUnit}
+          placeholderMinutes={isBaseline ? `${pMin}` : undefined}
+          placeholderSeconds={isBaseline ? String(pSec).padStart(2, "0") : undefined}
           onChange={(speed) =>
             setValues((prev) => ({ ...prev, [config.field]: speed }))
           }
@@ -167,11 +212,12 @@ export function ChangePointDialog({
       <NumberField
         value={values[config.field]}
         onValueChange={(value) =>
-          setValues((prev) => ({ ...prev, [config.field]: value ?? 0 }))
+          setValues((prev) => ({ ...prev, [config.field]: value }))
         }
         min={config.min}
         step={config.step}
         smallStep={config.smallStep}
+        placeholder={placeholder}
       />
     );
   };
@@ -188,65 +234,73 @@ export function ChangePointDialog({
                 : "Add Change Point"}
           </DialogTitle>
         </DialogHeader>
-        <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto">
-          {!isBaseline && (
-            <div className="flex flex-col gap-1.5">
-              <Label>Date</Label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
-              />
-            </div>
-          )}
-          {RIDER_FIELD_CONFIG.map((config) => (
-            <div key={config.field} className="flex flex-col gap-1.5">
-              {isBaseline ? (
-                <Label>
-                  {config.label}{" "}
-                  ({config.inputType === "pace" ? `min:sec ${config.paceUnit}` : config.unit})
-                </Label>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={enabledFields.has(config.field)}
-                    onCheckedChange={() => toggleField(config.field)}
-                  />
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSave();
+          }}
+        >
+          <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto">
+            {!isBaseline && (
+              <div className="flex flex-col gap-1.5">
+                <Label>Date</Label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+                />
+              </div>
+            )}
+            {RIDER_FIELD_CONFIG.map((config) => (
+              <div key={config.field} className="flex flex-col gap-1.5">
+                {isBaseline ? (
                   <Label>
                     {config.label}{" "}
                     ({config.inputType === "pace" ? `min:sec ${config.paceUnit}` : config.unit})
                   </Label>
-                </div>
-              )}
-              {(isBaseline || enabledFields.has(config.field)) &&
-                renderFieldInput(config)}
-            </div>
-          ))}
-        </div>
-        <DialogFooter>
-          {!isBaseline && existingPoint && onDelete && (
-            <Button
-              variant="destructive"
-              onClick={() => {
-                onDelete();
-                onOpenChange(false);
-              }}
-              className="mr-auto"
-            >
-              Delete
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={enabledFields.has(config.field)}
+                      onCheckedChange={() => toggleField(config.field)}
+                    />
+                    <Label>
+                      {config.label}{" "}
+                      ({config.inputType === "pace" ? `min:sec ${config.paceUnit}` : config.unit})
+                    </Label>
+                  </div>
+                )}
+                {(isBaseline || enabledFields.has(config.field)) &&
+                  renderFieldInput(config)}
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            {!isBaseline && existingPoint && onDelete && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => {
+                  onDelete();
+                  onOpenChange(false);
+                }}
+                className="mr-auto"
+              >
+                Delete
+              </Button>
+            )}
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
             </Button>
-          )}
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!isBaseline && enabledFields.size === 0}
-          >
-            Save
-          </Button>
-        </DialogFooter>
+            <Button
+              type="submit"
+              disabled={!isBaseline && enabledFields.size === 0}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

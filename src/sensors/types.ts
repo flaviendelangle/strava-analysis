@@ -35,19 +35,6 @@ export interface RiderSettings {
   swimThresholdPace: number;
 }
 
-export const DEFAULT_RIDER_SETTINGS: RiderSettings = {
-  weightKg: 75,
-  ftp: 200,
-  cdA: 0.35,
-  crr: 0.004,
-  bikeWeightKg: 8,
-  restingHr: 50,
-  maxHr: 185,
-  lthr: 163,
-  runThresholdPace: 3.33, // ~5:00/km
-  swimThresholdPace: 1.33, // ~1:15/100m
-};
-
 /** Fields that can vary over time */
 export type TimeVaryingField =
   | "ftp"
@@ -80,13 +67,13 @@ export interface RiderSettingsTimeline {
   runningLoadAlgorithm: "rtss" | "hrss";
   swimmingLoadAlgorithm: "stss" | "hrss";
   initialValues: {
-    ftp: number;
-    weightKg: number;
-    restingHr: number;
-    maxHr: number;
-    lthr: number;
-    runThresholdPace: number;
-    swimThresholdPace: number;
+    ftp: number | null;
+    weightKg: number | null;
+    restingHr: number | null;
+    maxHr: number | null;
+    lthr: number | null;
+    runThresholdPace: number | null;
+    swimThresholdPace: number | null;
   };
   changes: RiderSettingsChangePoint[];
 }
@@ -105,9 +92,23 @@ export const DEFAULT_RIDER_SETTINGS_TIMELINE: RiderSettingsTimeline = {
     maxHr: 185,
     lthr: 163,
     runThresholdPace: 3.33,
-    swimThresholdPace: 1.33,
+    swimThresholdPace: 0.952, // ~1:45/100m
   },
   changes: [],
+};
+
+// Derived from DEFAULT_RIDER_SETTINGS_TIMELINE — single source of truth
+export const DEFAULT_RIDER_SETTINGS: RiderSettings = {
+  cdA: DEFAULT_RIDER_SETTINGS_TIMELINE.cdA,
+  crr: DEFAULT_RIDER_SETTINGS_TIMELINE.crr,
+  bikeWeightKg: DEFAULT_RIDER_SETTINGS_TIMELINE.bikeWeightKg,
+  ftp: DEFAULT_RIDER_SETTINGS_TIMELINE.initialValues.ftp!,
+  weightKg: DEFAULT_RIDER_SETTINGS_TIMELINE.initialValues.weightKg!,
+  restingHr: DEFAULT_RIDER_SETTINGS_TIMELINE.initialValues.restingHr!,
+  maxHr: DEFAULT_RIDER_SETTINGS_TIMELINE.initialValues.maxHr!,
+  lthr: DEFAULT_RIDER_SETTINGS_TIMELINE.initialValues.lthr!,
+  runThresholdPace: DEFAULT_RIDER_SETTINGS_TIMELINE.initialValues.runThresholdPace!,
+  swimThresholdPace: DEFAULT_RIDER_SETTINGS_TIMELINE.initialValues.swimThresholdPace!,
 };
 
 export interface SessionDataPoint {

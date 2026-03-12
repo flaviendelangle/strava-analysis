@@ -1,6 +1,7 @@
 import { GridIcon } from "lucide-react";
 
 import { ActivitiesMap } from "~/components/ActivitiesMap";
+import { PageIntro } from "~/components/primitives/PageIntro";
 import { ActivityFilterPopover } from "~/components/settings/ActivityFilterPopover";
 import { Toolbar } from "~/components/settings/SettingsToolbar";
 import { Button } from "~/components/ui/button";
@@ -35,8 +36,11 @@ const HeatmapPage: NextPageWithLayout = () => {
         <div className="bg-border mx-1 h-4 w-px" />
         <ExplorerTilesToggleButton />
       </Toolbar>
-      <div className="flex-1 overflow-hidden">
+      <div className="relative flex-1 overflow-hidden">
         <ActivitiesMap />
+        <PageIntro hintId="intro-heatmap" className="pointer-events-auto absolute top-3 right-3 left-3 z-10 shadow-lg sm:top-4 sm:right-4 sm:left-4">
+          All your GPS activities plotted on a map. Toggle <strong>Tiles</strong> to overlay an exploration grid that tracks which areas you&apos;ve covered.
+        </PageIntro>
       </div>
     </>
   );

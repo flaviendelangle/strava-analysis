@@ -24,7 +24,7 @@ import { RIDER_FIELD_CONFIG, TIME_VARYING_FIELDS, formatPace } from "./fieldConf
 interface ResolvedRow {
   id: string;
   label: string;
-  values: Record<TimeVaryingField, number>;
+  values: Record<TimeVaryingField, number | null>;
   changed: Set<TimeVaryingField>;
   isBaseline: boolean;
 }
@@ -63,8 +63,9 @@ function buildResolvedRows(timeline: RiderSettingsTimeline): ResolvedRow[] {
 
 function formatFieldValue(
   field: (typeof RIDER_FIELD_CONFIG)[number],
-  value: number,
+  value: number | null,
 ): string {
+  if (value == null) return "—";
   if (field.inputType === "pace" && field.paceUnit) {
     return formatPace(value, field.paceUnit);
   }
@@ -74,11 +75,13 @@ function formatFieldValue(
 interface ChangePointsTimelineProps {
   timeline: RiderSettingsTimeline;
   onTimelineChange: (timeline: RiderSettingsTimeline) => void;
+  hasSettings?: boolean;
 }
 
 export function ChangePointsTimeline({
   timeline,
   onTimelineChange,
+  hasSettings = true,
 }: ChangePointsTimelineProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPoint, setEditingPoint] = useState<
@@ -133,7 +136,7 @@ export function ChangePointsTimeline({
     onTimelineChange({ ...timeline, changes: newChanges });
   };
 
-  const handleSaveBaseline = (values: Record<TimeVaryingField, number>) => {
+  const handleSaveBaseline = (values: Record<TimeVaryingField, number | null>) => {
     onTimelineChange({ ...timeline, initialValues: values });
   };
 
@@ -149,7 +152,7 @@ export function ChangePointsTimeline({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-medium">Rider Settings</h3>
-          <Tooltip label="Set your baseline fitness values and track how they change over time. These are used to calculate training load and power metrics for your activities.">
+          <Tooltip label="Set your baseline fitness values and track how they change over time. These are used to calculate training load and power metrics for your activities. Add a change point when you do an FTP test or your weight changes — past activities will use the settings that were active on their date.">
             <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
               <InfoIcon className="size-4" />
             </button>
@@ -172,60 +175,73 @@ export function ChangePointsTimeline({
       </div>
 
       <div className="flex flex-col gap-2">
-        {resolvedRows.map((row) => (
-          <div
-            key={row.id}
-            className="border-border bg-card rounded-lg border px-4 py-3"
-          >
-            <div className="mb-2 flex items-center justify-between">
-              <span
-                className={cn(
-                  "text-sm font-medium",
-                  row.isBaseline
-                    ? "text-foreground"
-                    : "text-muted-foreground font-mono",
-                )}
-              >
-                {row.label}
-              </span>
-              <Button
-                variant="ghost"
-                size="xs"
-                onClick={() => {
-                  if (row.isBaseline) {
-                    handleEditBaseline();
-                  } else {
-                    const point = timeline.changes.find(
-                      (c) => c.id === row.id,
-                    );
-                    if (point) handleEditChange(point);
-                  }
-                }}
-              >
-                Edit
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {RIDER_FIELD_CONFIG.map((config) => {
-                const isChanged = row.changed.has(config.field);
-                if (!row.isBaseline && !isChanged) return null;
-                return (
+        {resolvedRows.map((row) => {
+          const isDefaultBaseline = row.isBaseline && !hasSettings;
+          return (
+            <div
+              key={row.id}
+              className={cn(
+                "rounded-lg border px-4 py-3",
+                isDefaultBaseline
+                  ? "border-border border-dashed"
+                  : "border-border bg-card border",
+              )}
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
                   <span
-                    key={config.field}
                     className={cn(
-                      "rounded-md px-2 py-0.5 text-xs",
-                      isChanged
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "bg-muted text-muted-foreground",
+                      "text-sm font-medium",
+                      row.isBaseline
+                        ? "text-foreground"
+                        : "text-muted-foreground font-mono",
                     )}
                   >
-                    {config.label}: {formatFieldValue(config, row.values[config.field])}
+                    {row.label}
                   </span>
-                );
-              })}
+                </div>
+                <Button
+                  variant={isDefaultBaseline ? "default" : "ghost"}
+                  size="xs"
+                  onClick={() => {
+                    if (row.isBaseline) {
+                      handleEditBaseline();
+                    } else {
+                      const point = timeline.changes.find(
+                        (c) => c.id === row.id,
+                      );
+                      if (point) handleEditChange(point);
+                    }
+                  }}
+                >
+                  {isDefaultBaseline ? "Set your values" : "Edit"}
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {RIDER_FIELD_CONFIG.map((config) => {
+                  const isChanged = row.changed.has(config.field);
+                  if (!row.isBaseline && !isChanged) return null;
+                  const isNull = row.values[config.field] == null;
+                  return (
+                    <span
+                      key={config.field}
+                      className={cn(
+                        "rounded-md px-2 py-0.5 text-xs",
+                        isDefaultBaseline || isNull
+                          ? "bg-muted text-muted-foreground"
+                          : isChanged
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "bg-muted text-muted-foreground",
+                      )}
+                    >
+                      {config.label}: {formatFieldValue(config, row.values[config.field])}
+                    </span>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <Dialog open={timelineDialogOpen} onOpenChange={setTimelineDialogOpen}>
@@ -244,6 +260,7 @@ export function ChangePointsTimeline({
         mode={editingBaseline ? "baseline" : "change"}
         existingPoint={editingPoint}
         baselineValues={editingBaseline ? timeline.initialValues : undefined}
+        isDefaults={editingBaseline && !hasSettings}
         onSave={handleSave}
         onSaveBaseline={handleSaveBaseline}
         onDelete={

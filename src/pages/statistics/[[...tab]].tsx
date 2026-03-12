@@ -5,6 +5,7 @@ import nextDynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/router";
 
+import { PageIntro } from "~/components/primitives/PageIntro";
 import { Toolbar } from "~/components/settings/SettingsToolbar";
 import { PeriodStatsTable } from "~/components/statistics/PeriodStatsTable";
 import { Button } from "~/components/ui/button";
@@ -16,7 +17,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import type { NextPageWithLayout } from "~/pages/_app";
-import { POWER_BEST_ACTIVITY_TYPES } from "~/utils/constants";
+import { getActivityTypesByCategory } from "~/utils/sportConfig";
 
 const ActivitiesTimeline = nextDynamic(
   () =>
@@ -126,14 +127,23 @@ const StatisticsPage: NextPageWithLayout = () => {
       {activeTab === "charts" ? (
         <div className="flex flex-1 flex-col items-center gap-4 overflow-y-auto p-3 sm:p-4">
           <div className="flex w-full max-w-5xl flex-col gap-4">
+            <PageIntro hintId="intro-statistics-charts">
+              Training volume and intensity trends over time. Configure your rider settings to see training load data in the charts.
+            </PageIntro>
             <ActivitiesTimeline />
             <ActivitiesCumulativeTimeline />
-            <PowerCurve activityTypes={POWER_BEST_ACTIVITY_TYPES} />
+            <PowerCurve activityTypes={getActivityTypesByCategory("cycling")} />
             <EddingtonChart />
           </div>
         </div>
       ) : (
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-3 sm:p-4">
+          <PageIntro hintId="intro-statistics-periods">
+            Compare stats across custom training blocks. Define your time periods in{" "}
+            <Link href="/settings/periods" className="text-primary font-medium underline underline-offset-2">
+              Settings &gt; Time Periods
+            </Link>.
+          </PageIntro>
           <div className="flex justify-end">
             <Button variant="outline" size="sm" render={<Link href="/settings/periods" />}>
               <SettingsIcon className="size-4" />

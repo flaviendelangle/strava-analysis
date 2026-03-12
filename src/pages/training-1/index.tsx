@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useEffect, useRef } from "react";
 
+import { SettingsCallout } from "~/components/primitives/SettingsCallout";
 import { BrowserCompatibilityBanner } from "~/components/liveTraining/BrowserCompatibilityBanner";
 import { HudConnectionWizard } from "~/components/liveTraining/hud/HudConnectionWizard";
 import { HudMainView } from "~/components/liveTraining/hud/HudMainView";
@@ -64,8 +65,14 @@ export default function Training1Page() {
 
   return (
     <div className="relative h-full overflow-hidden">
-      <div className="absolute top-0 right-0 left-0 z-[60] p-2">
+      <div className="absolute top-0 right-0 left-0 z-[60] flex flex-col gap-2 p-2">
         <BrowserCompatibilityBanner />
+        {(phase === "connection" || phase === "waiting") && (
+          <SettingsCallout
+            hintId="callout-training-equipment"
+            message="Set your weight, bike weight, and aerodynamics (CdA, Crr) in Settings for accurate watts/kg and virtual speed."
+          />
+        )}
       </div>
 
       {/* Main training view (always mounted when running/paused so it freezes behind overlays) */}

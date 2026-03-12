@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
 
 import {
   Tooltip,
@@ -17,6 +18,7 @@ export function StatCard({
   icon: Icon,
   variant = "default",
   className,
+  settingsLink,
 }: {
   label: string;
   value: string | number | null;
@@ -24,6 +26,7 @@ export function StatCard({
   icon?: LucideIcon;
   variant?: "default" | "hero";
   className?: string;
+  settingsLink?: string;
 }) {
   const isHero = variant === "hero";
 
@@ -48,7 +51,19 @@ export function StatCard({
           isHero ? "mt-1 text-2xl" : "text-lg",
         )}
       >
-        {value ?? "--"}
+        {value ?? (
+          <span>
+            --
+            {settingsLink && (
+              <Link
+                href={settingsLink}
+                className="text-primary block text-[10px] font-medium hover:underline"
+              >
+                Configure
+              </Link>
+            )}
+          </span>
+        )}
       </div>
     </div>
   );

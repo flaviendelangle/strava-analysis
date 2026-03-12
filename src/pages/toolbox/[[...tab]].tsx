@@ -118,6 +118,7 @@ const ToolboxPage: NextPageWithLayout = () => {
         </div>
       </Toolbar>
       <div className="flex flex-1 flex-col overflow-auto p-4">
+
         {activeTool === "pace-calculator" && <PaceCalculator />}
         {activeTool === "race-predictor" && <RacePredictor />}
         {activeTool === "zone-calculator" && <ZoneCalculator />}

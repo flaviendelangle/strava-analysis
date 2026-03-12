@@ -123,13 +123,13 @@ export const riderSettings = pgTable(
     runningLoadAlgorithm: text("running_load_algorithm").notNull().default("rtss"),
     swimmingLoadAlgorithm: text("swimming_load_algorithm").notNull().default("stss"),
     initialValues: jsonb("initial_values").notNull().$type<{
-      ftp?: number;
-      weightKg?: number;
-      restingHr?: number;
-      maxHr?: number;
-      lthr?: number;
-      runThresholdPace?: number;
-      swimThresholdPace?: number;
+      ftp?: number | null;
+      weightKg?: number | null;
+      restingHr?: number | null;
+      maxHr?: number | null;
+      lthr?: number | null;
+      runThresholdPace?: number | null;
+      swimThresholdPace?: number | null;
     }>(),
     changes: jsonb("changes").notNull().$type<
       {

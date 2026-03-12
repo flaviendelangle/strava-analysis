@@ -300,21 +300,24 @@ const DEFAULT_RESOLVED_SETTINGS: ResolvedSettings = {
 };
 
 interface SettingsTimeline {
-  initialValues: Partial<ResolvedSettings>;
+  initialValues: { [K in keyof ResolvedSettings]?: ResolvedSettings[K] | null };
   changes: ({ date: string } & Partial<ResolvedSettings>)[];
 }
 
 /**
  * Resolves rider settings for a specific date by walking the change timeline.
- * Missing initial values are filled with sensible defaults.
+ * Missing or null initial values are filled with sensible defaults.
  */
 export function resolveRiderSettings(
   timeline: SettingsTimeline,
   targetDate: string,
 ): ResolvedSettings {
-  const fullInitialValues: ResolvedSettings = {
-    ...DEFAULT_RESOLVED_SETTINGS,
-    ...timeline.initialValues,
-  };
+  const fullInitialValues: ResolvedSettings = { ...DEFAULT_RESOLVED_SETTINGS };
+  for (const key of Object.keys(DEFAULT_RESOLVED_SETTINGS) as (keyof ResolvedSettings)[]) {
+    const v = timeline.initialValues[key];
+    if (v != null) {
+      fullInitialValues[key] = v;
+    }
+  }
   return resolveTimeline(fullInitialValues, timeline.changes, targetDate);
 }

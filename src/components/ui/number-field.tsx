@@ -87,11 +87,15 @@ function NumberFieldDecrement({
   );
 }
 
-function NumberField({ className, ...props }: NumberFieldPrimitive.Root.Props) {
+function NumberField({
+  className,
+  placeholder,
+  ...props
+}: NumberFieldPrimitive.Root.Props & { placeholder?: string }) {
   return (
     <NumberFieldRoot {...props}>
       <NumberFieldGroup className={className}>
-        <NumberFieldInput />
+        <NumberFieldInput placeholder={placeholder} />
         <div className="flex flex-col">
           <NumberFieldIncrement />
           <NumberFieldDecrement />
