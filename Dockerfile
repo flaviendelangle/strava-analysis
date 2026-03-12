@@ -30,7 +30,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Drizzle migrations need the schema + config at runtime
-COPY --from=builder /app/server ./server
+COPY --from=builder /app/src/server/db/schema.ts ./src/server/db/schema.ts
+COPY --from=builder /app/src/server/db/migrations ./src/server/db/migrations
 COPY --from=builder /app/drizzle.config.ts ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
